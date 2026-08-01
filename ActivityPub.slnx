@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ActivityPub.Core/ActivityPub.Core.csproj" />
+  <Project Path="ActivityPub.Tests/ActivityPub.Tests.csproj" />
+</Solution>

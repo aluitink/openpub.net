@@ -1,5 +1,6 @@
 using ActivityPub.Core.Events;
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using ActivityPub.Core.Infrastructure.Telemetry;
 using System.Diagnostics;

@@ -1,0 +1,8 @@
+/workspace/activitypub-dotnet/ActivityPub.Tests/bin/Release/net10.0/.msCoverageSourceRootsMapping_ActivityPub.Tests
+/workspace/activitypub-dotnet/ActivityPub.Tests/bin/Release/net10.0/CoverletSourceRootsMapping_ActivityPub.Tests
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Release/net10.0/ActivityPub.Tests.csproj.AssemblyReference.cache
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Release/net10.0/MvcTestingAppManifest.json
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Release/net10.0/ActivityPub.Tests.GeneratedMSBuildEditorConfig.editorconfig
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Release/net10.0/ActivityPub.Tests.AssemblyInfoInputs.cache
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Release/net10.0/ActivityPub.Tests.AssemblyInfo.cs
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Release/net10.0/ActivityPub.Tests.csproj.CoreCompileInputs.cache

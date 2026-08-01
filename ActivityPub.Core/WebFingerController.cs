@@ -1,50 +1,116 @@
 using Microsoft.AspNetCore.Mvc;
+using ActivityPub.Core.Services;
+using ActivityPub.Core.Infrastructure.Telemetry;
+using ActivityPub.Core.Models;
+using ActivityPub.Core.Infrastructure;
+using System.Text.Json;
+using System.Diagnostics;
 
 namespace ActivityPub.Core;
 
+/// <summary>
+/// WebFinger endpoint implementation for ActivityPub protocol
+/// </summary>
 [ApiController]
 [Route(".well-known/[controller]")]
 public class WebFingerController : ControllerBase
 {
+    private readonly WebFingerCacheService _cacheService;
+    private readonly ActivityPubTelemetry _telemetry;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public WebFingerController(WebFingerCacheService cacheService, ActivityPubTelemetry telemetry)
+    {
+        _cacheService = cacheService;
+        _telemetry = telemetry;
+        _jsonOptions = new JsonSerializerOptions
+        {
+            Converters = { new WebFingerJsonConverter() }
+        };
+    }
+
     [HttpGet("webfinger")]
-    public IActionResult GetWebFinger(
+    public async Task<IActionResult> GetWebFinger(
         [FromQuery] string? resource,
         [FromQuery] string? rel)
     {
+        // Record the WebFinger request
+        _telemetry.RecordWebFingerRequest();
+        
         // Validate required parameters according to W3C WebFinger specification
         if (string.IsNullOrEmpty(resource))
         {
             return BadRequest(new { error = "resource parameter is required" });
         }
 
+        // Generate cache key based on resource and rel parameters
+        var cacheKey = $"{resource}:{rel}";
+        
+        // Try to get from cache
+        var stopwatch = Stopwatch.StartNew();
+        var cachedResponse = _cacheService.GetCachedResponse(cacheKey);
+        
+        if (cachedResponse != null)
+        {
+            stopwatch.Stop();
+            _telemetry.RecordWebFingerProcessingTime(stopwatch.ElapsedMilliseconds);
+            
+            // Return cached response with proper JSON serialization
+            var json = JsonSerializer.Serialize(cachedResponse, _jsonOptions);
+            return Content(json, "application/jrd+json");
+        }
+        
         // Handle the resource according to WebFinger specification
         var subject = resource;
-        var links = new List<object>();
+        var links = new List<WebFingerLink>();
         
         // Add self link to the ActivityPub endpoint
         var activityPubEndpoint = GetActivityPubEndpoint(resource);
-        links.Add(new
+        links.Add(new WebFingerLink
         {
-            rel = "self",
-            type = "application/activity+json",
-            href = activityPubEndpoint
+            Rel = "self",
+            Type = "application/activity+json",
+            Href = activityPubEndpoint
         });
         
         // Add additional links if rel parameter is provided
         if (!string.IsNullOrEmpty(rel))
         {
-            // Add more links based on the relationship type if needed
             // This is a simplified implementation
         }
-
-        // Return JRD (JSON Resource Descriptor) as per W3C specification
-        var jrd = new
+        
+        // Create JRD response
+        var jrd = new WebFingerJrd
         {
-            subject = subject,
-            links = links.ToArray()
+            Subject = subject,
+            Links = links.ToList()
         };
-
-        return Ok(jrd);
+        
+        // Cache the response - ensure type compatibility
+        var cachedLinks = new List<WebFingerLink>();
+        foreach (var link in jrd.Links)
+        {
+            cachedLinks.Add(new WebFingerLink
+            {
+                Rel = link.Rel,
+                Type = link.Type,
+                Href = link.Href
+            });
+        }
+        
+        _cacheService.SetCachedResponse(cacheKey, new WebFingerResponse
+        {
+            Subject = jrd.Subject,
+            Links = cachedLinks.ToArray(),
+            CachedAt = DateTime.UtcNow
+        });
+        
+        stopwatch.Stop();
+        _telemetry.RecordWebFingerProcessingTime(stopwatch.ElapsedMilliseconds);
+        
+        // Return serialized JRD with proper content type
+        var jsonResponse = JsonSerializer.Serialize(jrd, _jsonOptions);
+        return Content(jsonResponse, "application/jrd+json");
     }
 
     private string GetActivityPubEndpoint(string resource)
@@ -69,5 +135,26 @@ public class WebFingerController : ControllerBase
         
         // For other resource types, return as-is or construct appropriate endpoint
         return resource;
+    }
+    
+    [HttpGet("cache-stats")]
+    public IActionResult GetCacheStats()
+    {
+        // Create comprehensive cache statistics for monitoring and debugging
+        var stats = new WebFingerCacheStats
+        {
+            Timestamp = DateTime.UtcNow,
+            CacheSize = 0, // Due to limited access to internal cache state, we'll use telemetry
+            CacheHits = _telemetry.GetWebFingerCacheHits(),
+            CacheMisses = _telemetry.GetWebFingerCacheMisses(),
+            HitRatio = _telemetry.GetWebFingerCacheHitRatio(),
+            MissRatio = 1.0 - _telemetry.GetWebFingerCacheHitRatio(), // Calculate miss ratio
+            TotalRequests = _telemetry.GetWebFingerRequests(),
+            CacheLifetime = "10 minutes",
+            CacheType = "MemoryCache",
+            CacheImplementationDetails = "Cache statistics exposed via ActivityPub telemetry"
+        };
+
+        return Ok(stats);
     }
 }

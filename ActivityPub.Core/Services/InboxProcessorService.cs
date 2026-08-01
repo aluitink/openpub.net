@@ -1,4 +1,5 @@
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Interfaces;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using ActivityPub.Core.Infrastructure.Telemetry;
