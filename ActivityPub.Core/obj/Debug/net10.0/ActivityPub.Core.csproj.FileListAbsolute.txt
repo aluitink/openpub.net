@@ -10,3 +10,15 @@
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/refint/ActivityPub.Core.dll
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.pdb
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ref/ActivityPub.Core.dll
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/ActivityPub.Core.deps.json
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/ActivityPub.Core.dll
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/ActivityPub.Core.pdb
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.csproj.AssemblyReference.cache
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.AssemblyInfoInputs.cache
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.AssemblyInfo.cs
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.csproj.CoreCompileInputs.cache
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.dll
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/refint/ActivityPub.Core.dll
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.pdb
+/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ref/ActivityPub.Core.dll

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ActivityPub.Core;
 
 namespace ActivityPub.Core;
 
@@ -12,6 +13,9 @@ public class Program
 
         // Add services to the container
         builder.Services.AddControllers();
+        
+        // Configure API versioning
+        ApiVersioningConfig.ConfigureApiVersioning(builder.Services);
 
         var app = builder.Build();
 
@@ -22,6 +26,7 @@ public class Program
         }
 
         app.UseRouting();
+        app.UseApiVersioning(); // Apply API versioning middleware
         app.MapControllers();
 
         app.Run();

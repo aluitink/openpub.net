@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ActivityPub.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7daaf4a8021ff845db3ae76d34f87af787625545")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8cf1f30a142ea0bc18826a3af41b715839d7a7c6")]
 [assembly: System.Reflection.AssemblyProductAttribute("ActivityPub.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ActivityPub.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

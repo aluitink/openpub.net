@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using ActivityPub.Core.Interfaces;
 
 namespace ActivityPub.Core.Controllers.Versioned;
 
@@ -34,7 +35,7 @@ public class WebFingerVersionedController : ControllerBase
 
         try
         {
-            var jrd = await _webFingerSource.GetWebFingerAsync(resource);
+            var jrd = await _webFingerSource.GetWebFingerResourceAsync(resource);
             if (jrd == null)
             {
                 return NotFound(new { error = "Resource not found" });

@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/workspace/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj": {}
+    "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj": {}
   },
   "projects": {
-    "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj": {
+    "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
+        "projectUniqueName": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
         "projectName": "ActivityPub.Core",
-        "projectPath": "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
-        "packagesPath": "/root/.nuget/packages/",
-        "outputPath": "/workspace/activitypub-dotnet/ActivityPub.Core/obj/",
+        "projectPath": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
+        "packagesPath": "/home/andrew/.nuget/packages/",
+        "outputPath": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/root/.nuget/NuGet/NuGet.Config"
+          "/home/andrew/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -24,7 +24,6 @@
         },
         "frameworks": {
           "net10.0": {
-            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -39,16 +38,23 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
-          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.Mvc.NewtonsoftJson": {
               "target": "Package",
               "version": "[8.0.*, )"
+            },
+            "Microsoft.AspNetCore.Mvc.Versioning": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer": {
+              "target": "Package",
+              "version": "[5.0.0, )"
             },
             "Microsoft.Extensions.DiagnosticAdapter": {
               "target": "Package",
@@ -71,7 +77,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.302/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -349,17 +355,17 @@
         }
       }
     },
-    "/workspace/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj": {
+    "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/workspace/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj",
+        "projectUniqueName": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj",
         "projectName": "ActivityPub.Tests",
-        "projectPath": "/workspace/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj",
-        "packagesPath": "/root/.nuget/packages/",
-        "outputPath": "/workspace/activitypub-dotnet/ActivityPub.Tests/obj/",
+        "projectPath": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/ActivityPub.Tests.csproj",
+        "packagesPath": "/home/andrew/.nuget/packages/",
+        "outputPath": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/root/.nuget/NuGet/NuGet.Config"
+          "/home/andrew/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -369,11 +375,10 @@
         },
         "frameworks": {
           "net10.0": {
-            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj": {
-                "projectPath": "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj"
+              "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj": {
+                "projectPath": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj"
               }
             }
           }
@@ -388,11 +393,10 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
-          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.Mvc.Testing": {
@@ -432,7 +436,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.302/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
