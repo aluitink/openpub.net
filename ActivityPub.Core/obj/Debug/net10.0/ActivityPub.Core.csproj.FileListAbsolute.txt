@@ -1,3 +1,8 @@
+/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.csproj.AssemblyReference.cache
+/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.GeneratedMSBuildEditorConfig.editorconfig
+/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.AssemblyInfoInputs.cache
+/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.AssemblyInfo.cs
+/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.csproj.CoreCompileInputs.cache
 /workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/ActivityPub.Core
 /workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/ActivityPub.Core.deps.json
 /workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/ActivityPub.Core.runtimeconfig.json
@@ -40,14 +45,10 @@
 /workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/runtimes/win-arm64/native/e_sqlite3.dll
 /workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/runtimes/win-x64/native/e_sqlite3.dll
 /workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/runtimes/win-x86/native/e_sqlite3.dll
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.csproj.AssemblyReference.cache
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.GeneratedMSBuildEditorConfig.editorconfig
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.AssemblyInfoInputs.cache
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.AssemblyInfo.cs
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.csproj.CoreCompileInputs.cache
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/Activity.E0A8A3B2.Up2Date
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.dll
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/refint/ActivityPub.Core.dll
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.pdb
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ActivityPub.Core.genruntimeconfig.cache
 /workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net10.0/ref/ActivityPub.Core.dll
+/workspace/activitypub-dotnet/ActivityPub.Core/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.InMemory.dll

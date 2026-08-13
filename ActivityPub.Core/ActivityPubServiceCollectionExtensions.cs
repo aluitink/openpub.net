@@ -3,11 +3,10 @@ using ActivityPub.Core.Implementations;
 using ActivityPub.Core.Options;
 using ActivityPub.Core.Repositories;
 using ActivityPub.Core.Services;
-using ActivityPub.Core.Infrastructure.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
 
 namespace ActivityPub.Core;
 
@@ -37,12 +36,12 @@ public static class ActivityPubServiceCollectionExtensions
 
         services.AddHttpClient();
         services.AddMemoryCache();
+        services.AddLogging();
         services.AddDbContext<ActivityPubDbContext>(options => 
             options.UseInMemoryDatabase("ActivityPubDb"));
-        services.AddSingleton<Meter>(sp => new Meter("ActivityPub"));
         services.AddScoped<IActivityPubRepository, EFCoreActivityPubRepository>();
         services.AddScoped<ActivityPubEventDispatcher>();
-        services.AddScoped<ActivityPubTelemetry>();
+        services.AddScoped<IKeyFetchingService, KeyFetchingService>();
         services.AddScoped<InboxProcessorService>();
         services.AddScoped<ActivityHandlerFactory>();
         services.AddScoped<WebFingerCacheService>();

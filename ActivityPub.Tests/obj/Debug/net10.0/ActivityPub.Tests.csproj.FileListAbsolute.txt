@@ -451,3 +451,4 @@
 /workspace/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ActivityPub.Tests.pdb
 /workspace/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ActivityPub.Tests.genruntimeconfig.cache
 /workspace/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ref/ActivityPub.Tests.dll
+/workspace/activitypub-dotnet/ActivityPub.Tests/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.InMemory.dll

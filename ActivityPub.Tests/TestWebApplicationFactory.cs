@@ -9,7 +9,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        builder.UseEnvironment(Environments.Development);
+        builder.UseEnvironment(Environments.Production);
         
         return base.CreateHost(builder);
     }

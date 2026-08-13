@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Interfaces;
+using ActivityPub.Core.Options;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
 
 namespace ActivityPub.Core;
 
@@ -12,11 +15,19 @@ public class ActorController : ControllerBase
 {
     private readonly IActivityPubRepository _repository;
     private readonly ILogger<ActorController> _logger;
+    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly ActivityPubOptions _options;
 
-    public ActorController(IActivityPubRepository repository, ILogger<ActorController> logger)
+    public ActorController(IActivityPubRepository repository, ILogger<ActorController> logger, IOptions<ActivityPubOptions> options)
     {
         _repository = repository;
         _logger = logger;
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+        _options = options.Value;
     }
 
     [HttpGet]
@@ -38,14 +49,15 @@ public class ActorController : ControllerBase
             if (actor == null)
             {
                 _logger.LogWarning("Actor not found for username: {Username}", username);
-                return NotFound(new { error = "Actor not found" });
+                return new ContentResult { StatusCode = 404, Content = "" };
             }
 
             _logger.LogInformation("Actor request successful for username: {Username}", username);
             stopwatch.Stop();
             _logger.LogDebug("Actor request completed in {ElapsedMilliseconds} ms", stopwatch.ElapsedMilliseconds);
             
-            return Ok(actor);
+            var json = JsonSerializer.Serialize(actor, _jsonOptions);
+            return Content(json, "application/activity+json");
         }
         catch (Exception ex)
         {
@@ -72,7 +84,7 @@ public class ActorController : ControllerBase
             if (actor == null)
             {
                 _logger.LogWarning("Actor not found for username: {Username}", username);
-                return NotFound(new { error = "Actor not found" });
+                return new ContentResult { StatusCode = 404, Content = "" };
             }
 
             var activities = await _repository.GetActorOutboxActivitiesAsync(username, 0, 20);
@@ -87,7 +99,8 @@ public class ActorController : ControllerBase
 
             _logger.LogInformation("Outbox request successful for username: {Username}", username);
             
-            return Ok(orderedCollection);
+            var json = JsonSerializer.Serialize(orderedCollection, _jsonOptions);
+            return Content(json, "application/activity+json");
         }
         catch (Exception ex)
         {
@@ -149,7 +162,7 @@ public class ActorController : ControllerBase
             if (actor == null)
             {
                 _logger.LogWarning("Actor not found for username: {Username}", username);
-                return NotFound(new { error = "Actor not found" });
+                return new ContentResult { StatusCode = 404, Content = "" };
             }
 
             var followers = await _repository.GetFollowersAsync(username, 0, 20);
@@ -164,7 +177,8 @@ public class ActorController : ControllerBase
 
             _logger.LogInformation("Followers request successful for username: {Username}", username);
             
-            return Ok(collection);
+            var json = JsonSerializer.Serialize(collection, _jsonOptions);
+            return Content(json, "application/activity+json");
         }
         catch (Exception ex)
         {
@@ -191,7 +205,7 @@ public class ActorController : ControllerBase
             if (actor == null)
             {
                 _logger.LogWarning("Actor not found for username: {Username}", username);
-                return NotFound(new { error = "Actor not found" });
+                return new ContentResult { StatusCode = 404, Content = "" };
             }
 
             var following = await _repository.GetFollowingAsync(username, 0, 20);
@@ -206,7 +220,8 @@ public class ActorController : ControllerBase
 
             _logger.LogInformation("Following request successful for username: {Username}", username);
             
-            return Ok(collection);
+            var json = JsonSerializer.Serialize(collection, _jsonOptions);
+            return Content(json, "application/activity+json");
         }
         catch (Exception ex)
         {

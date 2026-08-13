@@ -5,19 +5,19 @@ namespace ActivityPub.Core.Models;
 /// <summary>
 /// Represents an Ordered Collection in Activity Streams 2.0
 /// </summary>
-public record OrderedCollection
+public class OrderedCollection
 {
     /// <summary>
     /// The unique identifier for the collection
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; set; }
+    public string? Id { get; set; }
     
     /// <summary>
     /// The type of collection (typically "OrderedCollection")
     /// </summary>
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string? Type { get; set; }
     
     /// <summary>
     /// The name of the collection

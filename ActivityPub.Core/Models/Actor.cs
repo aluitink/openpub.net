@@ -5,7 +5,7 @@ namespace ActivityPub.Core.Models;
 /// <summary>
 /// Represents an Actor in Activity Streams 2.0
 /// </summary>
-public record Actor
+public class Actor
 {
     /// <summary>
     /// The @context for JSON-LD
@@ -17,13 +17,13 @@ public record Actor
     /// The unique identifier for the actor
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; set; }
+    public string? Id { get; set; }
     
     /// <summary>
     /// The type of object (typically "Person", "Organization", or "Service")
     /// </summary>
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string? Type { get; set; }
     
     /// <summary>
     /// The display name of the actor

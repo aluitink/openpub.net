@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using ActivityPub.Core.Services;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Infrastructure;
+using ActivityPub.Core.Options;
 using System.Diagnostics;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 
 namespace ActivityPub.Core;
 
@@ -16,8 +18,9 @@ public class WebFingerController : ControllerBase
 {
     private readonly WebFingerCacheService _cacheService;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly ActivityPubOptions _options;
 
-    public WebFingerController(WebFingerCacheService cacheService)
+    public WebFingerController(WebFingerCacheService cacheService, IOptions<ActivityPubOptions> options)
     {
         _cacheService = cacheService;
         _jsonOptions = new JsonSerializerOptions
@@ -25,6 +28,7 @@ public class WebFingerController : ControllerBase
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             Converters = { new WebFingerJsonConverter() }
         };
+        _options = options.Value;
     }
 
     [HttpGet]
@@ -108,25 +112,17 @@ public class WebFingerController : ControllerBase
 
     private string GetActivityPubEndpoint(string resource)
     {
-        // According to W3C WebFinger specification for ActivityPub:
-        // The resource URI should resolve to an ActivityPub actor
-        // We'll handle common formats like acct: usernames
-        
         if (resource.StartsWith("acct:"))
         {
-            // Extract username from acct:username@domain format
-            var accountInfo = resource.Substring(5); // Remove "acct:" prefix
+            var accountInfo = resource.Substring(5);
             var parts = accountInfo.Split('@');
             if (parts.Length >= 2)
             {
                 var username = parts[0];
-                var domain = parts[1];
-                // Return standard ActivityPub user endpoint
-                return $"/users/{username}";
+                return $"{_options.Domain}{_options.UserPath}/{username}";
             }
         }
         
-        // For other resource types, return as-is or construct appropriate endpoint
         return resource;
     }
     
