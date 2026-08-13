@@ -42,6 +42,9 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<IActivityPubRepository, EFCoreActivityPubRepository>();
         services.AddScoped<ActivityPubEventDispatcher>();
         services.AddScoped<IKeyFetchingService, KeyFetchingService>();
+        services.AddScoped<IFederationDiscoveryService, FederationDiscoveryService>();
+        services.AddScoped<IOutboundSigningService, OutboundSigningService>();
+        services.AddScoped<IOutboundActivityService, OutboundActivityService>();
         services.AddScoped<InboxProcessorService>();
         services.AddScoped<ActivityHandlerFactory>();
         services.AddScoped<WebFingerCacheService>();

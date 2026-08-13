@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActivityPub Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>ActivityPub Demo</h1>
+        <nav>
+            <button onclick="showSection('keys')">Key Generation</button>
+            <button onclick="showSection('actors')">Actors</button>
+            <button onclick="showSection('activities')">Activities</button>
+            <button onclick="showSection('status')">Status</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="keys" class="hidden">
+            <h2>Generate RSA Key Pair</h2>
+            <button id="generateKeysBtn">Generate Keys</button>
+            <div id="keysResult" class="result-box"></div>
+        </section>
+
+        <section id="actors" class="hidden">
+            <h2>Actor Management</h2>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Enter username">
+                <button id="createActorBtn">Create Actor</button>
+            </div>
+            <h3>Existing Actors</h3>
+            <div id="actorsList" class="result-box"></div>
+        </section>
+
+        <section id="activities" class="hidden">
+            <h2>Submit Activity</h2>
+            <div class="form-group">
+                <label for="activityId">Activity ID:</label>
+                <input type="text" id="activityId" placeholder="Enter activity ID">
+            </div>
+            <div class="form-group">
+                <label for="jsonData">JSON Data:</label>
+                <textarea id="jsonData" rows="4" placeholder='{"type":"Create","content":"Hello"}'></textarea>
+            </div>
+            <button id="submitActivityBtn">Submit Activity</button>
+            <div id="activitiesResult" class="result-box"></div>
+        </section>
+
+        <section id="status" class="hidden">
+            <h2>Service Status</h2>
+            <button id="statusBtn">Check Status</button>
+            <div id="statusResult" class="result-box"></div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
