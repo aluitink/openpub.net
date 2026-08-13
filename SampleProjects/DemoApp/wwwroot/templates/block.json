@@ -1,0 +1,16 @@
+{
+  "id": "block",
+  "name": "Block Actor",
+  "category": "Protocol",
+  "description": "Block another actor",
+  "activityType": "Block",
+  "objectType": "Person",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Block",
+    "actor": "https://localhost:8080/users/username",
+    "object": "https://remote-server.com/users/baduser",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

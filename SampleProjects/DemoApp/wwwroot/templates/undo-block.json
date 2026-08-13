@@ -1,0 +1,21 @@
+{
+  "id": "undo-block",
+  "name": "Undo Block",
+  "category": "Protocol",
+  "description": "Undo a block",
+  "activityType": "Undo",
+  "objectType": "Block",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Undo",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/activities/block-uuid-here",
+      "type": "Block",
+      "actor": "https://localhost:8080/users/username",
+      "object": "https://remote-server.com/users/baduser"
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

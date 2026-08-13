@@ -1,27 +1,18 @@
 # Build results
 bin/
 obj/
-*.dll
-*.exe
-*.pdb
-*.xml
+
+# Build artifacts (specific paths)
+**/bin/
+**/obj/
 
 # Visual Studio cache
 .vs/
-*.user
-*.userosscache
-*.suo
-*.vspx
-*.vscode
-
-# Visual Studio 2019 cache
 .vscode/
 .vscode/settings.json
 .vscode/extensions.json
-
-# Visual Studio 2022 cache
-.vs/
-.vscode/
+.vscode/tasks.json
+.vscode/launch.json
 
 # ReSharper
 .reSharper/
@@ -38,11 +29,10 @@ packages/
 *.temp
 
 # IDE specific
-*.idea/
-*.vs/
-*.vshost.exe
+.idea/
 
 # Test results
+TestResults/
 test-results/
 
 # Coverage data

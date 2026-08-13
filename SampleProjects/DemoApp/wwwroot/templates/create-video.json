@@ -1,0 +1,24 @@
+{
+  "id": "create-video",
+  "name": "Create Video",
+  "category": "Object",
+  "description": "Create a video object",
+  "activityType": "Create",
+  "objectType": "Video",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Create",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/videos/uuid-here",
+      "type": "Video",
+      "name": "Sample Video",
+      "url": "https://example.com/video.mp4",
+      "mediaType": "video/mp4",
+      "duration": "PT1H30M",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

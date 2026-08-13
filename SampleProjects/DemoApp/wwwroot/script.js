@@ -1,6 +1,7 @@
 const API_BASE = '';
 
 let currentSection = 'keys';
+let currentTemplate = null;
 
 async function fetchJson(url, options = {}) {
     try {
@@ -32,6 +33,8 @@ async function showSection(sectionId) {
         checkStatus();
     } else if (sectionId === 'activities') {
         loadActivities();
+    } else if (sectionId === 'templates') {
+        loadTemplates();
     }
 }
 
@@ -49,6 +52,19 @@ document.getElementById('generateKeysBtn').addEventListener('click', async () =>
         resultDiv.textContent = `Error: ${error.message}`;
     } finally {
         btn.disabled = false;
+    }
+});
+
+document.getElementById('templateSelect').addEventListener('change', () => {
+    const select = document.getElementById('templateSelect');
+    const contentArea = document.getElementById('templateContent');
+    
+    if (select.value) {
+        const templateName = select.options[select.selectedIndex].dataset.description || '';
+        contentArea.value = `Description: ${templateName}\n\n[Click "Load Template" to load JSON]`;
+    } else {
+        contentArea.value = '';
+        currentTemplate = null;
     }
 });
 
@@ -141,6 +157,7 @@ document.getElementById('statusBtn').addEventListener('click', checkStatus);
 document.addEventListener('DOMContentLoaded', () => {
     loadActors();
     loadActivities();
+    loadTemplates();
 });
 
 let currentPage = 1;
@@ -187,4 +204,97 @@ document.getElementById('prevPageBtn').addEventListener('click', () => {
 document.getElementById('nextPageBtn').addEventListener('click', () => {
     currentPage++;
     loadActivities();
+});
+
+async function loadTemplates() {
+    const select = document.getElementById('templateSelect');
+    select.innerHTML = '<option value="">-- Loading templates... --</option>';
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/templates`);
+        if (data.error) {
+            select.innerHTML = '<option value="">-- Error loading templates --</option>';
+            return;
+        }
+        
+        select.innerHTML = '<option value="">-- Select a template --</option>';
+        
+        if (data.templates && Array.isArray(data.templates)) {
+            data.templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = `${template.name} (${template.category})`;
+                option.dataset.description = template.description;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        select.innerHTML = '<option value="">-- Error loading templates --</option>';
+    }
+}
+
+document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
+    const select = document.getElementById('templateSelect');
+    const contentArea = document.getElementById('templateContent');
+    const resultDiv = document.getElementById('templateResult');
+    
+    const selectedId = select.value;
+    if (!selectedId) {
+        alert('Please select a template');
+        return;
+    }
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/templates/${selectedId}`);
+        if (data.error) {
+            resultDiv.textContent = `Error: ${data.error}`;
+            return;
+        }
+        
+        currentTemplate = data;
+        contentArea.value = JSON.stringify(data, null, 2);
+        resultDiv.textContent = 'Template loaded successfully';
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+});
+
+document.getElementById('copyTemplateBtn').addEventListener('click', () => {
+    const contentArea = document.getElementById('templateContent');
+    
+    contentArea.select();
+    document.execCommand('copy');
+    
+    const resultDiv = document.getElementById('templateResult');
+    resultDiv.textContent = 'Template copied to clipboard!';
+});
+
+document.getElementById('submitFromTemplateBtn').addEventListener('click', async () => {
+    const resultDiv = document.getElementById('templateResult');
+    
+    if (!currentTemplate || !currentTemplate.id) {
+        alert('Please load a template first');
+        return;
+    }
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/activities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                activityId: currentTemplate.id || 'template-' + Date.now(),
+                jsonData: JSON.stringify(currentTemplate)
+            })
+        });
+        
+        resultDiv.innerHTML = data.error
+            ? `Error: ${data.error}`
+            : `Activity submitted:\n${JSON.stringify(data, null, 2)}`;
+        
+        setTimeout(() => {
+            loadActivities();
+        }, 500);
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
 });

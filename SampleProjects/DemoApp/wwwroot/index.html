@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ActivityPub Demo</title>
+    <title>ActivityPub Debug Console</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>ActivityPub Demo</h1>
+        <h1>ActivityPub Debug Console</h1>
         <nav>
-            <button onclick="showSection('keys')">Key Generation</button>
+            <button onclick="showSection('keys')">Keys</button>
             <button onclick="showSection('actors')">Actors</button>
             <button onclick="showSection('activities')">Activities</button>
+            <button onclick="showSection('templates')">Templates</button>
             <button onclick="showSection('status')">Status</button>
         </nav>
     </header>
@@ -55,6 +56,26 @@
                 <span id="pageInfo">Page 1</span>
                 <button id="nextPageBtn">Next</button>
             </div>
+        </section>
+
+        <section id="templates" class="hidden">
+            <h2>ActivityPub Message Templates</h2>
+            <div class="form-group">
+                <label for="templateSelect">Select Template:</label>
+                <select id="templateSelect">
+                    <option value="">-- Select a template --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="templateContent">Template JSON:</label>
+                <textarea id="templateContent" rows="10" readonly></textarea>
+            </div>
+            <div class="button-group">
+                <button id="loadTemplateBtn">Load Template</button>
+                <button id="copyTemplateBtn">Copy to Clipboard</button>
+                <button id="submitFromTemplateBtn">Submit Activity</button>
+            </div>
+            <div id="templateResult" class="result-box"></div>
         </section>
 
         <section id="status" class="hidden">

@@ -1,0 +1,16 @@
+{
+  "id": "like",
+  "name": "Like Activity",
+  "category": "Social",
+  "description": "Like an activity or object",
+  "activityType": "Like",
+  "objectType": "Note",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Like",
+    "actor": "https://localhost:8080/users/username",
+    "object": "https://remote-server.com/notes/uuid-here",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

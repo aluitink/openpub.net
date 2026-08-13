@@ -1,0 +1,17 @@
+{
+  "id": "move",
+  "name": "Move Actor",
+  "category": "Protocol",
+  "description": "Move to a new actor URL",
+  "activityType": "Move",
+  "objectType": "Person",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Move",
+    "actor": "https://localhost:8080/users/username",
+    "object": "https://localhost:8080/users/username",
+    "target": "https://new-domain.com/users/username",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

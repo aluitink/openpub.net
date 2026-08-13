@@ -1,0 +1,23 @@
+{
+  "id": "create-article",
+  "name": "Create Article",
+  "category": "Object",
+  "description": "Create an article with title and content",
+  "activityType": "Create",
+  "objectType": "Article",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Create",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/articles/uuid-here",
+      "type": "Article",
+      "name": "Sample Article Title",
+      "content": "<p>This is the article content.</p>",
+      "summary": "Short summary of the article",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "follow",
+  "name": "Follow Actor",
+  "category": "Relationship",
+  "description": "Follow another actor",
+  "activityType": "Follow",
+  "objectType": "Person",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Follow",
+    "actor": "https://localhost:8080/users/username",
+    "object": "https://remote-server.com/users/otheruser",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

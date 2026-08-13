@@ -1,0 +1,16 @@
+{
+  "id": "announce",
+  "name": "Announce (Boost)",
+  "category": "Social",
+  "description": "Announce/boost another activity",
+  "activityType": "Announce",
+  "objectType": "Note",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Announce",
+    "actor": "https://localhost:8080/users/username",
+    "object": "https://remote-server.com/notes/uuid-here",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

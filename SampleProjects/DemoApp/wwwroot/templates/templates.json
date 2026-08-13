@@ -1,0 +1,112 @@
+{
+  "templates": [
+    {
+      "id": "create-note",
+      "name": "Create Note",
+      "category": "Object",
+      "description": "Create a simple text note"
+    },
+    {
+      "id": "create-article",
+      "name": "Create Article",
+      "category": "Object",
+      "description": "Create an article with title and content"
+    },
+    {
+      "id": "create-image",
+      "name": "Create Image",
+      "category": "Object",
+      "description": "Share an image with a link"
+    },
+    {
+      "id": "create-video",
+      "name": "Create Video",
+      "category": "Object",
+      "description": "Create a video object"
+    },
+    {
+      "id": "create-audio",
+      "name": "Create Audio",
+      "category": "Object",
+      "description": "Create an audio object"
+    },
+    {
+      "id": "update-note",
+      "name": "Update Note",
+      "category": "Object",
+      "description": "Update an existing note"
+    },
+    {
+      "id": "update-article",
+      "name": "Update Article",
+      "category": "Object",
+      "description": "Update an existing article"
+    },
+    {
+      "id": "delete-note",
+      "name": "Delete Note",
+      "category": "Object",
+      "description": "Delete an existing note"
+    },
+    {
+      "id": "follow",
+      "name": "Follow Actor",
+      "category": "Relationship",
+      "description": "Follow another actor"
+    },
+    {
+      "id": "accept-follow",
+      "name": "Accept Follow",
+      "category": "Relationship",
+      "description": "Accept a follow request"
+    },
+    {
+      "id": "reject-follow",
+      "name": "Reject Follow",
+      "category": "Relationship",
+      "description": "Reject a follow request"
+    },
+    {
+      "id": "like",
+      "name": "Like Activity",
+      "category": "Social",
+      "description": "Like an activity or object"
+    },
+    {
+      "id": "undo-like",
+      "name": "Undo Like",
+      "category": "Social",
+      "description": "Undo a like"
+    },
+    {
+      "id": "announce",
+      "name": "Announce (Boost)",
+      "category": "Social",
+      "description": "Announce/boost another activity"
+    },
+    {
+      "id": "undo-announce",
+      "name": "Undo Announce",
+      "category": "Social",
+      "description": "Undo an announcement/boost"
+    },
+    {
+      "id": "block",
+      "name": "Block Actor",
+      "category": "Protocol",
+      "description": "Block another actor"
+    },
+    {
+      "id": "undo-block",
+      "name": "Undo Block",
+      "category": "Protocol",
+      "description": "Undo a block"
+    },
+    {
+      "id": "move",
+      "name": "Move Actor",
+      "category": "Protocol",
+      "description": "Move to a new actor URL"
+    }
+  ]
+}

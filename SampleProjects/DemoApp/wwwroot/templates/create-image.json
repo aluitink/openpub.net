@@ -1,0 +1,23 @@
+{
+  "id": "create-image",
+  "name": "Create Image",
+  "category": "Object",
+  "description": "Share an image with a link",
+  "activityType": "Create",
+  "objectType": "Image",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Create",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/images/uuid-here",
+      "type": "Image",
+      "name": "Sample Image",
+      "url": "https://example.com/image.jpg",
+      "mediaType": "image/jpeg",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

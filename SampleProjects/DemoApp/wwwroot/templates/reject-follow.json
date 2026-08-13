@@ -1,0 +1,21 @@
+{
+  "id": "reject-follow",
+  "name": "Reject Follow",
+  "category": "Relationship",
+  "description": "Reject a follow request",
+  "activityType": "Reject",
+  "objectType": "Follow",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Reject",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://remote-server.com/activities/uuid-here",
+      "type": "Follow",
+      "actor": "https://remote-server.com/users/otheruser",
+      "object": "https://localhost:8080/users/username"
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

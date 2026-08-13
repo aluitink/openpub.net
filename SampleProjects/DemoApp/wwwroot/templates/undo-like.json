@@ -1,0 +1,21 @@
+{
+  "id": "undo-like",
+  "name": "Undo Like",
+  "category": "Social",
+  "description": "Undo a like",
+  "activityType": "Undo",
+  "objectType": "Like",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Undo",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/activities/like-uuid-here",
+      "type": "Like",
+      "actor": "https://localhost:8080/users/username",
+      "object": "https://remote-server.com/notes/uuid-here"
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

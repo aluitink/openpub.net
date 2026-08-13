@@ -1,0 +1,21 @@
+{
+  "id": "accept-follow",
+  "name": "Accept Follow",
+  "category": "Relationship",
+  "description": "Accept a follow request",
+  "activityType": "Accept",
+  "objectType": "Follow",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Accept",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://remote-server.com/activities/uuid-here",
+      "type": "Follow",
+      "actor": "https://remote-server.com/users/otheruser",
+      "object": "https://localhost:8080/users/username"
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

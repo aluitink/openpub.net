@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using static System.Math;
@@ -15,6 +20,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
 
 builder.Services.AddActivityPub(options =>
 {
@@ -50,12 +61,15 @@ app.MapGet("/demo/actors", async (ActivityPubDbContext db) =>
     return Results.Ok(actors);
 });
 
-app.MapPost("/demo/actors", async (ActivityPubDbContext db, string username) =>
+app.MapPost("/demo/actors", async (ActivityPubDbContext db, HttpContext context) =>
 {
     var keyService = app.Services.GetRequiredService<IKeyGenerationService>();
     var keys = keyService.GenerateRSAKeyPair();
     var privateKey = keys.privateKeyPem;
     var publicKey = keys.publicKeyPem;
+    
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var username = requestBody.Trim('"');
     
     var actor = new ActorEntity
     {
@@ -69,8 +83,13 @@ app.MapPost("/demo/actors", async (ActivityPubDbContext db, string username) =>
     return Results.Created($"/actors/{actor.Id}", actor);
 });
 
-app.MapPost("/demo/activities", async (ActivityPubDbContext db, string activityId, string jsonData) =>
+app.MapPost("/demo/activities", async (ActivityPubDbContext db, HttpContext context) =>
 {
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+    var activityId = data?.GetValueOrDefault("activityId") ?? "";
+    var jsonData = data?.GetValueOrDefault("jsonData") ?? "";
+    
     var activity = new ActivityEntity
     {
         ActivityId = activityId,
@@ -114,6 +133,34 @@ app.MapGet("/demo/activities/paginated", async (ActivityPubDbContext db, int pag
         TotalItems = total,
         TotalPages = (int)Ceiling((double)total / pageSize)
     });
+});
+
+app.MapGet("/demo/templates", () =>
+{
+    var templateDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "templates");
+    var templatesJsonPath = Path.Combine(templateDir, "templates.json");
+    
+    if (File.Exists(templatesJsonPath))
+    {
+        var json = File.ReadAllText(templatesJsonPath);
+        return Results.Content(json, "application/json");
+    }
+    
+    return Results.NotFound();
+});
+
+app.MapGet("/demo/templates/{templateId}", (string templateId) =>
+{
+    var templateDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "templates");
+    var templatePath = Path.Combine(templateDir, $"{templateId}.json");
+    
+    if (File.Exists(templatePath))
+    {
+        var json = File.ReadAllText(templatePath);
+        return Results.Content(json, "application/json");
+    }
+    
+    return Results.NotFound();
 });
 
 app.Run();

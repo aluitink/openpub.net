@@ -1,0 +1,21 @@
+{
+  "id": "undo-announce",
+  "name": "Undo Announce",
+  "category": "Social",
+  "description": "Undo an announcement/boost",
+  "activityType": "Undo",
+  "objectType": "Announce",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Undo",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/activities/announce-uuid-here",
+      "type": "Announce",
+      "actor": "https://localhost:8080/users/username",
+      "object": "https://remote-server.com/notes/uuid-here"
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

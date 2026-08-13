@@ -1,7 +1,0 @@
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/ActivityPub.Core.csproj.AssemblyReference.cache
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/rpswa.dswa.cache.json
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/ActivityPub.Core.GeneratedMSBuildEditorConfig.editorconfig
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/ActivityPub.Core.AssemblyInfoInputs.cache
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/ActivityPub.Core.AssemblyInfo.cs
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/ActivityPub.Core.csproj.CoreCompileInputs.cache
-/workspace/activitypub-dotnet/ActivityPub.Core/obj/Debug/net8.0/ActivityPub.Core.MvcApplicationPartsAssemblyInfo.cache

@@ -1,0 +1,23 @@
+{
+  "id": "update-article",
+  "name": "Update Article",
+  "category": "Object",
+  "description": "Update an existing article",
+  "activityType": "Update",
+  "objectType": "Article",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Update",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/articles/uuid-here",
+      "type": "Article",
+      "name": "Updated Article Title",
+      "content": "<p>Updated article content</p>",
+      "updated": "2026-08-13T12:00:00Z",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

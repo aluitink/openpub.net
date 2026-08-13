@@ -1,0 +1,24 @@
+{
+  "id": "create-audio",
+  "name": "Create Audio",
+  "category": "Object",
+  "description": "Create an audio object",
+  "activityType": "Create",
+  "objectType": "Audio",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Create",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/audios/uuid-here",
+      "type": "Audio",
+      "name": "Sample Audio",
+      "url": "https://example.com/audio.mp3",
+      "mediaType": "audio/mpeg",
+      "duration": "PT3M30S",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

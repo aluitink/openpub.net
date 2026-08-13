@@ -1,0 +1,15 @@
+.git
+.gitignore
+.opencode
+PLAN.md
+coverage_report.md
+screenlog.0
+*.md
+!.csproj
+!.sln
+obj/
+bin/
+**/obj/
+**/bin/
+.DS_Store
+Thumbs.db
