@@ -30,6 +30,8 @@ async function showSection(sectionId) {
         loadActors();
     } else if (sectionId === 'status') {
         checkStatus();
+    } else if (sectionId === 'activities') {
+        loadActivities();
     }
 }
 
@@ -138,4 +140,51 @@ document.getElementById('statusBtn').addEventListener('click', checkStatus);
 
 document.addEventListener('DOMContentLoaded', () => {
     loadActors();
+    loadActivities();
+});
+
+let currentPage = 1;
+const pageSize = 5;
+
+async function loadActivities() {
+    const resultDiv = document.getElementById('activityStream');
+    const pageInfo = document.getElementById('pageInfo');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/activities/paginated?page=${currentPage}&pageSize=${pageSize}`);
+        
+        if (data.error) {
+            resultDiv.textContent = `Error: ${data.error}`;
+            return;
+        }
+        
+        pageInfo.textContent = `Page ${data.page} of ${data.totalPages}`;
+        prevBtn.disabled = data.page <= 1;
+        nextBtn.disabled = data.page >= data.totalPages;
+        
+        if (!data.data || data.data.length === 0) {
+            resultDiv.textContent = 'No activities found. Submit one above!';
+            return;
+        }
+        
+        resultDiv.innerHTML = data.data.map(a => 
+            `<div class="activity-item"><strong>ID:</strong> ${a.activityId}<br><pre>${a.jsonData}</pre></div>`
+        ).join('<hr>');
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+document.getElementById('prevPageBtn').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        loadActivities();
+    }
+});
+
+document.getElementById('nextPageBtn').addEventListener('click', () => {
+    currentPage++;
+    loadActivities();
 });

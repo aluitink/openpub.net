@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  activitypub-demo:
+    build:
+      context: ../../
+      dockerfile: SampleProjects/DemoApp/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ACTIVITYPUB__DOMAIN=localhost
+      - ACTIVITYPUB__USERPATH=/users
+    volumes:
+      - activitypub-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/demo/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  activitypub-data:

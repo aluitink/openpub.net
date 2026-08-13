@@ -4,12 +4,17 @@ using ActivityPub.Core.Repositories;
 using ActivityPub.Core.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
+using System.Threading.Tasks;
+using static System.Math;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 builder.Services.AddActivityPub(options =>
 {
@@ -21,8 +26,11 @@ var app = builder.Build();
 
 app.UseRouting();
 app.UseStaticFiles();
-
-app.MapControllers();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapHub<ActivityHub>("/activityHub");
+});
 
 app.MapGet("/", () => Results.Redirect("/index.html"));
 
@@ -72,6 +80,9 @@ app.MapPost("/demo/activities", async (ActivityPubDbContext db, string activityI
     await db.Activities.AddAsync(activity);
     await db.SaveChangesAsync();
     
+    var hubContext = app.Services.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<ActivityHub>>();
+    await hubContext.Clients.All.SendAsync("ReceiveActivity", jsonData);
+    
     return Results.Created($"/activities/{activity.Id}", activity);
 });
 
@@ -85,4 +96,32 @@ app.MapGet("/demo/status", () =>
     });
 });
 
+app.MapGet("/demo/activities/paginated", async (ActivityPubDbContext db, int page = 1, int pageSize = 10) =>
+{
+    var activities = await db.Activities
+        .OrderByDescending(a => a.Id)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+    
+    var total = await db.Activities.CountAsync();
+    
+    return Results.Ok(new
+    {
+        Data = activities,
+        Page = page,
+        PageSize = pageSize,
+        TotalItems = total,
+        TotalPages = (int)Ceiling((double)total / pageSize)
+    });
+});
+
 app.Run();
+
+public class ActivityHub : Hub
+{
+    public async Task BroadcastActivity(string activityJson)
+    {
+        await Clients.All.SendAsync("ReceiveActivity", activityJson);
+    }
+}
