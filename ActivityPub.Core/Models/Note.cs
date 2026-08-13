@@ -11,17 +11,17 @@ public class Note : Object
     /// The in-reply-to reference
     /// </summary>
     [JsonPropertyName("inReplyTo")]
-    public string? InReplyTo { get; set; }
+    public new string? InReplyTo { get; set; }
     
     /// <summary>
     /// The parent object
     /// </summary>
     [JsonPropertyName("parent")]
-    public string? Parent { get; set; }
+    public new string? Parent { get; set; }
     
     /// <summary>
     /// The replies collection
     /// </summary>
     [JsonPropertyName("replies")]
-    public OrderedCollection? Replies { get; set; }
+    public new OrderedCollection? Replies { get; set; }
 }

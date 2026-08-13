@@ -64,19 +64,22 @@ private async Task ProcessInboxItemsAsync()
             
             // For now, we'll just store it
             var actorId = GetActorId(activity.Actor);
-            await _repository.SaveUserActorAsync(new Actor
+            if (!string.IsNullOrEmpty(actorId))
             {
-                Id = actorId,
-                Type = "Person",
-                PreferredUsername = "temp-user",
-                Inbox = actorId + "/inbox",
-                Outbox = actorId + "/outbox",
-                Followers = actorId + "/followers",
-                Following = actorId + "/following",
-                Liked = actorId + "/liked",
-                Published = DateTime.UtcNow,
-                Updated = DateTime.UtcNow
-            });
+                await _repository.SaveUserActorAsync(new Actor
+                {
+                    Id = actorId,
+                    Type = "Person",
+                    PreferredUsername = "temp-user",
+                    Inbox = actorId + "/inbox",
+                    Outbox = actorId + "/outbox",
+                    Followers = actorId + "/followers",
+                    Following = actorId + "/following",
+                    Liked = actorId + "/liked",
+                    Published = DateTime.UtcNow,
+                    Updated = DateTime.UtcNow
+                });
+            }
             
             // Dispatch event
             var eventObj = new ActivityReceivedEvent(activity);

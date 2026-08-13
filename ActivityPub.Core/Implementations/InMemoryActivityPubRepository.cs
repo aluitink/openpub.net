@@ -17,7 +17,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     {
         if (_actors.TryGetValue(username, out Actor? actor))
         {
-            return Task.FromResult(actor);
+            return Task.FromResult<Actor?>(actor);
         }
         
         return Task.FromResult<Actor?>(null);
@@ -43,7 +43,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     {
         if (_activities.TryGetValue(activityId, out Activity? activity))
         {
-            return Task.FromResult(activity);
+            return Task.FromResult<Activity?>(activity);
         }
         
         return Task.FromResult<Activity?>(null);

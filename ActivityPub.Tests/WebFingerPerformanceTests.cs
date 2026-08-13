@@ -25,8 +25,6 @@ public class WebFingerPerformanceTests
         // Act - Run multiple requests to measure cache hit rate
         var stopwatch = Stopwatch.StartNew();
         const int requestCount = 1000;
-        var cacheHits = 0;
-        var cacheMisses = 0;
         
         // Make requests to the same resource repeatedly to test caching
         var tasks = new List<Task<HttpResponseMessage>>();

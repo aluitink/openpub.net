@@ -11,11 +11,11 @@ public class Article : Object
     /// The content of the article
     /// </summary>
     [JsonPropertyName("content")]
-    public required string Content { get; set; }
+    public new required string Content { get; set; }
     
     /// <summary>
     /// The media type of the content
     /// </summary>
     [JsonPropertyName("mediaType")]
-    public required string MediaType { get; set; }
+    public new required string MediaType { get; set; }
 }

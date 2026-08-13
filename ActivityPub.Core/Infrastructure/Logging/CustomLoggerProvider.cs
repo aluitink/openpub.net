@@ -41,7 +41,7 @@ public class CustomLogger : ILogger
         _minLogLevel = minLogLevel;
     }
 
-    public IDisposable BeginScope<TState>(TState state) => null;
+    IDisposable ILogger.BeginScope<TState>(TState state) => null!;
 
     public bool IsEnabled(LogLevel level) => level >= _minLogLevel;
 
