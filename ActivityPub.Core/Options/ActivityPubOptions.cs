@@ -1,5 +1,12 @@
 namespace ActivityPub.Core.Options;
 
+public class MRFOptions
+{
+    public List<string> ProhibitedWords { get; set; } = new();
+    public List<string> BlockedDomains { get; set; } = new();
+    public int? MaxContentLength { get; set; }
+}
+
 /// <summary>
 /// Configuration options for ActivityPub
 /// </summary>
@@ -54,4 +61,9 @@ public class ActivityPubOptions
     /// Enable ActivityPub federation
     /// </summary>
     public bool EnableFederation { get; set; } = false;
+
+    /// <summary>
+    /// Message Rewrite Rules (MRF) options for content moderation
+    /// </summary>
+    public MRFOptions? MRFOptions { get; set; }
 }
