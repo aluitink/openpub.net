@@ -21,4 +21,18 @@ public interface IActivityPubRepository
     /// <param name="actor">The actor to save</param>
     /// <returns>True if saved successfully, false otherwise</returns>
     Task<bool> SaveUserActorAsync(Actor actor);
+    
+    /// <summary>
+    /// Saves an activity
+    /// </summary>
+    /// <param name="activity">The activity to save</param>
+    /// <returns>True if saved successfully, false otherwise</returns>
+    Task<bool> SaveActivityAsync(Activity activity);
+    
+    /// <summary>
+    /// Gets an activity by ID
+    /// </summary>
+    /// <param name="activityId">The activity ID</param>
+    /// <returns>The activity if found, null otherwise</returns>
+    Task<Activity?> GetActivityAsync(string activityId);
 }

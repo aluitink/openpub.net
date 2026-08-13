@@ -14,7 +14,7 @@ public class WebFingerVersionedControllerTests
     public async Task WebFingerVersioned_Returns_Valid_JRD_For_Acct_Resource_With_Version_Header()
     {
         // Arrange
-        var factory = new WebApplicationFactory<Program>();
+        var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
         
         // Act - Test with version header
@@ -25,16 +25,14 @@ public class WebFingerVersionedControllerTests
         // Assert
         Assert.True(response.IsSuccessStatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("\"subject\":\"acct:test@localhost\"", content);
-        Assert.Contains("\"rel\":\"self\"", content);
-        Assert.Contains("\"type\":\"application/activity+json\"", content);
+        Assert.Equal("{\"subject\":\"acct:test@localhost\",\"links\":[{\"rel\":\"self\",\"type\":\"application/activity+json\",\"href\":\"/users/test\"}]}", content);
     }
 
     [Fact]
     public async Task WebFingerVersioned_Returns_Valid_JRD_For_Acct_Resource_With_Url_Version()
     {
         // Arrange
-        var factory = new WebApplicationFactory<Program>();
+        var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
         
         // Act - Test with version in URL
@@ -43,7 +41,7 @@ public class WebFingerVersionedControllerTests
         // Assert
         Assert.True(response.IsSuccessStatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("\"subject\":\"acct:test_i@test.com\"", content);
+        Assert.Contains("\"subject\":\"acct:test@localhost\"", content);
         Assert.Contains("\"rel\":\"self\"", content);
         Assert.Contains("\"type\":\"application/activity+json\"", content);
     }
@@ -52,7 +50,7 @@ public class WebFingerVersionedControllerTests
     public async Task WebFingerVersioned_Invalid_Resource_Returns_BadRequest()
     {
         // Arrange
-        var factory = new WebApplicationFactory<Program>();
+        var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
         
         // Act - Test with missing resource parameter

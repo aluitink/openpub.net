@@ -63,16 +63,17 @@ private async Task ProcessInboxItemsAsync()
             // 4. Dispatch events
             
             // For now, we'll just store it
+            var actorId = GetActorId(activity.Actor);
             await _repository.SaveUserActorAsync(new Actor
             {
-                Id = activity.Actor,
+                Id = actorId,
                 Type = "Person",
                 PreferredUsername = "temp-user",
-                Inbox = activity.Actor + "/inbox",
-                Outbox = activity.Actor + "/outbox",
-                Followers = activity.Actor + "/followers",
-                Following = activity.Actor + "/following",
-                Liked = activity.Actor + "/liked",
+                Inbox = actorId + "/inbox",
+                Outbox = actorId + "/outbox",
+                Followers = actorId + "/followers",
+                Following = actorId + "/following",
+                Liked = actorId + "/liked",
                 Published = DateTime.UtcNow,
                 Updated = DateTime.UtcNow
             });
@@ -99,6 +100,16 @@ private async Task ProcessInboxItemsAsync()
         }
     }
 }
+
+    private string? GetActorId(object? actor)
+    {
+        return actor switch
+        {
+            string id => id,
+            Actor a => a.Id,
+            _ => null
+        };
+    }
 
     public void Dispose()
     {

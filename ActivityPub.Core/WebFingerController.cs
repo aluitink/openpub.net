@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using ActivityPub.Core.Services;
-using ActivityPub.Core.Infrastructure.Telemetry;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Infrastructure;
-using System.Text.Json;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace ActivityPub.Core;
 
@@ -12,31 +11,27 @@ namespace ActivityPub.Core;
 /// WebFinger endpoint implementation for ActivityPub protocol
 /// </summary>
 [ApiController]
-[Route(".well-known/[controller]")]
+[Route(".well-known/webfinger")]
 public class WebFingerController : ControllerBase
 {
     private readonly WebFingerCacheService _cacheService;
-    private readonly ActivityPubTelemetry _telemetry;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public WebFingerController(WebFingerCacheService cacheService, ActivityPubTelemetry telemetry)
+    public WebFingerController(WebFingerCacheService cacheService)
     {
         _cacheService = cacheService;
-        _telemetry = telemetry;
         _jsonOptions = new JsonSerializerOptions
         {
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             Converters = { new WebFingerJsonConverter() }
         };
     }
 
-    [HttpGet("webfinger")]
+    [HttpGet]
     public async Task<IActionResult> GetWebFinger(
         [FromQuery] string? resource,
         [FromQuery] string? rel)
     {
-        // Record the WebFinger request
-        _telemetry.RecordWebFingerRequest();
-        
         // Validate required parameters according to W3C WebFinger specification
         if (string.IsNullOrEmpty(resource))
         {
@@ -53,7 +48,6 @@ public class WebFingerController : ControllerBase
         if (cachedResponse != null)
         {
             stopwatch.Stop();
-            _telemetry.RecordWebFingerProcessingTime(stopwatch.ElapsedMilliseconds);
             
             // Return cached response with proper JSON serialization
             var json = JsonSerializer.Serialize(cachedResponse, _jsonOptions);
@@ -106,7 +100,6 @@ public class WebFingerController : ControllerBase
         });
         
         stopwatch.Stop();
-        _telemetry.RecordWebFingerProcessingTime(stopwatch.ElapsedMilliseconds);
         
         // Return serialized JRD with proper content type
         var jsonResponse = JsonSerializer.Serialize(jrd, _jsonOptions);
@@ -137,24 +130,5 @@ public class WebFingerController : ControllerBase
         return resource;
     }
     
-    [HttpGet("cache-stats")]
-    public IActionResult GetCacheStats()
-    {
-        // Create comprehensive cache statistics for monitoring and debugging
-        var stats = new WebFingerCacheStats
-        {
-            Timestamp = DateTime.UtcNow,
-            CacheSize = 0, // Due to limited access to internal cache state, we'll use telemetry
-            CacheHits = _telemetry.GetWebFingerCacheHits(),
-            CacheMisses = _telemetry.GetWebFingerCacheMisses(),
-            HitRatio = _telemetry.GetWebFingerCacheHitRatio(),
-            MissRatio = 1.0 - _telemetry.GetWebFingerCacheHitRatio(), // Calculate miss ratio
-            TotalRequests = _telemetry.GetWebFingerRequests(),
-            CacheLifetime = "10 minutes",
-            CacheType = "MemoryCache",
-            CacheImplementationDetails = "Cache statistics exposed via ActivityPub telemetry"
-        };
 
-        return Ok(stats);
-    }
 }

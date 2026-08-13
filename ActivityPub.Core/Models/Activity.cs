@@ -27,16 +27,38 @@ public class Activity
     public required string Type { get; set; }
     
     /// <summary>
-    /// The actor performing the activity
+    /// The actor performing the activity (can be a string ID or an Actor object)
     /// </summary>
     [JsonPropertyName("actor")]
-    public required string Actor { get; set; }
+    public object? Actor { get; set; }
     
     /// <summary>
-    /// The object being acted upon
+    /// The object being acted upon (can be a string ID or an Object)
     /// </summary>
     [JsonPropertyName("object")]
-    public required string Object { get; set; }
+    public object? Object { get; set; }
+    
+    /// <summary>
+    /// Gets the actor ID (extracted from Actor property if it's an object, or returned as-is if it's a string)
+    /// </summary>
+    [JsonIgnore]
+    public string? ActorId => Actor switch
+    {
+        string id => id,
+        Actor actor => actor.Id,
+        _ => null
+    };
+    
+    /// <summary>
+    /// Gets the object ID (extracted from Object property if it's an object, or returned as-is if it's a string)
+    /// </summary>
+    [JsonIgnore]
+    public string? ObjectId => Object switch
+    {
+        string id => id,
+        Object obj => obj.Id,
+        _ => null
+    };
     
     /// <summary>
     /// The target of the activity (optional)

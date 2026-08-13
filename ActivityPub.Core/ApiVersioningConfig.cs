@@ -25,7 +25,5 @@ public class ApiVersioningConfig
                 new MediaTypeApiVersionReader()
             );
         });
-        
-        services.AddApiVersioning();
     }
 }

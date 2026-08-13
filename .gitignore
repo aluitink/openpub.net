@@ -56,3 +56,9 @@ coverage/
 # Local settings
 local.settings.json
 appsettings.Development.json
+
+# Solution user options
+*.suo
+*.user
+*.userosscache
+*.sln.cache

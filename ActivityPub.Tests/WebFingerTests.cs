@@ -3,16 +3,17 @@ using System.Net.Http;
 using Xunit;
 using Microsoft.AspNetCore.Mvc;
 using ActivityPub.Core;
+using ActivityPub.Core.Tests;
 
 namespace ActivityPub.Core.Tests;
- 
+  
 public class WebFingerTests
 {
     [Fact]
     public async Task WebFinger_Returns_Valid_JRD_For_Acct_Resource()
     {
         // Arrange
-        var factory = new WebApplicationFactory<Program>();
+        var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
         
         // Act
@@ -29,7 +30,7 @@ public class WebFingerTests
     public async Task WebFinger_Returns_Valid_JRD_For_Acct_Resource_With_Rel_Parameter()
     {
         // Arrange
-        var factory = new WebApplicationFactory<Program>();
+        var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
         
         // Act

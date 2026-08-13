@@ -1,21 +1,26 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ActivityPub.Core.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ActivityPub.Core.Services;
 
 /// <summary>
 /// Service for fetching public keys from remote servers via Actor documents
 /// </summary>
-public class KeyFetchingService
+public class KeyFetchingService : IKeyFetchingService
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<KeyFetchingService> _logger;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public KeyFetchingService(HttpClient httpClient, IMemoryCache cache)
+    public KeyFetchingService(HttpClient httpClient, IMemoryCache cache, ILogger<KeyFetchingService> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
+        _logger = logger;
     }
 
     /// <summary>
@@ -25,7 +30,11 @@ public class KeyFetchingService
     /// <returns>The public key if found, null otherwise</returns>
     public async Task<PublicKey?> FetchPublicKeyAsync(string keyId)
     {
-        // Check cache first
+        if (string.IsNullOrEmpty(keyId))
+        {
+            return null;
+        }
+
         if (_cache.TryGetValue(keyId, out PublicKey? cachedKey))
         {
             return cachedKey;
@@ -33,46 +42,43 @@ public class KeyFetchingService
 
         try
         {
-            // Extract the actor URI from the key ID (assumes keyId looks like: https://domain.tld/users/username#key-id)
             var actorUri = ExtractActorUriFromKeyId(keyId);
             if (string.IsNullOrEmpty(actorUri))
             {
                 return null;
             }
 
-            // Fetch the actor document directly
-            var actorUrl = $"{actorUri}.jsonld"; // ActivityPub expects .jsonld for actor documents
-            
-            // Try the .jsonld endpoint first, fallback to .json
+            var actorUrl = $"{actorUri}.jsonld";
             var actorResponse = await _httpClient.GetAsync(actorUrl);
             if (!actorResponse.IsSuccessStatusCode)
             {
-                // Try alternative endpoint
                 actorUrl = $"{actorUri}.json";
                 actorResponse = await _httpClient.GetAsync(actorUrl);
             }
-            
-            if (actorResponse.IsSuccessStatusCode)
+
+            if (!actorResponse.IsSuccessStatusCode)
             {
-                var actorContent = await actorResponse.Content.ReadAsStringAsync();
-                var actorData = JsonSerializer.Deserialize<Dictionary<string, object>>(actorContent);
-                
-                if (actorData != null)
-                {
-                    // Extract public key from actor document
-                    var publicKey = ExtractPublicKeyFromActorDocument(actorData, keyId);
-                    if (publicKey != null)
-                    {
-                        // Cache for future use
-                        _cache.Set(keyId, publicKey, TimeSpan.FromHours(1));
-                        return publicKey;
-                    }
-                }
+                return null;
+            }
+
+            var actorContent = await actorResponse.Content.ReadAsStringAsync();
+            var actorData = JsonNode.Parse(actorContent);
+
+            if (actorData == null)
+            {
+                return null;
+            }
+
+            var publicKey = ExtractPublicKeyFromActorDocument(actorData, keyId);
+            if (publicKey != null)
+            {
+                _cache.Set(keyId, publicKey, TimeSpan.FromHours(1));
+                return publicKey;
             }
         }
         catch (Exception ex)
         {
-            // Log error but continue
+            _logger.LogError(ex, "Error fetching public key for {KeyId}", keyId);
         }
 
         return null;
@@ -80,7 +86,6 @@ public class KeyFetchingService
 
     private string ExtractActorUriFromKeyId(string keyId)
     {
-        // Extract the actor URI from a key ID (should be in format: https://domain.tld/users/username#key-id)
         var fragmentIndex = keyId.IndexOf('#');
         if (fragmentIndex > 0)
         {
@@ -89,16 +94,29 @@ public class KeyFetchingService
         return keyId;
     }
 
-    private PublicKey? ExtractPublicKeyFromActorDocument(Dictionary<string, object> actorData, string keyId)
+    private PublicKey? ExtractPublicKeyFromActorDocument(JsonNode actorData, string keyId)
     {
-        // Look for publicKey in the actor document
-        if (actorData.TryGetValue("publicKey", out var publicKeyObj))
+        if (actorData is not JsonObject actorObj)
         {
-            // This is a simplified implementation - in production you'd parse the full public key structure
-            var publicKeyJson = JsonSerializer.Serialize(publicKeyObj);
-            return JsonSerializer.Deserialize<PublicKey>(publicKeyJson);
+            return null;
         }
-        
-        return null;
+
+        var publicKeyObj = actorObj["publicKey"];
+        if (publicKeyObj == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var publicKeyJson = publicKeyObj.ToJsonString(_jsonOptions);
+            var publicKey = JsonSerializer.Deserialize<PublicKey>(publicKeyJson, _jsonOptions);
+            return publicKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deserializing public key for {KeyId}", keyId);
+            return null;
+        }
     }
 }

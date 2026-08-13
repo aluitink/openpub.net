@@ -1,16 +1,50 @@
 {
   "version": 2,
-  "dgSpecHash": "tD3rWH4do6E=",
+  "dgSpecHash": "n54wmsRfbro=",
   "success": true,
-  "projectFilePath": "/home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
+  "projectFilePath": "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
   "expectedPackageFiles": [
-    "/home/andrew/.nuget/packages/microsoft.aspnetcore.jsonpatch/8.0.29/microsoft.aspnetcore.jsonpatch.8.0.29.nupkg.sha512",
-    "/home/andrew/.nuget/packages/microsoft.aspnetcore.mvc.newtonsoftjson/8.0.29/microsoft.aspnetcore.mvc.newtonsoftjson.8.0.29.nupkg.sha512",
-    "/home/andrew/.nuget/packages/microsoft.aspnetcore.mvc.versioning/5.0.0/microsoft.aspnetcore.mvc.versioning.5.0.0.nupkg.sha512",
-    "/home/andrew/.nuget/packages/microsoft.aspnetcore.mvc.versioning.apiexplorer/5.0.0/microsoft.aspnetcore.mvc.versioning.apiexplorer.5.0.0.nupkg.sha512",
-    "/home/andrew/.nuget/packages/microsoft.extensions.diagnosticadapter/3.1.32/microsoft.extensions.diagnosticadapter.3.1.32.nupkg.sha512",
-    "/home/andrew/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
-    "/home/andrew/.nuget/packages/newtonsoft.json.bson/1.0.2/newtonsoft.json.bson.1.0.2.nupkg.sha512"
+    "/home/ubuntu/.nuget/packages/microsoft.aspnetcore.jsonpatch/8.0.30/microsoft.aspnetcore.jsonpatch.8.0.30.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.aspnetcore.mvc.newtonsoftjson/8.0.30/microsoft.aspnetcore.mvc.newtonsoftjson.8.0.30.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.aspnetcore.mvc.versioning/5.0.0/microsoft.aspnetcore.mvc.versioning.5.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.aspnetcore.mvc.versioning.apiexplorer/5.0.0/microsoft.aspnetcore.mvc.versioning.apiexplorer.5.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.data.sqlite.core/9.0.0/microsoft.data.sqlite.core.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.entityframeworkcore/9.0.0/microsoft.entityframeworkcore.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.entityframeworkcore.abstractions/9.0.0/microsoft.entityframeworkcore.abstractions.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.entityframeworkcore.analyzers/9.0.0/microsoft.entityframeworkcore.analyzers.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.entityframeworkcore.relational/9.0.0/microsoft.entityframeworkcore.relational.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.entityframeworkcore.sqlite/9.0.0/microsoft.entityframeworkcore.sqlite.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.entityframeworkcore.sqlite.core/9.0.0/microsoft.entityframeworkcore.sqlite.core.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.caching.abstractions/9.0.0/microsoft.extensions.caching.abstractions.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.caching.memory/9.0.0/microsoft.extensions.caching.memory.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.configuration.abstractions/9.0.0/microsoft.extensions.configuration.abstractions.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.dependencyinjection/9.0.0/microsoft.extensions.dependencyinjection.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/9.0.0/microsoft.extensions.dependencyinjection.abstractions.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.dependencymodel/9.0.0/microsoft.extensions.dependencymodel.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.diagnosticadapter/3.1.32/microsoft.extensions.diagnosticadapter.3.1.32.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.logging/9.0.0/microsoft.extensions.logging.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.logging.abstractions/9.0.0/microsoft.extensions.logging.abstractions.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.options/9.0.0/microsoft.extensions.options.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/microsoft.extensions.primitives/9.0.0/microsoft.extensions.primitives.9.0.0.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/newtonsoft.json.bson/1.0.2/newtonsoft.json.bson.1.0.2.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/sqlitepclraw.bundle_e_sqlite3/2.1.10/sqlitepclraw.bundle_e_sqlite3.2.1.10.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/sqlitepclraw.core/2.1.10/sqlitepclraw.core.2.1.10.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/sqlitepclraw.lib.e_sqlite3/2.1.10/sqlitepclraw.lib.e_sqlite3.2.1.10.nupkg.sha512",
+    "/home/ubuntu/.nuget/packages/sqlitepclraw.provider.e_sqlite3/2.1.10/sqlitepclraw.provider.e_sqlite3.2.1.10.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.10 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
+      "projectPath": "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
+      "warningLevel": 1,
+      "filePath": "/workspace/activitypub-dotnet/ActivityPub.Core/ActivityPub.Core.csproj",
+      "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }
