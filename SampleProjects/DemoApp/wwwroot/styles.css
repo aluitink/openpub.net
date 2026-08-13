@@ -116,3 +116,57 @@ button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+.queue-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-box {
+    background: #ecf0f1;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.stat-box h4 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.stat-box p {
+    font-size: 0.9rem;
+}
+
+.queue-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.queue-controls button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #e74c3c;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.queue-controls button:hover {
+    background: #c0392b;
+}
+
+.queue-controls button:last-child {
+    background: #3498db;
+}
+
+.queue-controls button:last-child:hover {
+    background: #2980b9;
+}
+
+.http-signature-section {
+    margin-top: 1rem;
+}
