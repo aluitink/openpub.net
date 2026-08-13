@@ -110,6 +110,95 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         return JsonSerializer.Deserialize<Activity>(entity.JsonData, _jsonOptions);
     }
 
+    public async Task<ICollection<string>> GetActorOutboxActivitiesAsync(string username, int skip, int limit)
+    {
+        var activities = await _context.Activities
+            .OrderBy(a => a.CreatedAt)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.ActivityId)
+            .ToListAsync();
+
+        return activities;
+    }
+
+    public async Task<ICollection<string>> GetFollowersAsync(string username, int skip, int limit)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null)
+        {
+            return new List<string>();
+        }
+
+        var followingActivities = await _context.Activities
+            .Where(a => a.JsonData.Contains($"\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actor.Id}\""))
+            .OrderBy(a => a.CreatedAt)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.JsonData)
+            .ToListAsync();
+
+        return followingActivities.Select(json => ExtractActorIdFromFollowJson(json)).Where(id => !string.IsNullOrEmpty(id)).ToList();
+    }
+
+    public async Task<ICollection<string>> GetFollowingAsync(string username, int skip, int limit)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null)
+        {
+            return new List<string>();
+        }
+
+        var followingActivities = await _context.Activities
+            .Where(a => a.JsonData.Contains($"\"type\":\"Follow\"") && a.JsonData.Contains($"\"actor\":\"{actor.Id}\""))
+            .OrderBy(a => a.CreatedAt)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.JsonData)
+            .ToListAsync();
+
+        return followingActivities.Select(json => ExtractActorIdFromFollowJson(json)).Where(id => !string.IsNullOrEmpty(id)).ToList();
+    }
+
+    private string ExtractActorIdFromFollowJson(string json)
+    {
+        try
+        {
+            if (json.Contains("\"actor\""))
+            {
+                var start = json.IndexOf("\"actor\"");
+                var colon = json.IndexOf(':', start);
+                var quote1 = json.IndexOf('"', colon + 1);
+                var quote2 = json.IndexOf('"', quote1 + 1);
+                if (quote1 > 0 && quote2 > 0)
+                {
+                    return json.Substring(quote1 + 1, quote2 - quote1 - 1);
+                }
+            }
+        }
+        catch
+        {
+            return string.Empty;
+        }
+        return string.Empty;
+    }
+
+    public async Task<bool> DeleteActivityAsync(string activityId)
+    {
+        var entity = await _context.Activities
+            .Where(a => a.ActivityId == activityId)
+            .FirstOrDefaultAsync();
+
+        if (entity == null)
+        {
+            return false;
+        }
+
+        _context.Activities.Remove(entity);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     private string GetUsernameFromActor(Actor actor)
     {
         if (!string.IsNullOrEmpty(actor.PreferredUsername))

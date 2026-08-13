@@ -35,4 +35,38 @@ public interface IActivityPubRepository
     /// <param name="activityId">The activity ID</param>
     /// <returns>The activity if found, null otherwise</returns>
     Task<Activity?> GetActivityAsync(string activityId);
+    
+    /// <summary>
+    /// Gets outbox activities for an actor
+    /// </summary>
+    /// <param name="username">The username of the actor</param>
+    /// <param name="skip">Number of items to skip</param>
+    /// <param name="limit">Maximum number of items to return</param>
+    /// <returns>Collection of activity IDs</returns>
+    Task<ICollection<string>> GetActorOutboxActivitiesAsync(string username, int skip, int limit);
+    
+    /// <summary>
+    /// Gets followers for an actor
+    /// </summary>
+    /// <param name="username">The username of the actor</param>
+    /// <param name="skip">Number of items to skip</param>
+    /// <param name="limit">Maximum number of items to return</param>
+    /// <returns>Collection of follower actor IDs</returns>
+    Task<ICollection<string>> GetFollowersAsync(string username, int skip, int limit);
+    
+    /// <summary>
+    /// Gets actors that the given user is following
+    /// </summary>
+    /// <param name="username">The username of the actor</param>
+    /// <param name="skip">Number of items to skip</param>
+    /// <param name="limit">Maximum number of items to return</param>
+    /// <returns>Collection of following actor IDs</returns>
+    Task<ICollection<string>> GetFollowingAsync(string username, int skip, int limit);
+    
+    /// <summary>
+    /// Marks an activity as deleted (tombstone)
+    /// </summary>
+    /// <param name="activityId">The activity ID to delete</param>
+    /// <returns>True if deleted successfully, false otherwise</returns>
+    Task<bool> DeleteActivityAsync(string activityId);
 }

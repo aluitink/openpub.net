@@ -49,6 +49,43 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         return Task.FromResult<Activity?>(null);
     }
 
+    /// <inheritdoc />
+    public Task<ICollection<string>> GetActorOutboxActivitiesAsync(string username, int skip, int limit)
+    {
+        var activityIds = _activities.Values
+            .OrderBy(a => a.Published ?? DateTime.MinValue)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.Id)
+            .ToList();
+        
+        return Task.FromResult<ICollection<string>>(activityIds);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<string>> GetFollowersAsync(string username, int skip, int limit)
+    {
+        var followers = new List<string>();
+        return Task.FromResult<ICollection<string>>(followers);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<string>> GetFollowingAsync(string username, int skip, int limit)
+    {
+        var following = new List<string>();
+        return Task.FromResult<ICollection<string>>(following);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> DeleteActivityAsync(string activityId)
+    {
+        if (_activities.Remove(activityId))
+        {
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
+    }
+
     private string GetUsernameFromActor(Actor actor)
     {
         if (!string.IsNullOrEmpty(actor.PreferredUsername))
