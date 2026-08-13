@@ -907,3 +907,4 @@
 /home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ActivityPub.Tests.pdb
 /home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ActivityPub.Tests.genruntimeconfig.cache
 /home/andrew/src/openpub.net/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ref/ActivityPub.Tests.dll
+/workspace/activitypub-dotnet/ActivityPub.Tests/obj/Debug/net10.0/ActivityPub.Tests.sourcelink.json
