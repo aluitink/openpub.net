@@ -1605,9 +1605,217 @@ function exportAnalytics(format) {
             URL.revokeObjectURL(url);
         })
         .catch(error => {
-            alert(`Export failed: ${error.message}`);
+            statusDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
         });
 }
+
+let websocketConnection = null;
+let activityFeed = [];
+let autoScroll = true;
+let messagesReceived = 0;
+let streamFilters = {
+    type: '',
+    actor: '',
+    timeRange: ''
+};
+
+function connectWebSocket() {
+    const statusDiv = document.getElementById('streamStatus');
+    const streamContainer = document.getElementById('realtimeActivityStream');
+    const emptyMessage = document.getElementById('streamEmptyMessage');
+    
+    if (websocketConnection) {
+        websocketConnection.close();
+    }
+    
+    websocketConnection = new WebSocket(`ws://${window.location.host}/activityHub`);
+    
+    websocketConnection.onopen = () => {
+        statusDiv.textContent = 'Connected';
+        statusDiv.style.color = '#27ae60';
+        emptyMessage.style.display = 'none';
+    };
+    
+    websocketConnection.onmessage = (event) => {
+        try {
+            const activity = JSON.parse(event.data);
+            const now = new Date();
+            
+            activity.timestamp = now.toISOString();
+            activityFeed.push(activity);
+            messagesReceived++;
+            
+            updateMessagesReceived();
+            renderActivityStream();
+            
+            if (autoScroll) {
+                const streamContainer = document.getElementById('realtimeActivityStream');
+                streamContainer.scrollTop = streamContainer.scrollHeight;
+            }
+        } catch (error) {
+            console.error('Error parsing activity:', error);
+        }
+    };
+    
+    websocketConnection.onclose = () => {
+        statusDiv.textContent = 'Disconnected';
+        statusDiv.style.color = '#e74c3c';
+        
+        setTimeout(connectWebSocket, 3000);
+    };
+    
+    websocketConnection.onerror = (error) => {
+        statusDiv.textContent = 'Error';
+        statusDiv.style.color = '#e74c3c';
+        console.error('WebSocket error:', error);
+    };
+}
+
+function disconnectWebSocket() {
+    if (websocketConnection) {
+        websocketConnection.close();
+        websocketConnection = null;
+        document.getElementById('streamStatus').textContent = 'Disconnected';
+        document.getElementById('streamStatus').style.color = '#e74c3c';
+    }
+}
+
+function renderActivityStream() {
+    const container = document.getElementById('realtimeActivityStream');
+    const filterType = document.getElementById('streamFilterType')?.value || '';
+    const filterActor = document.getElementById('streamFilterActor')?.value || '';
+    const filterTime = document.getElementById('streamFilterTime')?.value || '';
+    
+    let filteredActivities = activityFeed.filter(activity => {
+        if (filterType) {
+            const activityType = typeof activity === 'object' && activity !== null ? 
+                (activity.type || (activity.object && activity.object.type)) : '';
+            if (activityType !== filterType) return false;
+        }
+        
+        if (filterActor) {
+            const actor = typeof activity === 'object' && activity !== null ? 
+                (activity.actor || activity.id || '') : '';
+            if (!actor.toLowerCase().includes(filterActor.toLowerCase())) return false;
+        }
+        
+        if (filterTime) {
+            const now = new Date();
+            const activityDate = new Date(activity.timestamp || now);
+            const hours = parseInt(filterTime);
+            
+            if (filterTime.includes('h')) {
+                const diff = (now - activityDate) / (1000 * 60 * 60);
+                if (diff > hours) return false;
+            } else if (filterTime.includes('d')) {
+                const diff = (now - activityDate) / (1000 * 60 * 60 * 24);
+                if (diff > parseInt(filterTime)) return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    if (filteredActivities.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 1rem;">No activities match the current filters.</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredActivities.map((activity, index) => {
+        const type = typeof activity === 'object' && activity !== null ? 
+            (activity.type || (activity.object && activity.object.type) || 'Unknown') : 'Unknown';
+        const content = typeof activity === 'object' && activity !== null ? 
+            JSON.stringify(activity, null, 2) : String(activity);
+        const timestamp = activity.timestamp || new Date().toISOString();
+        
+        return `
+            <div class="activity-item ${type.toLowerCase()}">
+                <div class="activity-header">
+                    <span class="activity-type">${type}</span>
+                    <span class="activity-timestamp">${new Date(timestamp).toLocaleString()}</span>
+                </div>
+                <div class="activity-content">
+                    <pre>${escapeHtml(content)}</pre>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function applyStreamFilter() {
+    renderActivityStream();
+}
+
+function clearStreamFilter() {
+    document.getElementById('streamFilterType').value = '';
+    document.getElementById('streamFilterActor').value = '';
+    document.getElementById('streamFilterTime').value = '';
+    renderActivityStream();
+}
+
+function exportStream(format) {
+    const data = JSON.stringify(activityFeed, null, 2);
+    
+    if (format === 'csv') {
+        const csvRows = [];
+        csvRows.push(['Type', 'Timestamp', 'Content']);
+        
+        activityFeed.forEach(activity => {
+            const type = typeof activity === 'object' && activity !== null ? 
+                (activity.type || (activity.object && activity.object.type) || 'Unknown') : 'Unknown';
+            const timestamp = activity.timestamp || new Date().toISOString();
+            const content = typeof activity === 'object' ? JSON.stringify(activity) : String(activity);
+            
+            csvRows.push([type, timestamp, content]);
+        });
+        
+        const csv = csvRows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+        downloadFile(`activity_stream_${new Date().toISOString()}.csv`, csv, 'text/csv');
+    } else {
+        downloadFile(`activity_stream_${new Date().toISOString()}.json`, data, 'application/json');
+    }
+}
+
+function toggleAutoScroll() {
+    autoScroll = !autoScroll;
+    const button = document.getElementById('toggleAutoScrollBtn');
+    if (button) {
+        button.textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+    }
+}
+
+function updateMessagesReceived() {
+    const countDisplay = document.getElementById('messagesReceived');
+    if (countDisplay) {
+        countDisplay.textContent = messagesReceived;
+    }
+}
+
+function downloadFile(filename, content, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+window.addEventListener('beforeunload', () => {
+    disconnectWebSocket();
+});
 
 function updateTimeRange(days) {
     const timeRangeDisplay = document.getElementById('timeRangeDisplay');
