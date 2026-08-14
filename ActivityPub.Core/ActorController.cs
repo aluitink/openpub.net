@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using ActivityPub.Core.Models;
 using ActivityPub.Core.Interfaces;
+using ActivityPub.Core.Models;
 using ActivityPub.Core.Options;
+using ActivityPub.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Text.Json;
@@ -226,6 +227,51 @@ public class ActorController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing Following request for username: {Username}", username);
+            throw;
+        }
+    }
+
+    [HttpPost("inbox")]
+    public async Task<IActionResult> PostInbox(
+        [FromRoute] string username,
+        [FromBody] global::ActivityPub.Core.Models.Activity activity)
+    {
+        _logger.LogInformation("Inbox post request received for username: {Username}", username);
+        
+        try
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                _logger.LogWarning("Inbox post request missing username parameter");
+                return BadRequest(new { error = "username parameter is required" });
+            }
+
+            if (activity == null)
+            {
+                _logger.LogWarning("Inbox post request missing activity body");
+                return BadRequest(new { error = "activity body is required" });
+            }
+
+            using var scope = HttpContext.RequestServices.CreateScope();
+            var sharedInboxService = scope.ServiceProvider.GetRequiredService<ISharedInboxService>();
+            
+            var success = await sharedInboxService.ProcessAndDistributeActivityAsync(username, activity);
+            
+            if (success)
+            {
+                _logger.LogInformation("Inbox post successful for username: {Username}, activity: {ActivityType}", 
+                    username, activity.Type);
+                return Ok(new { success = true, activityId = activity.Id });
+            }
+            else
+            {
+                _logger.LogWarning("Inbox post processing failed for username: {Username}", username);
+                return BadRequest(new { success = false, error = "Failed to process activity" });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing Inbox post for username: {Username}", username);
             throw;
         }
     }

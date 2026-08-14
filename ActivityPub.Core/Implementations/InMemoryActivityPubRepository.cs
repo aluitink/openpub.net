@@ -1,5 +1,6 @@
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Interfaces;
+using ActivityPub.Core.Repositories;
 using System.Threading.Tasks;
 
 namespace ActivityPub.Core.Implementations;
@@ -11,6 +12,8 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
 {
     private readonly Dictionary<string, Actor> _actors = new();
     private readonly Dictionary<string, Activity> _activities = new();
+    private readonly HashSet<string> _seenActivities = new();
+    private readonly List<SharedInboxDeliveryEntity> _sharedInboxDeliveries = new();
 
     /// <inheritdoc />
     public Task<Actor?> GetUserActorAsync(string username)
@@ -86,7 +89,67 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         return Task.FromResult(false);
     }
 
-    private string GetUsernameFromActor(Actor actor)
+    /// <inheritdoc />
+    public Task<bool> HasSeenActivityAsync(string activityId)
+    {
+        return Task.FromResult(_seenActivities.Contains(activityId));
+    }
+
+    /// <inheritdoc />
+    public Task<bool> MarkActivityAsSeenAsync(string activityId)
+    {
+        _seenActivities.Add(activityId);
+        return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> QueueSharedInboxDeliveryAsync(string activityId, string activityJson, string targetActorId)
+    {
+        var delivery = new SharedInboxDeliveryEntity
+        {
+            Id = Guid.NewGuid().ToString(),
+            ActivityId = activityId,
+            ActivityJson = activityJson,
+            TargetActorId = targetActorId,
+            Status = DeliveryStatus.Queued,
+            RetryCount = 0,
+            CreatedAt = DateTime.UtcNow
+        };
+        _sharedInboxDeliveries.Add(delivery);
+        return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100)
+    {
+        var pending = _sharedInboxDeliveries
+            .Where(d => d.Status == DeliveryStatus.Queued || 
+                       d.Status == DeliveryStatus.Failed)
+            .Take(maxCount)
+            .ToList();
+        return Task.FromResult<ICollection<SharedInboxDeliveryEntity>>(pending);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> UpdateSharedInboxDeliveryAsync(SharedInboxDeliveryEntity delivery)
+    {
+        var existing = _sharedInboxDeliveries.FirstOrDefault(d => d.Id == delivery.Id);
+        if (existing != null)
+        {
+            var index = _sharedInboxDeliveries.IndexOf(existing);
+            _sharedInboxDeliveries[index] = delivery;
+        }
+        return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<string>> GetUniqueFollowerIdsAsync(string username)
+    {
+        var followers = new List<string>();
+        return Task.FromResult<ICollection<string>>(followers);
+    }
+
+    private static string GetUsernameFromActor(Actor actor)
     {
         if (!string.IsNullOrEmpty(actor.PreferredUsername))
         {

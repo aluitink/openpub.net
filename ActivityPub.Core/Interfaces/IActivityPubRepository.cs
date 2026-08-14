@@ -1,4 +1,5 @@
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Repositories;
 using System.Threading.Tasks;
 
 namespace ActivityPub.Core.Interfaces;
@@ -69,4 +70,48 @@ public interface IActivityPubRepository
     /// <param name="activityId">The activity ID to delete</param>
     /// <returns>True if deleted successfully, false otherwise</returns>
     Task<bool> DeleteActivityAsync(string activityId);
+    
+    /// <summary>
+    /// Checks if an activity has been seen before (deduplication)
+    /// </summary>
+    /// <param name="activityId">The activity ID to check</param>
+    /// <returns>True if the activity has been seen, false otherwise</returns>
+    Task<bool> HasSeenActivityAsync(string activityId);
+    
+    /// <summary>
+    /// Marks an activity as seen (for deduplication)
+    /// </summary>
+    /// <param name="activityId">The activity ID to mark as seen</param>
+    /// <returns>True if marked successfully, false if already seen</returns>
+    Task<bool> MarkActivityAsSeenAsync(string activityId);
+    
+    /// <summary>
+    /// Queues a shared inbox delivery for a target actor
+    /// </summary>
+    /// <param name="activityId">The activity ID</param>
+    /// <param name="activityJson">The activity JSON data</param>
+    /// <param name="targetActorId">The target actor ID</param>
+    /// <returns>True if queued successfully, false otherwise</returns>
+    Task<bool> QueueSharedInboxDeliveryAsync(string activityId, string activityJson, string targetActorId);
+    
+    /// <summary>
+    /// Gets pending shared inbox deliveries
+    /// </summary>
+    /// <param name="maxCount">Maximum number of deliveries to retrieve</param>
+    /// <returns>Collection of pending deliveries</returns>
+    Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100);
+    
+    /// <summary>
+    /// Updates a shared inbox delivery status
+    /// </summary>
+    /// <param name="delivery">The delivery entity to update</param>
+    /// <returns>True if updated successfully, false otherwise</returns>
+    Task<bool> UpdateSharedInboxDeliveryAsync(SharedInboxDeliveryEntity delivery);
+    
+    /// <summary>
+    /// Gets unique follower actor IDs for a username (for shared inbox distribution)
+    /// </summary>
+    /// <param name="username">The username of the actor</param>
+    /// <returns>Collection of unique follower actor IDs</returns>
+    Task<ICollection<string>> GetUniqueFollowerIdsAsync(string username);
 }

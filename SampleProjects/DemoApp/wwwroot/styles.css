@@ -170,3 +170,449 @@ button:disabled {
 .http-signature-section {
     margin-top: 1rem;
 }
+
+.tutorials-container {
+    display: flex;
+    gap: 2rem;
+}
+
+.tutorials-list {
+    flex: 0 0 300px;
+}
+
+.tutorials-viewer {
+    flex: 1;
+}
+
+.tutorial-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.tutorial-controls button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.tutorial-controls button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.tutorial-controls button:first-child {
+    background: #3498db;
+}
+
+.tutorial-controls button:first-child:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.tutorial-controls button:last-child {
+    background: #27ae60;
+}
+
+.tutorial-controls button:last-child:hover:not(:disabled) {
+    background: #219a52;
+}
+
+#prevStepBtn:disabled {
+    background: #95a5a6;
+}
+
+#markCompleteBtn:disabled {
+    background: #95a5a6;
+}
+
+#nextStepBtn:disabled {
+    background: #95a5a6;
+}
+
+#stepIndicator {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.instance-section {
+    margin-bottom: 2rem;
+}
+
+.instance-section h3 {
+    margin-bottom: 1rem;
+    color: #27ae60;
+}
+
+.instance-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.instance-form input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.instance-form button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #27ae60;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    align-self: flex-end;
+}
+
+.instance-form button:hover {
+    background: #219a52;
+}
+
+.instance-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.instance-item h4 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.instance-item p {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.instance-item button {
+    padding: 0.3rem 0.6rem;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-right: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.instance-item button:first-child {
+    background: #3498db;
+    color: white;
+}
+
+.instance-item button:first-child:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.instance-item button:last-child {
+    background: #e74c3c;
+    color: white;
+}
+
+.instance-item button:last-child:hover {
+    background: #c0392b;
+}
+
+.status-active {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.status-pending {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.status-error {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.status-unknown {
+    color: #95a5a6;
+}
+
+.config-comparison {
+    margin-top: 1rem;
+}
+
+.config-comparison table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.config-comparison th,
+.config-comparison td {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.config-comparison th {
+    background: #3498db;
+    color: white;
+}
+
+.config-comparison tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.config-comparison tr:hover {
+    background: #e8f4f8;
+}
+
+.instance-selectors {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.instance-selectors select {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.instance-selectors button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #3498db;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.instance-selectors button:hover {
+    background: #2980b9;
+}
+
+#currentInstanceStatus {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #ecf0f1;
+    border-radius: 4px;
+}
+
+#currentInstanceStatus strong {
+    color: #2c3e50;
+}
+
+#actorProfiles {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #ecf0f1;
+    border-radius: 4px;
+}
+
+#actorProfiles strong {
+    color: #2c3e50;
+}
+
+#configComparison {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #ecf0f1;
+    border-radius: 4px;
+}
+
+.instance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.instance-header h3 {
+    margin: 0;
+}
+
+.instance-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.instance-actions button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.instance-actions button:first-child {
+    background: #3498db;
+    color: white;
+}
+
+.instance-actions button:first-child:hover {
+    background: #2980b9;
+}
+
+.instance-actions button:last-child {
+    background: #27ae60;
+    color: white;
+}
+
+.instance-actions button:last-child:hover {
+    background: #219a52;
+}
+
+.realtime-stream-section {
+    margin-bottom: 2rem;
+}
+
+.stream-controls {
+    margin-bottom: 1rem;
+}
+
+.stream-controls .button-group {
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.stream-controls .button-group label {
+    align-self: center;
+}
+
+.stream-controls select,
+.stream-controls input[type="text"] {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.stream-controls button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 1rem;
+}
+
+.stream-controls button:first-child {
+    background: #3498db;
+    color: white;
+}
+
+.stream-controls button:first-child:hover {
+    background: #2980b9;
+}
+
+.stream-controls button:last-child {
+    background: #27ae60;
+    color: white;
+}
+
+.stream-controls button:last-child:hover {
+    background: #219a52;
+}
+
+#streamConnectionStatus {
+    padding: 1rem;
+    background: #ecf0f1;
+    border-radius: 4px;
+}
+
+#streamConnectionStatus strong {
+    color: #2c3e50;
+}
+
+#streamEmptyMessage {
+    background: #fafafa;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+#streamEmptyMessage button {
+    padding: 0.75rem 1.5rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+#streamEmptyMessage button:hover {
+    background: #2980b9;
+}
+
+#realtimeActivityStream .activity-item {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid #3498db;
+    background: #f8f9fa;
+    border-radius: 0 4px 4px 0;
+    transition: background 0.2s;
+}
+
+#realtimeActivityStream .activity-item:hover {
+    background: #e8f4f8;
+}
+
+#realtimeActivityStream .activity-item .activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+#realtimeActivityStream .activity-item .activity-type {
+    font-weight: bold;
+    color: #2c3e50;
+    background: #3498db;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    color: white;
+}
+
+#realtimeActivityStream .activity-item .activity-timestamp {
+    color: #7f8c8d;
+    font-family: monospace;
+}
+
+#realtimeActivityStream .activity-item .activity-content {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #34495e;
+    font-size: 0.85rem;
+}
+
+#realtimeActivityStream .activity-item .activity-content pre {
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#realtimeActivityStream .activity-item.create { border-left-color: #27ae60; }
+#realtimeActivityStream .activity-item.update { border-left-color: #f39c12; }
+#realtimeActivityStream .activity-item.delete { border-left-color: #e74c3c; }
+#realtimeActivityStream .activity-item.follow { border-left-color: #9b59b6; }
+#realtimeActivityStream .activity-item.like { border-left-color: #e91e63; }
+#realtimeActivityStream .activity-item.announce { border-left-color: #1abc9c; }
+#realtimeActivityStream .activity-item.accept { border-left-color: #3498db; }
+#realtimeActivityStream .activity-item.reject { border-left-color: #95a5a6; }
+
+.stream-activity-count {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
