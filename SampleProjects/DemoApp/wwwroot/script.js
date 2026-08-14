@@ -2,6 +2,150 @@ const API_BASE = '';
 
 let currentSection = 'keys';
 let currentTemplate = null;
+let currentTutorial = null;
+let currentTutorialStep = 0;
+let completedTutorials = new Set();
+
+const tutorialData = {
+    setup: {
+        title: 'Step-by-step Setup Guide',
+        steps: [
+            {
+                title: 'Welcome to ActivityPub',
+                content: '<p>ActivityPub is a decentralized social networking protocol. This tutorial will guide you through setting up your first actor and sending activities.</p>',
+                examples: []
+            },
+            {
+                title: 'Generate Your Keys',
+                content: '<p>Before creating an actor, you need to generate an RSA key pair for signing activities.</p>',
+                examples: [
+                    {
+                        id: 'generate-keys-example',
+                        label: 'Generate Key Pair',
+                        action: 'fetchJson(`${API_BASE}/demo/keys`)',
+                        description: 'Click to generate a test key pair'
+                    }
+                ]
+            },
+            {
+                title: 'Create Your First Actor',
+                content: '<p>An actor represents your user in the ActivityPub network. You need a username to create one.</p>',
+                examples: [
+                    {
+                        id: 'create-actor-example',
+                        label: 'Create Actor',
+                        action: 'fetchJson(`${API_BASE}/demo/actors`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify("tutorialuser") })',
+                        description: 'Click to create a tutorial actor'
+                    }
+                ]
+            },
+            {
+                title: 'Verify Your Setup',
+                content: '<p>Congratulations! You now have the basic components needed for ActivityPub. Let\'s verify everything is working.</p>',
+                examples: []
+            }
+        ]
+    },
+    'first-post': {
+        title: 'First Post Walkthrough',
+        steps: [
+            {
+                title: 'Creating Your First Activity',
+                content: '<p>An activity represents an action taken on the network, like creating a note or liking a post. Let\'s create a simple "Create" activity.</p>',
+                examples: []
+            },
+            {
+                title: 'Activity Structure',
+                content: '<p>An ActivityPub activity typically includes:</p><ul><li><strong>type:</strong> The type of activity (Create, Like, Announce, etc.)</li><li><strong>actor:</strong> Who performed the action</li><li><strong>object:</strong> What the action is about</li><li><strong>to:</strong> Who can see it</li></ul>',
+                examples: []
+            },
+            {
+                title: 'Submit Your Activity',
+                content: '<p>Now let\'s submit your first activity to the system.</p>',
+                examples: [
+                    {
+                        id: 'submit-activity-example',
+                        label: 'Submit First Activity',
+                        action: 'fetchJson(`${API_BASE}/demo/activities`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: "post-1", jsonData: JSON.stringify({ type: "Create", object: { type: "Note", content: "Hello, Federation!" } }) }) })',
+                        description: 'Click to submit your first activity'
+                    }
+                ]
+            },
+            {
+                title: 'View Your Activity',
+                content: '<p>Your activity has been submitted! You can view it in the Activities section or check the activity stream.</p>',
+                examples: []
+            }
+        ]
+    },
+    federation: {
+        title: 'Federation Basics',
+        steps: [
+            {
+                title: 'Understanding Federation',
+                content: '<p>Federation allows different ActivityPub instances to communicate with each other. Each instance can follow and interact with others.</p>',
+                examples: []
+            },
+            {
+                title: 'Discovering Actors',
+                content: '<p>To federate with another instance, you need to discover their actor endpoints using WebFinger or direct lookup.</p>',
+                examples: []
+            },
+            {
+                title: 'Adding a Federation Peer',
+                content: '<p>You can add federation peers in the Federation Dashboard to simulate connections with other instances.</p>',
+                examples: [
+                    {
+                        id: 'add-peer-example',
+                        label: 'Add Federation Peer',
+                        action: 'fetchJson(`${API_BASE}/demo/federation/peers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain: "example.com" }) })',
+                        description: 'Click to add a test federation peer'
+                    }
+                ]
+            },
+            {
+                title: 'Testing Federation',
+                content: '<p>Once peers are added, you can test federation by sending activities that should be delivered to other instances.</p>',
+                examples: []
+            }
+        ]
+    },
+    security: {
+        title: 'Security Best Practices',
+        steps: [
+            {
+                title: 'HTTP Signature Authentication',
+                content: '<p>ActivityPub uses HTTP Signature for authentication. All requests must be signed with your private key.</p>',
+                examples: []
+            },
+            {
+                title: 'Key Management',
+                content: '<p>Keep your private key secure and never share it. Store it in a secure location, not in your code repository.</p>',
+                examples: []
+            },
+            {
+                title: 'Content Moderation',
+                content: '<p>ActivityPub supports moderation through MRF (Message Review Function) rules. You can block keywords, domains, and even shadow-ban users.</p>',
+                examples: [
+                    {
+                        id: 'moderation-example',
+                        label: 'View Moderation Settings',
+                        action: 'fetchJson(`${API_BASE}/demo/moderation/settings`)',
+                        description: 'Click to check current moderation settings'
+                    }
+                ]
+            },
+            {
+                title: 'Production Security',
+                content: '<p>For production deployments, consider:</p><ul><li>Using HTTPS for all connections</li><li>Implementing rate limiting</li><li>Enabling audit logging</li><li>Regular security audits</li></ul>',
+                examples: []
+            }
+        ]
+    }
+};
+let currentTutorial = null;
+let currentTutorialStep = 0;
+let completedTutorials = new Set();
 
 async function fetchJson(url, options = {}) {
     try {
@@ -53,6 +197,9 @@ async function showSection(sectionId) {
         loadAnalyticsSection();
     } else if (sectionId === 'api-documentation') {
         loadApiDocsSection();
+    } else if (sectionId === 'interactive-tutorials') {
+        loadTutorialsSection();
+        document.getElementById('markCompleteBtn').addEventListener('click', markComplete);
     } else if (sectionId === 'service-simulator') {
         loadServiceSimulatorSection();
     } else if (sectionId === 'protocol-debug') {
@@ -1762,4 +1909,194 @@ function getErrorCodeFromError(errorMsg) {
 
 function loadApiDocumentationSection() {
     loadApiDocsSection();
+}
+
+async function loadTutorialsSection() {
+    currentTutorial = null;
+    currentTutorialStep = 0;
+    document.getElementById('tutorialTitle').textContent = 'Select a Tutorial';
+    document.getElementById('tutorialContent').innerHTML = '<p>Select a tutorial from the list to begin learning.</p>';
+    document.getElementById('prevStepBtn').disabled = true;
+    document.getElementById('nextStepBtn').disabled = true;
+    document.getElementById('markCompleteBtn').disabled = true;
+    document.getElementById('exampleContainer').innerHTML = '<p>No interactive examples available for this step.</p>';
+    
+    const tutorialList = document.getElementById('tutorialList');
+    if (tutorialData) {
+        tutorialList.innerHTML = '';
+        Object.keys(tutorialData).forEach(tutorialId => {
+            const tutorial = tutorialData[tutorialId];
+            const isCompleted = completedTutorials.has(tutorialId);
+            const tutorialBtn = document.createElement('button');
+            tutorialBtn.onclick = () => loadTutorial(tutorialId);
+            tutorialBtn.style.width = '100%';
+            tutorialBtn.style.marginBottom = '10px';
+            tutorialBtn.style.padding = '10px';
+            tutorialBtn.style.textAlign = 'left';
+            tutorialBtn.style.background = isCompleted ? '#27ae60' : '#3498db';
+            tutorialBtn.innerHTML = `${isCompleted ? '✓' : '○'} ${tutorial.title}`;
+            tutorialList.appendChild(tutorialBtn);
+        });
+    }
+}
+
+function loadTutorial(tutorialId) {
+    if (!tutorialData[tutorialId]) return;
+    
+    currentTutorial = tutorialId;
+    currentTutorialStep = 0;
+    completedTutorials.add(tutorialId);
+    
+    updateTutorialViewer();
+    updateProgress();
+    
+    document.getElementById('prevStepBtn').disabled = true;
+    document.getElementById('markCompleteBtn').disabled = false;
+}
+
+function updateTutorialViewer() {
+    if (!currentTutorial || !tutorialData[currentTutorial]) return;
+    
+    const tutorial = tutorialData[currentTutorial];
+    const step = tutorial.steps[currentTutorialStep];
+    
+    document.getElementById('tutorialTitle').textContent = step.title;
+    document.getElementById('tutorialContent').innerHTML = step.content;
+    
+    const stepIndicator = document.getElementById('stepIndicator');
+    if (stepIndicator) {
+        stepIndicator.textContent = `Step ${currentTutorialStep + 1} of ${tutorial.steps.length}`;
+    }
+    
+    const nextBtn = document.getElementById('nextStepBtn');
+    if (nextBtn) {
+        nextBtn.disabled = currentTutorialStep >= tutorial.steps.length - 1;
+    }
+    
+    const prevBtn = document.getElementById('prevStepBtn');
+    if (prevBtn) {
+        prevBtn.disabled = currentTutorialStep <= 0;
+    }
+    
+    renderExamples(step.examples);
+}
+
+function renderExamples(examples) {
+    const container = document.getElementById('exampleContainer');
+    if (!examples || examples.length === 0) {
+        container.innerHTML = '<p>No interactive examples available for this step.</p>';
+        return;
+    }
+    
+    container.innerHTML = examples.map(example => `
+        <div style="padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+            <p style="margin-bottom: 8px;">${example.description}</p>
+            <button onclick="tryExample('${example.id}')" style="padding: 8px 16px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 4px;">
+                ${example.label}
+            </button>
+        </div>
+    `).join('');
+}
+
+async function tryExample(exampleId) {
+    const resultDiv = document.getElementById('exampleContainer');
+    
+    if (exampleId === 'generate-keys-example') {
+        try {
+            const data = await fetchJson(`${API_BASE}/demo/keys`);
+            resultDiv.innerHTML = `<strong>Key Generation Result:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    } else if (exampleId === 'create-actor-example') {
+        try {
+            const data = await fetchJson(`${API_BASE}/demo/actors`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify('tutorialuser')
+            });
+            resultDiv.innerHTML = `<strong>Actor Creation Result:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    } else if (exampleId === 'submit-activity-example') {
+        try {
+            const data = await fetchJson(`${API_BASE}/demo/activities`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    activityId: 'post-1',
+                    jsonData: JSON.stringify({ type: 'Create', object: { type: 'Note', content: 'Hello, Federation!' } })
+                })
+            });
+            resultDiv.innerHTML = `<strong>Activity Submission Result:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    } else if (exampleId === 'add-peer-example') {
+        try {
+            const data = await fetchJson(`${API_BASE}/demo/federation/peers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain: 'example.com' })
+            });
+            resultDiv.innerHTML = `<strong>Federation Peer Addition Result:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    } else if (exampleId === 'moderation-example') {
+        try {
+            const data = await fetchJson(`${API_BASE}/demo/moderation/settings`);
+            resultDiv.innerHTML = `<strong>Moderation Settings:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    } else {
+        resultDiv.innerHTML = `<strong>Unknown example ID:</strong> ${exampleId}`;
+    }
+}
+
+function nextStep() {
+    if (!currentTutorial || !tutorialData[currentTutorial]) return;
+    
+    const tutorial = tutorialData[currentTutorial];
+    if (currentTutorialStep < tutorial.steps.length - 1) {
+        currentTutorialStep++;
+        updateTutorialViewer();
+    }
+}
+
+function prevStep() {
+    if (!currentTutorial || !tutorialData[currentTutorial]) return;
+    
+    if (currentTutorialStep > 0) {
+        currentTutorialStep--;
+        updateTutorialViewer();
+    }
+}
+
+function markComplete() {
+    if (!currentTutorial) return;
+    
+    completedTutorials.add(currentTutorial);
+    alert(`Tutorial "${tutorialData[currentTutorial].title}" marked as complete!`);
+    loadTutorialsSection();
+}
+
+function getTutorialProgress() {
+    if (!tutorialData) return { total: 0, completed: 0, percentage: 0 };
+    
+    const total = Object.keys(tutorialData).length;
+    const completed = completedTutorials.size;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    return { total, completed, percentage };
+}
+
+function updateProgress() {
+    const progress = getTutorialProgress();
+    const progressText = document.getElementById('progressText');
+    if (progressText) {
+        progressText.textContent = `${progress.completed}/${progress.total} completed (${progress.percentage}%)`;
+    }
 }

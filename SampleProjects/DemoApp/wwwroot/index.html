@@ -25,6 +25,7 @@
             <button onclick="showSection('federation-dashboard')">Federation</button>
             <button onclick="showSection('analytics-dashboard')">Analytics</button>
             <button onclick="showSection('api-documentation')">API Docs</button>
+            <button onclick="showSection('interactive-tutorials')">Tutorials</button>
         </nav>
     </header>
 
@@ -340,6 +341,55 @@
             
             <h3>Error Codes</h3>
             <div id="errorCodes" class="result-box"></div>
+        </section>
+
+        <section id="interactive-tutorials" class="hidden">
+            <h2>Interactive Tutorials</h2>
+            
+            <div class="tutorials-container">
+                <div class="tutorials-list">
+                    <h3>Available Tutorials</h3>
+                    <div id="tutorialList" class="result-box" style="max-height: 300px; overflow-y: auto;">
+                        <button onclick="loadTutorial('setup')" style="width: 100%; margin-bottom: 10px; padding: 10px; text-align: left;">
+                            ✓ Step-by-step Setup Guide
+                        </button>
+                        <button onclick="loadTutorial('first-post')" style="width: 100%; margin-bottom: 10px; padding: 10px; text-align: left;">
+                            ✓ First Post Walkthrough
+                        </button>
+                        <button onclick="loadTutorial('federation')" style="width: 100%; margin-bottom: 10px; padding: 10px; text-align: left;">
+                            ✓ Federation Basics
+                        </button>
+                        <button onclick="loadTutorial('security')" style="width: 100%; margin-bottom: 10px; padding: 10px; text-align: left;">
+                            ✓ Security Best Practices
+                        </button>
+                    </div>
+                    
+                    <div id="tutorialProgress" style="margin-top: 1rem; padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                        <strong>Progress:</strong> <span id="progressText">0/0 completed</span>
+                    </div>
+                </div>
+                
+                <div class="tutorials-viewer" style="margin-left: 20px; flex: 1;">
+                    <h3 id="tutorialTitle">Select a Tutorial</h3>
+                    <div id="tutorialContent" class="result-box" style="min-height: 200px; padding: 1.5rem;">
+                        <p>Select a tutorial from the list to begin learning.</p>
+                    </div>
+                    
+                    <div class="tutorial-controls" style="margin-top: 1rem; display: flex; gap: 10px; align-items: center;">
+                        <button id="prevStepBtn" onclick="prevStep()" disabled>Previous</button>
+                        <span id="stepIndicator">Step 1 of 1</span>
+                        <button id="nextStepBtn" onclick="nextStep()">Next</button>
+                        <button id="markCompleteBtn" onclick="markComplete()" style="background: #27ae60;">Mark Complete</button>
+                    </div>
+                    
+                    <div id="interactiveExamples" style="margin-top: 1rem;">
+                        <h4>Try It Out</h4>
+                        <div id="exampleContainer" class="result-box">
+                            <p>No interactive examples available for this step.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section id="http-signature" class="hidden">
