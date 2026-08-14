@@ -1,3 +1,4 @@
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Events;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Interfaces;
@@ -15,17 +16,23 @@ public class ActivityPubService
     private readonly ActivityPubEventDispatcher _eventDispatcher;
     private readonly IEnumerable<IActivityPubInterceptor> _interceptors;
     private readonly ILogger<ActivityPubService> _logger;
+    private readonly IFederationCache _cache;
+    private readonly CacheInvalidationService _invalidationService;
 
     public ActivityPubService(
         IActivityPubRepository repository,
         ActivityPubEventDispatcher eventDispatcher,
         IEnumerable<IActivityPubInterceptor> interceptors,
-        ILogger<ActivityPubService> logger)
+        ILogger<ActivityPubService> logger,
+        IFederationCache cache,
+        CacheInvalidationService invalidationService)
     {
         _repository = repository;
         _eventDispatcher = eventDispatcher;
         _interceptors = interceptors;
         _logger = logger;
+        _cache = cache;
+        _invalidationService = invalidationService;
     }
 
     public async Task<Actor?> GetActorWithEventAsync(string username)
@@ -40,6 +47,13 @@ public class ActivityPubService
             }
             
             var actor = await _repository.GetUserActorAsync(username);
+            
+            if (actor != null)
+            {
+                await _cache.SetActorAsync(actor.Id, actor);
+                _logger.LogInformation("Actor cached for username: {Username}", username);
+            }
+            
             _logger.LogInformation("GetActorWithEventAsync successful for username: {Username}", username);
             
             return actor;
@@ -76,6 +90,12 @@ public class ActivityPubService
             var eventObj = new ActivityReceivedEvent(activity);
             await _eventDispatcher.DispatchAsync(eventObj);
             
+            if (activity.Id != null)
+            {
+                await _cache.SetActivityAsync(activity.Id, activity);
+                _logger.LogInformation("Activity cached for ID: {ActivityId}", activity.Id);
+            }
+            
             _logger.LogInformation("ProcessIncomingActivityAsync successful for activity: {ActivityId}", activity.Id);
             
             return true;
@@ -90,5 +110,14 @@ public class ActivityPubService
             stopwatch.Stop();
             _logger.LogDebug("ProcessIncomingActivityAsync completed for activity: {ActivityId} in {ElapsedMilliseconds} ms", activity.Id, stopwatch.ElapsedMilliseconds);
         }
+    }
+    
+    public async Task<bool> InvalidateActorCacheAsync(string actorId)
+    {
+        _logger.LogInformation("Invalidating cache for actor: {ActorId}", actorId);
+        
+        await _invalidationService.InvalidateAllForActorAsync(actorId);
+        
+        return true;
     }
 }

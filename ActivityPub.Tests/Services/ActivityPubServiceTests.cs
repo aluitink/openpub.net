@@ -1,7 +1,9 @@
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Events;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -19,8 +21,12 @@ public class ActivityPubServiceTests
     {
         _repositoryMock = new Mock<IActivityPubRepository>();
         _loggerMock = new Mock<ILogger<ActivityPubService>>();
+        var loggerCache = new Mock<ILogger<CacheInvalidationService>>();
         _eventDispatcher = new ActivityPub.Core.Services.ActivityPubEventDispatcher();
-        _service = new ActivityPubService(_repositoryMock.Object, _eventDispatcher, Enumerable.Empty<IActivityPubInterceptor>(), _loggerMock.Object);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new MemoryFederationCache(memoryCache);
+        var invalidationService = new CacheInvalidationService(cache, loggerCache.Object);
+        _service = new ActivityPubService(_repositoryMock.Object, _eventDispatcher, Enumerable.Empty<IActivityPubInterceptor>(), _loggerMock.Object, cache, invalidationService);
     }
 
     [Fact]
@@ -72,7 +78,11 @@ public class ActivityPubServiceTests
         var interceptorMock = new Mock<IActivityPubInterceptor>();
         interceptorMock.Setup(i => i.OnActivityReceivedAsync(It.IsAny<Activity>())).ReturnsAsync(true);
 
-        var service = new ActivityPubService(_repositoryMock.Object, _eventDispatcher, new[] { interceptorMock.Object }, _loggerMock.Object);
+        var loggerCache = new Mock<ILogger<CacheInvalidationService>>();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new MemoryFederationCache(memoryCache);
+        var invalidationService = new CacheInvalidationService(cache, loggerCache.Object);
+        var service = new ActivityPubService(_repositoryMock.Object, _eventDispatcher, new[] { interceptorMock.Object }, _loggerMock.Object, cache, invalidationService);
 
         var result = await service.ProcessIncomingActivityAsync(activity);
 
@@ -87,7 +97,11 @@ public class ActivityPubServiceTests
         var interceptorMock = new Mock<IActivityPubInterceptor>();
         interceptorMock.Setup(i => i.OnActivityReceivedAsync(It.IsAny<Activity>())).ReturnsAsync(false);
 
-        var service = new ActivityPubService(_repositoryMock.Object, _eventDispatcher, new[] { interceptorMock.Object }, _loggerMock.Object);
+        var loggerCache = new Mock<ILogger<CacheInvalidationService>>();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new MemoryFederationCache(memoryCache);
+        var invalidationService = new CacheInvalidationService(cache, loggerCache.Object);
+        var service = new ActivityPubService(_repositoryMock.Object, _eventDispatcher, new[] { interceptorMock.Object }, _loggerMock.Object, cache, invalidationService);
 
         var result = await service.ProcessIncomingActivityAsync(activity);
 

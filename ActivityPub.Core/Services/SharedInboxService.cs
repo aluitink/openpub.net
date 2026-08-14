@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Events;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
@@ -13,6 +14,7 @@ public class SharedInboxService : ISharedInboxService
     private readonly IActivityPubRepository _repository;
     private readonly IOutboundActivityService _outboundService;
     private readonly IMemoryCache _cache;
+    private readonly IFederationCache _federationCache;
     private readonly ILogger<SharedInboxService> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -20,11 +22,13 @@ public class SharedInboxService : ISharedInboxService
         IActivityPubRepository repository,
         IOutboundActivityService outboundService,
         IMemoryCache cache,
+        IFederationCache federationCache,
         ILogger<SharedInboxService> logger)
     {
         _repository = repository;
         _outboundService = outboundService;
         _cache = cache;
+        _federationCache = federationCache;
         _logger = logger;
         _jsonOptions = new JsonSerializerOptions
         {
@@ -37,17 +41,17 @@ public class SharedInboxService : ISharedInboxService
     {
         if (activity == null)
         {
-            throw new ArgumentNullException(nameof(activity));
+            return false;
         }
 
         if (string.IsNullOrEmpty(activity.Id))
         {
-            throw new ArgumentException("Activity must have an ID", nameof(activity.Id));
+            return false;
         }
 
         if (string.IsNullOrEmpty(activity.Type))
         {
-            throw new ArgumentException("Activity must have a type", nameof(activity.Type));
+            return false;
         }
 
         _logger.LogInformation("Processing shared inbox activity {ActivityId} for user {Username}", activity.Id, username);
@@ -59,8 +63,10 @@ public class SharedInboxService : ISharedInboxService
         }
 
         await _repository.MarkActivityAsSeenAsync(activity.Id);
+        await _repository.SaveActivityAsync(activity);
+        await _federationCache.SetActivityAsync(activity.Id, activity);
 
-        _logger.LogInformation("Activity {ActivityId} passed deduplication check", activity.Id);
+        _logger.LogInformation("Activity {ActivityId} passed deduplication check and cached", activity.Id);
 
         var activityJson = JsonSerializer.Serialize(activity, _jsonOptions);
 
@@ -88,17 +94,27 @@ public class SharedInboxService : ISharedInboxService
     {
         if (activity == null)
         {
-            throw new ArgumentNullException(nameof(activity));
+            return false;
         }
 
         if (string.IsNullOrEmpty(activity.Id))
         {
-            throw new ArgumentException("Activity must have an ID", nameof(activity.Id));
+            return false;
         }
 
         if (string.IsNullOrEmpty(activity.Type))
         {
-            throw new ArgumentException("Activity must have a type", nameof(activity.Type));
+            return false;
+        }
+
+        if (activity.Actor == null)
+        {
+            return false;
+        }
+
+        if (!IsValidActivityType(activity.Type))
+        {
+            return false;
         }
 
         _logger.LogInformation("Processing and distributing shared inbox activity {ActivityId} for user {Username}", activity.Id, username);
@@ -110,8 +126,10 @@ public class SharedInboxService : ISharedInboxService
         }
 
         await _repository.MarkActivityAsSeenAsync(activity.Id);
+        await _repository.SaveActivityAsync(activity);
+        await _federationCache.SetActivityAsync(activity.Id, activity);
 
-        _logger.LogInformation("Activity {ActivityId} passed deduplication check", activity.Id);
+        _logger.LogInformation("Activity {ActivityId} passed deduplication check and cached", activity.Id);
 
         var activityJson = JsonSerializer.Serialize(activity, _jsonOptions);
 
@@ -218,18 +236,51 @@ public class SharedInboxService : ISharedInboxService
     public async Task<bool> AddToCacheAsync(string key, string value)
     {
         _cache.Set(key, value, TimeSpan.FromHours(1));
+        await _federationCache.SetInboxResponseAsync(key, value);
         return true;
     }
 
     public async Task<string?> TryGetFromCacheAsync(string key)
     {
-        return _cache.Get<string>(key);
+        var memoryResult = _cache.Get<string>(key);
+        
+        if (memoryResult == null)
+        {
+            memoryResult = await _federationCache.GetInboxResponseAsync(key);
+        }
+        
+        return memoryResult;
     }
 
     public async Task<bool> RemoveFromCacheAsync(string key)
     {
         _cache.Remove(key);
+        await _federationCache.RemoveInboxResponseAsync(key);
         return true;
+    }
+
+    private bool IsValidActivityType(string? type)
+    {
+        if (string.IsNullOrEmpty(type))
+        {
+            return false;
+        }
+
+        var typeLower = type.ToLowerInvariant();
+        return typeLower switch
+        {
+            "create" => true,
+            "follow" => true,
+            "like" => true,
+            "announce" => true,
+            "undo" => true,
+            "accept" => true,
+            "reject" => true,
+            "delete" => true,
+            "update" => true,
+            "view" => true,
+            _ => false
+        };
     }
 }
 

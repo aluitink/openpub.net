@@ -18,13 +18,13 @@ public class Activity
     /// The unique identifier for the activity
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; set; }
+    public string? Id { get; set; }
     
     /// <summary>
     /// The type of activity (e.g., "Create", "Follow", "Like")
     /// </summary>
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string? Type { get; set; }
     
     /// <summary>
     /// The actor performing the activity (can be a string ID or an Actor object)

@@ -45,7 +45,7 @@ public class HttpSignatureMiddleware
                         context.Response.StatusCode = 401;
                     }
                     _logger.LogWarning("HTTP signature verification failed for request to {Path}", context.Request.Path);
-                    await context.Response.WriteAsync("Unauthorized: Invalid HTTP signature");
+                    await WriteResponseAsync(context, "Unauthorized: Invalid HTTP signature");
                     return;
                 }
                 }
@@ -54,7 +54,7 @@ public class HttpSignatureMiddleware
             {
                 _logger.LogError(ex, "Error processing HTTP signature for request to {Path}", context.Request.Path);
                 context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Unauthorized: Error processing signature");
+                await WriteResponseAsync(context, "Unauthorized: Error processing signature");
                 return;
             }
         }
@@ -95,15 +95,17 @@ public class HttpSignatureMiddleware
                 return false;
             }
 
-            var publicKey = await GetPublicKeyForVerificationAsync(context, signatureParams["keyId"]);
-            if (publicKey == null)
+            // Check replay protection (created/expired) before fetching public key
+            // This ensures expired signatures are rejected with 403 even if key fetch fails
+            if (!ValidateReplayProtection(context, signatureParams))
             {
+                context.Response.StatusCode = 403;
                 return false;
             }
 
-            if (!ValidateReplayProtection(signatureParams))
+            var publicKey = await GetPublicKeyForVerificationAsync(context, signatureParams["keyId"]);
+            if (publicKey == null)
             {
-                context.Response.StatusCode = 403;
                 return false;
             }
 
@@ -128,41 +130,76 @@ public class HttpSignatureMiddleware
         }
     }
 
-    private bool ValidateReplayProtection(Dictionary<string, string> signatureParams)
+    private bool ValidateReplayProtection(HttpContext context, Dictionary<string, string> signatureParams)
     {
         const int maxTimeSkewSeconds = 300;
+        bool hasCreated = false;
+        bool hasExpires = false;
+        long created = 0;
+        long expires = 0;
 
-        if (signatureParams.TryGetValue("created", out var createdStr) && long.TryParse(createdStr, out var created))
+        // Check signature params first (created=, expires= in Signature header)
+        if (signatureParams.TryGetValue("created", out var createdStr) && long.TryParse(createdStr, out created))
         {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            if (created < now - maxTimeSkewSeconds || created > now + maxTimeSkewSeconds)
-            {
-                _logger.LogWarning("Signature created time is outside acceptable window");
-                return false;
-            }
-
-            if (signatureParams.TryGetValue("expires", out var expiresStr) && long.TryParse(expiresStr, out var expires))
-            {
-                if (expires <= now)
-                {
-                    _logger.LogWarning("Signature has expired");
-                    return false;
-                }
-
-                if (expires < created)
-                {
-                    _logger.LogWarning("Signature expires before it is created");
-                    return false;
-                }
-            }
+            hasCreated = true;
         }
-        else
+
+        if (signatureParams.TryGetValue("expires", out var expiresStr) && long.TryParse(expiresStr, out expires))
+        {
+            hasExpires = true;
+        }
+
+        // If not in signature params, check HTTP headers ((created), (expires))
+        if (!hasCreated && context.Request.Headers.TryGetValue("(created)", out StringValues createdHeader) && 
+            long.TryParse(createdHeader.FirstOrDefault(), out created))
+        {
+            hasCreated = true;
+        }
+
+        if (!hasExpires && context.Request.Headers.TryGetValue("(expires)", out StringValues expiresHeader) && 
+            long.TryParse(expiresHeader.FirstOrDefault(), out expires))
+        {
+            hasExpires = true;
+        }
+
+        if (!hasCreated)
         {
             _logger.LogWarning("Signature missing required 'created' field for replay attack protection");
             return false;
         }
 
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (created < now - maxTimeSkewSeconds || created > now + maxTimeSkewSeconds)
+        {
+            _logger.LogWarning("Signature created time is outside acceptable window");
+            return false;
+        }
+
+        if (hasExpires)
+        {
+            if (expires <= now)
+            {
+                _logger.LogWarning("Signature has expired");
+                return false;
+            }
+
+            if (expires < created)
+            {
+                _logger.LogWarning("Signature expires before it is created");
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    private async Task WriteResponseAsync(HttpContext context, string message)
+    {
+        if (context.Response.Body.CanWrite)
+        {
+            context.Response.ContentType = "text/plain";
+            await context.Response.WriteAsync(message);
+        }
     }
 
     private Dictionary<string, string> ParseSignatureHeader(string signatureHeader)
@@ -277,7 +314,8 @@ public class HttpSignatureMiddleware
             var contentBytes = Encoding.UTF8.GetBytes(content);
             var hash = hashAlgorithm.ComputeHash(contentBytes);
 
-            return rsa.VerifyData(hash, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            // Verify using the hash (signature was computed on the hash)
+            return rsa.VerifyHash(hash, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
         catch (Exception ex)
         {

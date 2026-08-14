@@ -88,7 +88,7 @@ public class InboxProcessor : IActivityPubEventHandler
                 break;
             default:
                 _logger.LogWarning("Unknown activity type: {ActivityType}", activity.Type);
-                break;
+                throw new InvalidDataException($"Unknown activity type: {activity.Type}");
         }
 
         await _repository.SaveActivityAsync(activity);

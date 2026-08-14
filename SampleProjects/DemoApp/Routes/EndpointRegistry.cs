@@ -1,6 +1,7 @@
 using ActivityPub.Core;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Repositories;
+using ActivityPub.Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
@@ -16,6 +17,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DemoApp.Services;
+using DemoApp.Services.OAuth2;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DemoApp.Routing;
 
@@ -996,5 +1000,325 @@ public static class EndpointRegistry
             });
         })
         .WithTags("Security");
+        
+        app.MapGet(OAuth2Constants.AuthorizationEndpoint, async (string? clientId, string? redirectUri, string? responseType, string? state, string? codeChallenge, string? codeChallengeMethod, HashSet<string>? scopes, HttpContext context, IOAuth2Service oauthService, IMemoryCache cache) =>
+        {
+            if (string.IsNullOrEmpty(clientId))
+            {
+                return Results.BadRequest(new { error = "client_id is required" });
+            }
+            
+            if (string.IsNullOrEmpty(redirectUri))
+            {
+                return Results.BadRequest(new { error = "redirect_uri is required" });
+            }
+            
+            if (string.IsNullOrEmpty(responseType) || responseType != "code")
+            {
+                return Results.BadRequest(new { error = "response_type must be 'code'" });
+            }
+            
+            var request = new AuthorizationRequest
+            {
+                ClientId = clientId,
+                RedirectUri = redirectUri,
+                ResponseType = responseType,
+                State = state,
+                CodeChallenge = codeChallenge,
+                CodeChallengeMethod = codeChallengeMethod,
+                Scopes = scopes
+            };
+            
+            var actorId = GetActorIdFromRequest(context, cache);
+            
+            if (string.IsNullOrEmpty(actorId))
+            {
+                return Results.Redirect($"/login?redirectUri={Uri.EscapeDataString(redirectUri)}&clientId={Uri.EscapeDataString(clientId)}");
+            }
+            
+            try
+            {
+                var response = await oauthService.CreateAuthorizationCodeAsync(request, actorId);
+                
+                var redirectUrl = $"{redirectUri}?code={response.Code}";
+                if (!string.IsNullOrEmpty(response.State))
+                {
+                    redirectUrl += $"&state={response.State}";
+                }
+                
+                return Results.Redirect(redirectUrl);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithTags("OAuth2");
+        
+        app.MapPost(OAuth2Constants.TokenEndpoint, async (TokenRequest request, HttpContext context, IOAuth2Service oauthService) =>
+        {
+            if (string.IsNullOrEmpty(request.GrantType))
+            {
+                return Results.BadRequest(new { error = "grant_type is required" });
+            }
+            
+            try
+            {
+                var response = await oauthService.CreateTokenAsync(request);
+                return Results.Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithTags("OAuth2");
+        
+        app.MapGet(OAuth2Constants.UserInfoEndpoint, async (HttpContext context, IOAuth2Service oauthService) =>
+        {
+            var authHeader = context.Request.Headers["Authorization"].ToString();
+            string accessToken = null;
+            
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+            {
+                accessToken = authHeader.Substring(7);
+            }
+            
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return Results.StatusCode(401);
+            }
+            
+            try
+            {
+                var userInfo = await oauthService.GetUserInfoAsync(accessToken);
+                
+                if (userInfo == null)
+                {
+                    return Results.StatusCode(401);
+                }
+                
+                return Results.Ok(userInfo);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithTags("OAuth2");
+        
+        app.MapPost(OAuth2Constants.RevokeEndpoint, async (RevokeRequest request, string? clientId, HttpContext context, IOAuth2Service oauthService) =>
+        {
+            if (string.IsNullOrEmpty(request.Token))
+            {
+                return Results.BadRequest(new { error = "token is required" });
+            }
+            
+            var success = await oauthService.RevokeTokenAsync(request.Token, clientId);
+            
+            return Results.Ok(new { success });
+        })
+        .WithTags("OAuth2");
+        
+        app.MapPost(OAuth2Constants.IntrospectEndpoint, async (IntrospectRequest request, IOAuth2Service oauthService) =>
+        {
+            if (string.IsNullOrEmpty(request.Token))
+            {
+                return Results.BadRequest(new { error = "token is required" });
+            }
+            
+            var result = await oauthService.IntrospectTokenAsync(request.Token, request.ClientId, request.ClientSecret);
+            return Results.Ok(result);
+        })
+        .WithTags("OAuth2");
+        
+        app.MapPost("/oauth2/pkce/challenge", async (string codeVerifier) =>
+        {
+            if (string.IsNullOrEmpty(codeVerifier))
+            {
+                return Results.BadRequest(new { error = "code_verifier is required" });
+            }
+            
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(codeVerifier);
+            var hash = sha256.ComputeHash(bytes);
+            var codeChallenge = Convert.ToBase64String(hash).Replace("/", "_").Replace("+", "-").TrimEnd('=');
+            
+            return Results.Ok(new
+            {
+                code_challenge = codeChallenge,
+                code_challenge_method = "S256"
+            });
+        })
+        .WithTags("OAuth2");
+        
+        app.MapGet("/oauth2/scope/descriptions", () =>
+        {
+            return Results.Ok(OAuth2Scopes.ScopeDescriptions);
+        })
+        .WithTags("OAuth2");
+
+        app.MapGet("/webhook/configs", async (ActivityPubDbContext db, string? actorId, string? eventType) =>
+        {
+            if (string.IsNullOrEmpty(actorId))
+                return Results.BadRequest("actorId is required");
+
+            var query = db.WebhookConfigs.Where(c => c.ActorId == actorId);
+            if (!string.IsNullOrEmpty(eventType))
+            {
+                query = query.Where(c => c.EventType == eventType);
+            }
+
+            var configs = await query.ToListAsync();
+            return Results.Ok(configs);
+        })
+        .WithTags("Webhooks");
+
+        app.MapGet("/webhook/configs/{id:int}", async (int id, ActivityPubDbContext db) =>
+        {
+            var config = await db.WebhookConfigs.FindAsync(id);
+            if (config == null)
+                return Results.NotFound();
+
+            return Results.Ok(config);
+        })
+        .WithTags("Webhooks");
+
+        app.MapPost("/webhook/configs", async (HttpContext context, ActivityPubDbContext db) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(requestBody);
+
+            string actorId = data?.GetValueOrDefault("actorId")?.ToString() ?? "";
+            string eventType = data?.GetValueOrDefault("eventType")?.ToString() ?? "All";
+            string endpointUrl = data?.GetValueOrDefault("endpointUrl")?.ToString() ?? "";
+            string httpMethod = data?.GetValueOrDefault("httpMethod")?.ToString() ?? "POST";
+            bool enabled = data?.GetValueOrDefault("enabled") is bool e ? e : true;
+            string? secretKey = data?.GetValueOrDefault("secretKey")?.ToString();
+            int maxRetries = data?.GetValueOrDefault("maxRetries") is int mr ? mr : 3;
+            int retryDelaySeconds = data?.GetValueOrDefault("retryDelaySeconds") is int rds ? rds : 60;
+            bool useExponentialBackoff = data?.GetValueOrDefault("useExponentialBackoff") is bool ueb ? ueb : true;
+
+            var config = new WebhookConfigEntity
+            {
+                ActorId = actorId,
+                EventType = eventType,
+                EndpointUrl = endpointUrl,
+                HttpMethod = httpMethod,
+                Enabled = enabled,
+                SecretKey = secretKey,
+                MaxRetries = maxRetries,
+                RetryDelaySeconds = retryDelaySeconds,
+                UseExponentialBackoff = useExponentialBackoff,
+                DeliveryMethod = httpMethod switch
+                {
+                    "POST" => WebhookDeliveryMethod.HttpPost,
+                    "PUT" => WebhookDeliveryMethod.HttpPut,
+                    _ => WebhookDeliveryMethod.HttpPost
+                }
+            };
+
+            await db.WebhookConfigs.AddAsync(config);
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/webhook/configs/{config.Id}", config);
+        })
+        .WithTags("Webhooks");
+
+        app.MapPut("/webhook/configs/{id:int}", async (int id, HttpContext context, ActivityPubDbContext db) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(requestBody);
+
+            var config = await db.WebhookConfigs.FindAsync(id);
+            if (config == null)
+                return Results.NotFound();
+
+            if (data?.GetValueOrDefault("endpointUrl") is string eu) config.EndpointUrl = eu;
+            if (data?.GetValueOrDefault("httpMethod") is string hm) config.HttpMethod = hm;
+            if (data?.GetValueOrDefault("enabled") is bool e) config.Enabled = e;
+            if (data?.GetValueOrDefault("secretKey") is string sk) config.SecretKey = sk;
+            if (data?.GetValueOrDefault("maxRetries") is int mr) config.MaxRetries = mr;
+            if (data?.GetValueOrDefault("retryDelaySeconds") is int rds) config.RetryDelaySeconds = rds;
+            if (data?.GetValueOrDefault("useExponentialBackoff") is bool ueb) config.UseExponentialBackoff = ueb;
+            if (data?.GetValueOrDefault("eventType") is string et) config.EventType = et;
+
+            config.UpdatedAt = DateTime.UtcNow;
+
+            db.WebhookConfigs.Update(config);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(config);
+        })
+        .WithTags("Webhooks");
+
+        app.MapDelete("/webhook/configs/{id:int}", async (int id, ActivityPubDbContext db) =>
+        {
+            var config = await db.WebhookConfigs.FindAsync(id);
+            if (config == null)
+                return Results.NotFound();
+
+            db.WebhookConfigs.Remove(config);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new { success = true, id });
+        })
+        .WithTags("Webhooks");
+
+        app.MapPost("/webhook/process", async (ActivityPubDbContext db) =>
+        {
+            var deliveryService = app.Services.GetRequiredService<IWebhookDeliveryService>();
+            await deliveryService.ProcessPendingDeliveriesAsync();
+
+            return Results.Ok(new
+            {
+                Success = true,
+                Message = "Webhook deliveries processed"
+            });
+        })
+        .WithTags("Webhooks");
+
+        app.MapGet("/webhook/deliveries", async (ActivityPubDbContext db, string? configId, WebhookDeliveryStatus? status) =>
+        {
+            var query = db.WebhookDeliveries.AsQueryable();
+
+            if (!string.IsNullOrEmpty(configId))
+            {
+                query = query.Where(d => d.ConfigId == configId);
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(d => d.Status == status.Value);
+            }
+
+            var deliveries = await query
+                .OrderByDescending(d => d.CreatedAt)
+                .Take(100)
+                .ToListAsync();
+
+            return Results.Ok(deliveries);
+        })
+        .WithTags("Webhooks");
+
+        app.MapGet("/webhook/deliveries/{id}", async (string id, ActivityPubDbContext db) =>
+        {
+            var delivery = await db.WebhookDeliveries.FindAsync(id);
+            if (delivery == null)
+                return Results.NotFound();
+
+            return Results.Ok(delivery);
+        })
+        .WithTags("Webhooks");
+    }
+    
+    private static string GetActorIdFromRequest(HttpContext context, IMemoryCache cache)
+    {
+        var sessionId = context.Request.Cookies["session_id"];
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            return cache.Get<string>($"user_{sessionId}") ?? string.Empty;
+        }
+        return string.Empty;
     }
 }

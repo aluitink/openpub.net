@@ -1,6 +1,9 @@
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace ActivityPub.Tests.Services;
@@ -17,7 +20,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task GetAsync_RetrievesCachedActivity()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var activity = new Activity
         {
@@ -43,7 +47,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task GetAsync_ReturnsNullForMissingKey()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var result = await cache.GetAsync("nonexistent-key");
 
@@ -53,7 +58,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task SetAsync_CachesActivity()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var activity = new Activity
         {
@@ -75,7 +81,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task RemoveAsync_RemovesCachedActivity()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var activity = new Activity
         {
@@ -100,7 +107,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task ClearAsync_ClearsAllCachedActivities()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var activity1 = new Activity
         {
@@ -132,7 +140,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task GetAsync_ReturnsNullForNullKey()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var result = await cache.GetAsync(string.Empty);
 
@@ -142,7 +151,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task SetAsync_IgnoresNullActivity()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         await cache.SetAsync("test-key", null!);
 
@@ -152,7 +162,8 @@ public class ActivityCacheServiceTests
     [Fact]
     public async Task SetAsync_IgnoresNullKey()
     {
-        var cache = new ActivityCacheService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new ActivityCacheService(new MemoryFederationCache(memoryCache));
 
         var activity = new Activity
         {

@@ -128,7 +128,7 @@ public class ActorController : ControllerBase
             if (activity == null)
             {
                 _logger.LogWarning("Outbox post request missing activity body");
-                return BadRequest(new { error = "activity body is required" });
+                return BadRequest(new ContentResult { StatusCode = 400, Content = "{\"error\":\"activity body is required\"}" });
             }
 
             await _repository.SaveActivityAsync(activity);
@@ -136,7 +136,8 @@ public class ActorController : ControllerBase
             _logger.LogInformation("Outbox post successful for username: {Username}, activity: {ActivityType}", 
                 username, activity.Type);
 
-            return Ok(new { success = true, activityId = activity.Id });
+            var resultJson = JsonSerializer.Serialize(new { success = true, activityId = activity.Id }, _jsonOptions);
+            return Content(resultJson, "application/json");
         }
         catch (Exception ex)
         {
@@ -243,13 +244,13 @@ public class ActorController : ControllerBase
             if (string.IsNullOrEmpty(username))
             {
                 _logger.LogWarning("Inbox post request missing username parameter");
-                return BadRequest(new { error = "username parameter is required" });
+                return BadRequest("{\"error\":\"username parameter is required\"}");
             }
 
             if (activity == null)
             {
                 _logger.LogWarning("Inbox post request missing activity body");
-                return BadRequest(new { error = "activity body is required" });
+                return BadRequest("{\"error\":\"activity body is required\"}");
             }
 
             using var scope = HttpContext.RequestServices.CreateScope();
@@ -261,18 +262,18 @@ public class ActorController : ControllerBase
             {
                 _logger.LogInformation("Inbox post successful for username: {Username}, activity: {ActivityType}", 
                     username, activity.Type);
-                return Ok(new { success = true, activityId = activity.Id });
+                return Content("{\"success\":true}", "application/json");
             }
             else
             {
                 _logger.LogWarning("Inbox post processing failed for username: {Username}", username);
-                return BadRequest(new { success = false, error = "Failed to process activity" });
+                return BadRequest("{\"error\":\"Failed to process activity\"}");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing Inbox post for username: {Username}", username);
-            throw;
+            return BadRequest("{\"error\":\"Failed to process activity\"}");
         }
     }
 }

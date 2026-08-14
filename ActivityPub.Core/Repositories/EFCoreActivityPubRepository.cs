@@ -273,6 +273,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         {
             var delivery = new SharedInboxDeliveryEntity
             {
+                Id = $"{activityId}-{targetActorId}-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
                 ActivityId = activityId,
                 ActivityJson = activityJson,
                 TargetActorId = targetActorId,
@@ -325,5 +326,106 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         var followerIds = followerActivities.Select(json => ExtractActorIdFromFollowJson(json)).Where(id => !string.IsNullOrEmpty(id)).ToHashSet();
 
         return followerIds.ToList();
+    }
+
+    public async Task<bool> SaveWebhookConfigAsync(WebhookConfigEntity config)
+    {
+        var existing = await _context.WebhookConfigs
+            .Where(c => c.Id == config.Id)
+            .FirstOrDefaultAsync();
+
+        if (existing != null)
+        {
+            existing.EndpointUrl = config.EndpointUrl;
+            existing.HttpMethod = config.HttpMethod;
+            existing.Enabled = config.Enabled;
+            existing.SecretKey = config.SecretKey;
+            existing.MaxRetries = config.MaxRetries;
+            existing.RetryDelaySeconds = config.RetryDelaySeconds;
+            existing.UseExponentialBackoff = config.UseExponentialBackoff;
+            existing.EventType = config.EventType;
+            existing.UpdatedAt = DateTime.UtcNow;
+            _context.WebhookConfigs.Update(existing);
+        }
+        else
+        {
+            config.CreatedAt = DateTime.UtcNow;
+            config.UpdatedAt = DateTime.UtcNow;
+            await _context.WebhookConfigs.AddAsync(config);
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<ICollection<WebhookConfigEntity>> GetWebhookConfigsAsync(string actorId, string? eventType = null)
+    {
+        var query = _context.WebhookConfigs.Where(c => c.ActorId == actorId);
+
+        if (!string.IsNullOrEmpty(eventType))
+        {
+            query = query.Where(c => c.EventType == eventType);
+        }
+
+        return await query.ToListAsync();
+    }
+
+    public async Task<WebhookConfigEntity?> GetWebhookConfigByIdAsync(int id)
+    {
+        return await _context.WebhookConfigs.FindAsync(id);
+    }
+
+    public async Task<bool> DeleteWebhookConfigAsync(int id)
+    {
+        var config = await _context.WebhookConfigs.FindAsync(id);
+        if (config != null)
+        {
+            _context.WebhookConfigs.Remove(config);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        return false;
+    }
+
+    public async Task<bool> QueueWebhookDeliveryAsync(WebhookDeliveryEntity delivery)
+    {
+        delivery.Id = Guid.NewGuid().ToString();
+        delivery.Status = WebhookDeliveryStatus.Queued;
+        delivery.RetryCount = 0;
+        delivery.CreatedAt = DateTime.UtcNow;
+        delivery.UpdatedAt = DateTime.UtcNow;
+
+        await _context.WebhookDeliveries.AddAsync(delivery);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<ICollection<WebhookDeliveryEntity>> GetPendingWebhookDeliveriesAsync(int maxCount = 100)
+    {
+        var deliveries = await _context.WebhookDeliveries
+            .Where(d => d.Status == WebhookDeliveryStatus.Queued || d.Status == WebhookDeliveryStatus.Processing || 
+                       (d.Status == WebhookDeliveryStatus.Failed && d.RetryCount < 3))
+            .OrderBy(d => d.CreatedAt)
+            .Take(maxCount)
+            .ToListAsync();
+
+        return deliveries;
+    }
+
+    public async Task<bool> UpdateWebhookDeliveryAsync(WebhookDeliveryEntity delivery)
+    {
+        _context.WebhookDeliveries.Update(delivery);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> SaveWebhookDeliveryHistoryAsync(WebhookDeliveryHistoryEntity history)
+    {
+        history.Id = Guid.NewGuid().ToString();
+        history.Timestamp = DateTime.UtcNow;
+
+        await _context.WebhookDeliveryHistories.AddAsync(history);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

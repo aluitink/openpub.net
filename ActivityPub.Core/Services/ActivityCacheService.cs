@@ -1,3 +1,4 @@
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Models;
 
 namespace ActivityPub.Core.Services;
@@ -8,17 +9,16 @@ public interface IActivityCacheService
     Task SetAsync(string key, Activity activity, TimeSpan? slidingExpiration = null, CancellationToken cancellationToken = default);
     Task RemoveAsync(string key, CancellationToken cancellationToken = default);
     Task ClearAsync(CancellationToken cancellationToken = default);
+    long GetCount();
 }
 
 public class ActivityCacheService : IActivityCacheService
 {
-    private readonly Dictionary<string, Activity> _cache;
-    private readonly TimeSpan _defaultSlidingExpiration;
+    private readonly IFederationCache _cache;
 
-    public ActivityCacheService()
+    public ActivityCacheService(IFederationCache cache)
     {
-        _cache = new Dictionary<string, Activity>();
-        _defaultSlidingExpiration = TimeSpan.FromMinutes(10);
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
     }
 
     public async Task<Activity?> GetAsync(string key, CancellationToken cancellationToken = default)
@@ -26,12 +26,8 @@ public class ActivityCacheService : IActivityCacheService
         if (string.IsNullOrEmpty(key))
             return null;
 
-        if (_cache.TryGetValue(key, out var activity))
-        {
-            return activity;
-        }
-
-        return null;
+        var activity = await _cache.GetActivityAsync(key);
+        return activity;
     }
 
     public async Task SetAsync(string key, Activity activity, TimeSpan? slidingExpiration = null, CancellationToken cancellationToken = default)
@@ -39,7 +35,7 @@ public class ActivityCacheService : IActivityCacheService
         if (string.IsNullOrEmpty(key) || activity == null)
             return;
 
-        _cache[key] = activity;
+        await _cache.SetActivityAsync(key, activity);
     }
 
     public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
@@ -47,12 +43,12 @@ public class ActivityCacheService : IActivityCacheService
         if (string.IsNullOrEmpty(key))
             return;
 
-        _cache.Remove(key);
+        await _cache.RemoveActivityAsync(key);
     }
 
     public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        _cache.Clear();
+        await _cache.ClearAsync();
     }
 
     public long GetCount()

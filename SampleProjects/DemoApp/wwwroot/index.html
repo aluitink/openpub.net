@@ -22,6 +22,7 @@
         <nav id="mainNav">
             <button onclick="showSection('keys')">Keys</button>
             <button onclick="showSection('actors')">Actors</button>
+            <button onclick="showSection('webhooks')">Webhooks</button>
             <button onclick="showSection('activities')">Activities</button>
             <button onclick="showSection('templates')">Templates</button>
             <button onclick="showSection('explorer')">Explorer</button>
@@ -57,6 +58,43 @@
             </div>
             <h3>Existing Actors</h3>
             <div id="actorsList" class="result-box"></div>
+        </section>
+
+        <section id="webhooks" class="hidden">
+            <h2>Webhook Configuration</h2>
+            <div class="form-group">
+                <label for="webhookUrl">Endpoint URL:</label>
+                <input type="text" id="webhookUrl" placeholder="https://example.com/webhook">
+            </div>
+            <div class="form-group">
+                <label for="webhookSecret">Secret Key:</label>
+                <input type="text" id="webhookSecret" placeholder="Secret for signature verification">
+            </div>
+            <div class="form-group">
+                <label for="webhookMethod">Delivery Method:</label>
+                <select id="webhookMethod">
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="webhookActorId">Actor ID (optional):</label>
+                <input type="text" id="webhookActorId" placeholder="Actor URL to filter activities">
+            </div>
+            <div class="button-group">
+                <button id="addWebhookBtn">Add Webhook</button>
+                <button id="listWebhooksBtn">List Webhooks</button>
+                <button id="testWebhookBtn">Test Webhook</button>
+            </div>
+            <div id="webhookConfigResult" class="result-box"></div>
+            <h3>Active Webhooks</h3>
+            <div id="webhookList" class="result-box"></div>
+            <h3>Webhook Delivery History</h3>
+            <div id="webhookDeliveryHistory" class="result-box"></div>
+            <div class="button-group">
+                <button id="retryFailedWebhookBtn">Retry Failed Deliveries</button>
+                <button id="clearWebhookHistoryBtn">Clear History</button>
+            </div>
         </section>
 
         <section id="activities" class="hidden">

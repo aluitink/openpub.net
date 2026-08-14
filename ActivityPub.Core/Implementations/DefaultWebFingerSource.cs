@@ -1,3 +1,4 @@
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Services;
@@ -13,17 +14,20 @@ public class DefaultWebFingerSource : IWebFingerSource
 {
     private readonly IActivityPubRepository _repository;
     private readonly ActivityPubService _activityPubService;
+    private readonly WebFingerCacheService _webFingerCache;
     private readonly ILogger<DefaultWebFingerSource> _logger;
     private readonly ActivityPubTelemetry _telemetry;
 
     public DefaultWebFingerSource(
         IActivityPubRepository repository,
         ActivityPubService activityPubService,
+        WebFingerCacheService webFingerCache,
         ILogger<DefaultWebFingerSource> logger,
         ActivityPubTelemetry telemetry)
     {
         _repository = repository;
         _activityPubService = activityPubService;
+        _webFingerCache = webFingerCache;
         _logger = logger;
         _telemetry = telemetry;
     }
@@ -43,13 +47,43 @@ public class DefaultWebFingerSource : IWebFingerSource
                 if (parts.Length >= 2)
                 {
                     var username = parts[0];
+                    var domain = parts[1];
+                    var cacheKey = $"webfinger:{resource}";
+                    
+                    // Try cache first
+                    var cachedResponse = await _webFingerCache.GetCachedResponseAsync(cacheKey);
+                    if (cachedResponse != null && cachedResponse.Links.Length > 0)
+                    {
+                        _logger.LogInformation("WebFinger cache hit for resource: {Resource}", resource);
+                        if (cachedResponse.Links.Any(l => l.Rel == "self"))
+                        {
+                            return cachedResponse.Links.First(l => l.Rel == "self").Href;
+                        }
+                    }
                     
                     // Use the repository to resolve actor
                     var actor = await _repository.GetUserActorAsync(username);
                     if (actor != null)
                     {
+                        // Cache the response
+                        var webFingerResponse = new WebFingerResponse
+                        {
+                            Subject = resource,
+                            Links = new WebFingerLink[]
+                            {
+                                new WebFingerLink 
+                                { 
+                                    Rel = "self", 
+                                    Href = actor.Id,
+                                    Type = "application/activity+json"
+                                }
+                            }
+                        };
+                        
+                        await _webFingerCache.SetCachedResponseAsync(cacheKey, webFingerResponse);
+                        
                         // Return the actor's WebFinger compatible resource
-                        _logger.LogInformation("WebFinger resource resolved successfully for user: {Username}", username);
+                        _logger.LogInformation("WebFinger resource resolved and cached successfully for user: {Username}", username);
                         _telemetry.RecordActivityProcessed("WebFingerResolve");
                         return actor.Id;
                     }

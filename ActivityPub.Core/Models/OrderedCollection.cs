@@ -54,4 +54,28 @@ public class OrderedCollection
     /// </summary>
     [JsonPropertyName("summary")]
     public string? Summary { get; set; }
+    
+    /// <summary>
+    /// The current page of the collection
+    /// </summary>
+    [JsonPropertyName("current")]
+    public string? Current { get; set; }
+    
+    /// <summary>
+    /// The part of the collection
+    /// </summary>
+    [JsonPropertyName("partOf")]
+    public string? PartOf { get; set; }
+    
+    /// <summary>
+    /// The next page of the collection
+    /// </summary>
+    [JsonPropertyName("next")]
+    public string? Next { get; set; }
+    
+    /// <summary>
+    /// The previous page of the collection
+    /// </summary>
+    [JsonPropertyName("prev")]
+    public string? Prev { get; set; }
 }

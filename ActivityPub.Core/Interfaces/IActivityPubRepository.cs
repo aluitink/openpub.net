@@ -114,4 +114,61 @@ public interface IActivityPubRepository
     /// <param name="username">The username of the actor</param>
     /// <returns>Collection of unique follower actor IDs</returns>
     Task<ICollection<string>> GetUniqueFollowerIdsAsync(string username);
+    
+    /// <summary>
+    /// Saves a webhook configuration
+    /// </summary>
+    /// <param name="config">The webhook configuration to save</param>
+    /// <returns>True if saved successfully, false otherwise</returns>
+    Task<bool> SaveWebhookConfigAsync(WebhookConfigEntity config);
+    
+    /// <summary>
+    /// Gets webhook configurations for an actor
+    /// </summary>
+    /// <param name="actorId">The actor ID</param>
+    /// <param name="eventType">Optional event type filter</param>
+    /// <returns>Collection of webhook configurations</returns>
+    Task<ICollection<WebhookConfigEntity>> GetWebhookConfigsAsync(string actorId, string? eventType = null);
+    
+    /// <summary>
+    /// Gets a webhook configuration by ID
+    /// </summary>
+    /// <param name="id">The configuration ID</param>
+    /// <returns>The webhook configuration if found, null otherwise</returns>
+    Task<WebhookConfigEntity?> GetWebhookConfigByIdAsync(int id);
+    
+    /// <summary>
+    /// Deletes a webhook configuration
+    /// </summary>
+    /// <param name="id">The configuration ID</param>
+    /// <returns>True if deleted successfully, false otherwise</returns>
+    Task<bool> DeleteWebhookConfigAsync(int id);
+    
+    /// <summary>
+    /// Queues a webhook delivery
+    /// </summary>
+    /// <param name="delivery">The webhook delivery entity</param>
+    /// <returns>True if queued successfully, false otherwise</returns>
+    Task<bool> QueueWebhookDeliveryAsync(WebhookDeliveryEntity delivery);
+    
+    /// <summary>
+    /// Gets pending webhook deliveries
+    /// </summary>
+    /// <param name="maxCount">Maximum number of deliveries to retrieve</param>
+    /// <returns>Collection of pending deliveries</returns>
+    Task<ICollection<WebhookDeliveryEntity>> GetPendingWebhookDeliveriesAsync(int maxCount = 100);
+    
+    /// <summary>
+    /// Updates a webhook delivery status
+    /// </summary>
+    /// <param name="delivery">The delivery entity to update</param>
+    /// <returns>True if updated successfully, false otherwise</returns>
+    Task<bool> UpdateWebhookDeliveryAsync(WebhookDeliveryEntity delivery);
+    
+    /// <summary>
+    /// Saves webhook delivery history
+    /// </summary>
+    /// <param name="history">The delivery history entity</param>
+    /// <returns>True if saved successfully, false otherwise</returns>
+    Task<bool> SaveWebhookDeliveryHistoryAsync(WebhookDeliveryHistoryEntity history);
 }

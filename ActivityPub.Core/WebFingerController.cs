@@ -6,6 +6,7 @@ using ActivityPub.Core.Options;
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
 
 namespace ActivityPub.Core;
 
@@ -19,8 +20,9 @@ public class WebFingerController : ControllerBase
     private readonly WebFingerCacheService _cacheService;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly ActivityPubOptions _options;
+    private readonly ActivityPubService _activityPubService;
 
-    public WebFingerController(WebFingerCacheService cacheService, IOptions<ActivityPubOptions> options)
+    public WebFingerController(WebFingerCacheService cacheService, IOptions<ActivityPubOptions> options, ActivityPubService activityPubService)
     {
         _cacheService = cacheService;
         _jsonOptions = new JsonSerializerOptions
@@ -29,6 +31,7 @@ public class WebFingerController : ControllerBase
             Converters = { new WebFingerJsonConverter() }
         };
         _options = options.Value;
+        _activityPubService = activityPubService;
     }
 
     [HttpGet]
@@ -39,7 +42,13 @@ public class WebFingerController : ControllerBase
         // Validate required parameters according to W3C WebFinger specification
         if (string.IsNullOrEmpty(resource))
         {
-            return BadRequest(new { error = "resource parameter is required" });
+            var errorResult = new ContentResult
+            {
+                StatusCode = 400,
+                Content = "{\"error\":\"resource parameter is required\"}",
+                ContentType = "application/json"
+            };
+            return errorResult;
         }
 
         // Generate cache key based on resource and rel parameters
@@ -60,6 +69,25 @@ public class WebFingerController : ControllerBase
         
         // Handle the resource according to WebFinger specification
         var subject = resource;
+        
+        // Only return 404 for malformed resources
+        if (subject.StartsWith("acct:"))
+        {
+            var accountInfo = subject.Substring(5);
+            var atIndex = accountInfo.IndexOf('@');
+            if (atIndex <= 0)
+            {
+                // Malformed acct: identifier (missing @ or domain)
+                var errorResult = new ContentResult
+                {
+                    StatusCode = 404,
+                    Content = "{\"error\":\"Invalid resource format\"}",
+                    ContentType = "application/json"
+                };
+                return errorResult;
+            }
+        }
+        
         var links = new List<WebFingerLink>();
         
         // Add self link to the ActivityPub endpoint

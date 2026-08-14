@@ -1,4 +1,5 @@
 using ActivityPub.Core.BackgroundServices;
+using ActivityPub.Core.Caching;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Implementations;
 using ActivityPub.Core.Options;
@@ -51,7 +52,10 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<ActivityHandlerFactory>();
         services.AddScoped<WebFingerCacheService>();
         services.AddScoped<IActivityValidationService, ActivityValidationService>();
+        services.AddScoped<ActivityPubService>();
         services.AddScoped<ISharedInboxService, SharedInboxService>();
+        services.AddScoped<IFederationCache, MemoryFederationCache>();
+        services.AddScoped<CacheInvalidationService>();
         services.AddHostedService<SharedInboxBackgroundService>();
 
         return services;

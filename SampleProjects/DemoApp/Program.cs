@@ -1,9 +1,12 @@
 using DemoApp.Routing;
 using DemoApp.Services;
+using DemoApp.Services.OAuth2;
 using ActivityPub.Core;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Repositories;
 using ActivityPub.Core.Middleware;
+using ActivityPub.Core.Implementations;
+using ActivityPub.Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
@@ -40,16 +43,21 @@ builder.Services.AddActivityPub(options =>
 builder.Services.AddDbContext<ActivityPubDbContext>(options =>
     options.UseInMemoryDatabase("ActivityPubDemo"));
 
+builder.Services.AddWebhookServices();
+
 builder.Services.AddSingleton<IKeyGenerationService, KeyService>();
 builder.Services.AddScoped<IActorService, ActorService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddHostedService<QueueProcessorBackgroundService>();
+builder.Services.AddHostedService<WebhookDeliveryBackgroundService>();
 builder.Services.AddSingleton<PerformanceMetricsService>();
 
 builder.Services.AddSingleton<RateLimiterService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<IPFilterService>();
 builder.Services.AddSingleton<AuditLogger>();
+builder.Services.AddSingleton<IOAuth2Service, OAuth2Service>();
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
