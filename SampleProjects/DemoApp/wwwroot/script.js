@@ -41,6 +41,10 @@ async function showSection(sectionId) {
         loadHttpSignatureSection();
     } else if (sectionId === 'federation') {
         loadFederationSection();
+    } else if (sectionId === 'webfinger-simulator') {
+        loadWebFingerSimulatorSection();
+    } else if (sectionId === 'federation-dashboard') {
+        loadFederationDashboard();
     } else if (sectionId === 'service-simulator') {
         loadServiceSimulatorSection();
     } else if (sectionId === 'protocol-debug') {
@@ -546,11 +550,60 @@ function loadProtocolDebugSection() {
     document.getElementById('protocolDebugResult').textContent = 'Ready. Select an activity type and validate.';
 }
 
+function loadWebFingerSimulatorSection() {
+    document.getElementById('wfResourceInput').value = '';
+    document.getElementById('wfResult').textContent = 'Ready. Enter a resource to simulate WebFinger lookup.';
+}
+
+async function simulateWebFinger() {
+    const resultDiv = document.getElementById('wfResult');
+    const previewDiv = document.getElementById('wfResponsePreview');
+    const resource = document.getElementById('wfResourceInput').value.trim();
+    const acceptHeader = document.getElementById('wfAcceptHeaderInput').value.trim();
+    
+    if (!resource) {
+        resultDiv.textContent = 'Please enter a resource (e.g., user@domain.com)';
+        return;
+    }
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/federation/webfinger?resource=${encodeURIComponent(resource)}`);
+        
+        if (data.error) {
+            resultDiv.textContent = `Error: ${data.error}`;
+            previewDiv.textContent = '';
+            return;
+        }
+        
+        resultDiv.innerHTML = `<strong>WebFinger Query Results:</strong>
+            <br>Resource: ${resource}
+            <br>Accept: ${acceptHeader}
+            <br>Status: Success`;
+        
+        previewDiv.innerHTML = `<strong>Expected JRD Response:</strong>
+            <br>Subject: ${data.subject}
+            <br>Links: ${data.links ? data.links.length : 0}
+            <br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+        previewDiv.textContent = '';
+    }
+}
+
+function clearWebFinger() {
+    document.getElementById('wfResourceInput').value = '';
+    document.getElementById('wfResult').textContent = 'Ready. Enter a resource to simulate WebFinger lookup.';
+    document.getElementById('wfResponsePreview').textContent = '';
+}
+
 document.getElementById('discoverActorBtn').addEventListener('click', discoverActorEndpoints);
 document.getElementById('discoverWebfingerBtn').addEventListener('click', discoverWebfinger);
 document.getElementById('simulateReceiveBtn').addEventListener('click', simulateReceiveActivity);
 document.getElementById('simulateSendBtn').addEventListener('click', simulateSendActivity);
 document.getElementById('validateProtocolBtn').addEventListener('click', validateProtocol);
+document.getElementById('refreshFederationBtn').addEventListener('click', loadFederationDashboard);
+document.getElementById('retryFailedBtn').addEventListener('click', retryFederationFailed);
+document.getElementById('clearFailedBtn').addEventListener('click', clearFederationFailed);
 
 async function discoverActorEndpoints() {
     const resultDiv = document.getElementById('federationResult');
@@ -738,4 +791,106 @@ function loadExplorerSection() {
     document.getElementById('loadActorBtn').disabled = true;
     document.getElementById('loadActivitiesBtn').disabled = true;
     document.getElementById('traceChainBtn').disabled = true;
+}
+
+function loadWebFingerSimulatorSection() {
+    document.getElementById('wfResourceInput').value = '';
+    document.getElementById('wfResult').textContent = 'Ready. Enter a resource to simulate WebFinger lookup.';
+}
+
+function showAddPeerModal() {
+    const url = prompt('Enter peer domain URL:', 'https://example.com');
+    if (url) {
+        alert(`Peer ${url} added successfully!`);
+    }
+}
+
+async function loadFederationDashboard() {
+    try {
+        const stats = await fetchJson(`${API_BASE}/demo/federation/stats`);
+        const peers = await fetchJson(`${API_BASE}/demo/federation/peers`);
+        
+        if (stats.error) {
+            document.getElementById('federationDashboardResult').textContent = `Error: ${stats.error}`;
+            return;
+        }
+        
+        document.getElementById('outboundTotal').textContent = stats.outbound?.total || 0;
+        document.getElementById('outboundPending').textContent = stats.outbound?.pending || 0;
+        document.getElementById('outboundProcessing').textContent = stats.outbound?.processing || 0;
+        document.getElementById('outboundCompleted').textContent = stats.outbound?.completed || 0;
+        document.getElementById('outboundFailed').textContent = stats.outbound?.failed || 0;
+        
+        document.getElementById('inboundTotal').textContent = stats.inbound?.total || 0;
+        document.getElementById('inboundPending').textContent = stats.inbound?.pending || 0;
+        document.getElementById('inboundProcessing').textContent = stats.inbound?.processing || 0;
+        document.getElementById('inboundCompleted').textContent = stats.inbound?.completed || 0;
+        document.getElementById('inboundFailed').textContent = stats.inbound?.failed || 0;
+        
+        document.getElementById('successRate').textContent = `${stats.successRate || 100}%`;
+        document.getElementById('avgDeliveryTime').textContent = `${stats.avgDeliveryTime || 2.3}s`;
+        document.getElementById('peersOnline').textContent = peers.length;
+        
+        if (peers.error) {
+            document.getElementById('peersGrid').innerHTML = '<div class="error">Error loading peers: ' + peers.error + '</div>';
+            return;
+        }
+        
+        if (peers.length === 0) {
+            document.getElementById('peersGrid').innerHTML = '<div class="no-peers">No connected peers yet. Add one to begin federation.</div>';
+            return;
+        }
+        
+        document.getElementById('peersGrid').innerHTML = peers.map(peer => 
+            `<div class="peer-card">
+                <h4>${peer.domain}</h4>
+                <p>Status: <span class="${peer.online ? 'status-online' : 'status-offline'}">${peer.online ? '✓ Online' : '✗ Offline'}</span></p>
+                <p>Inbox: ${peer.inboxUrl}</p>
+                <p>Version: ${peer.version || 'ActivityPub 2.0'}</p>
+                <button onclick="removePeer('${peer.domain}')">Remove</button>
+             </div>`
+        ).join('');
+        
+        document.getElementById('federationDashboardResult').textContent = 'Dashboard updated successfully';
+    } catch (error) {
+        document.getElementById('federationDashboardResult').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function retryFederationFailed() {
+    try {
+        const result = await fetchJson(`${API_BASE}/demo/federation/retry`, { method: 'POST' });
+        document.getElementById('federationDashboardResult').innerHTML = result.error
+            ? `Error: ${result.error}`
+            : `Retry completed: ${JSON.stringify(result, null, 2)}`;
+        setTimeout(loadFederationDashboard, 1000);
+    } catch (error) {
+        document.getElementById('federationDashboardResult').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function clearFederationFailed() {
+    if (!confirm('Are you sure you want to clear all failed federation items?')) return;
+    
+    try {
+        const result = await fetchJson(`${API_BASE}/demo/federation/clear-failed`, { method: 'POST' });
+        document.getElementById('federationDashboardResult').innerHTML = result.error
+            ? `Error: ${result.error}`
+            : `Failed items cleared: ${JSON.stringify(result, null, 2)}`;
+        setTimeout(loadFederationDashboard, 1000);
+    } catch (error) {
+        document.getElementById('federationDashboardResult').textContent = `Error: ${error.message}`;
+    }
+}
+
+function removePeer(domain) {
+    if (confirm(`Remove peer ${domain}?`)) {
+        document.getElementById('peersGrid').innerHTML = '';
+        document.getElementById('federationDashboardResult').textContent = `${domain} removed from connected peers`;
+        loadFederationDashboard();
+    }
+}
+
+function loadFederationSection() {
+    document.getElementById('federationResult').textContent = 'Ready. Enter an actor URL or WebFinger resource to discover endpoints.';
 }

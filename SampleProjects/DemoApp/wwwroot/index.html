@@ -19,6 +19,8 @@
             <button onclick="showSection('queues')">Queues</button>
             <button onclick="showSection('http-signature')">HTTP Sig</button>
             <button onclick="showSection('status')">Status</button>
+            <button onclick="showSection('webfinger-simulator')">WebFinger</button>
+            <button onclick="showSection('federation-dashboard')">Federation</button>
         </nav>
     </header>
 
@@ -198,6 +200,25 @@
             <div id="httpSignatureResult" class="result-box"></div>
         </section>
 
+        <section id="webfinger-simulator" class="hidden">
+            <h2>WebFinger Simulator</h2>
+            <div class="form-group">
+                <label for="wfResourceInput">Resource (acct: or URI):</label>
+                <input type="text" id="wfResourceInput" placeholder="user@domain.com or acct:username@domain.com">
+            </div>
+            <div class="form-group">
+                <label for="wfAcceptHeaderInput">Accept Header:</label>
+                <input type="text" id="wfAcceptHeaderInput" value="application/jrd+json,application/json" placeholder="application/jrd+json,application/json">
+            </div>
+            <div class="button-group">
+                <button id="wfSimulateBtn">Simulate WebFinger Query</button>
+                <button id="wfClearBtn">Clear</button>
+            </div>
+            <div id="wfResult" class="result-box"></div>
+            <h3>Response Preview</h3>
+            <div id="wfResponsePreview" class="result-box"></div>
+        </section>
+
         <section id="federation" class="hidden">
             <h2>Federation Discovery</h2>
             <div class="form-group">
@@ -213,6 +234,65 @@
                 <button id="discoverWebfingerBtn">Discover WebFinger</button>
             </div>
             <div id="federationResult" class="result-box"></div>
+        </section>
+
+        <section id="federation-dashboard" class="hidden">
+            <h2>Federation Dashboard</h2>
+            
+            <h3>Connected Peers</h3>
+            <div class="peers-grid" id="peersGrid">
+                <div class="peer-card">
+                    <h4>example.com</h4>
+                    <p>Status: <span class="status-online">✓ Online</span></p>
+                    <p>Inbox: https://example.com/inbox</p>
+                    <p>Version: ActivityPub 2.0</p>
+                    <button onclick="removePeer('example.com')">Remove</button>
+                </div>
+            </div>
+            <button id="addPeerBtn" onclick="showAddPeerModal()">Add Peer</button>
+            
+            <h3>Queue Visualization</h3>
+            <div class="queue-stats">
+                <div class="stat-box">
+                    <h4>Outbound Queue</h4>
+                    <p>Total: <span id="outboundTotal">0</span></p>
+                    <p>Pending: <span id="outboundPending">0</span></p>
+                    <p>Processing: <span id="outboundProcessing">0</span></p>
+                    <p>Completed: <span id="outboundCompleted">0</span></p>
+                    <p>Failed: <span id="outboundFailed">0</span></p>
+                </div>
+                <div class="stat-box">
+                    <h4>Inbound Queue</h4>
+                    <p>Total: <span id="inboundTotal">0</span></p>
+                    <p>Pending: <span id="inboundPending">0</span></p>
+                    <p>Processing: <span id="inboundProcessing">0</span></p>
+                    <p>Completed: <span id="inboundCompleted">0</span></p>
+                    <p>Failed: <span id="inboundFailed">0</span></p>
+                </div>
+            </div>
+            
+            <h3>Federation Health</h3>
+            <div class="health-stats">
+                <div class="stat-box">
+                    <h4>Success Rate</h4>
+                    <p id="successRate">100%</p>
+                </div>
+                <div class="stat-box">
+                    <h4>Avg Delivery Time</h4>
+                    <p id="avgDeliveryTime">2.3s</p>
+                </div>
+                <div class="stat-box">
+                    <h4>Peers Online</h4>
+                    <p id="peersOnline">1</p>
+                </div>
+            </div>
+            
+            <div class="queue-controls">
+                <button id="refreshFederationBtn">Refresh Dashboard</button>
+                <button id="retryFailedBtn">Retry Failed Deliveries</button>
+                <button id="clearFailedBtn">Clear Failed Items</button>
+            </div>
+            <div id="federationDashboardResult" class="result-box"></div>
         </section>
 
         <section id="service-simulator" class="hidden">
