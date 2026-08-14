@@ -8,6 +8,22 @@ let completedTutorials = new Set();
 let currentInstanceId = null;
 let instances = [];
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('SW registered:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('SW registration failed:', error);
+            });
+    });
+}
+
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage('check-cache');
+}
+
 const tutorialData = {
     setup: {
         title: 'Step-by-step Setup Guide',
@@ -161,6 +177,13 @@ async function fetchJson(url, options = {}) {
     }
 }
 
+function toggleMobileMenu() {
+    const nav = document.getElementById('mainNav');
+    if (nav) {
+        nav.classList.toggle('mobile-nav-visible');
+    }
+}
+
 async function showSection(sectionId) {
     if (currentSection === sectionId) return;
     
@@ -172,6 +195,13 @@ async function showSection(sectionId) {
     });
     
     currentSection = sectionId;
+    
+    if (window.innerWidth <= 768) {
+        const nav = document.getElementById('mainNav');
+        if (nav) {
+            nav.classList.remove('mobile-nav-visible');
+        }
+    }
     
     if (sectionId === 'actors') {
         loadActors();

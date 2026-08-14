@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#3498db"/>
+  <path d="M256 80 L416 160 V352 L256 432 L96 352 V160 Z" fill="white"/>
+  <circle cx="256" cy="256" r="100" fill="#2ecc71"/>
+  <path d="M256 156 L356 196 V316 L256 356 L156 316 V196 Z" fill="white"/>
+  <text x="256" y="450" font-family="Arial" font-size="60" fill="white" text-anchor="middle">ActivityPub</text>
+</svg>

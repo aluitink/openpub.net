@@ -208,6 +208,104 @@
         .tab-content.active {
             display: block;
         }
+        
+        /* Mobile-Responsive UI - Phase 7 */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                padding: 20px 15px;
+                text-align: center;
+            }
+            
+            header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .card h2 {
+                font-size: 1.1rem;
+            }
+            
+            input, textarea, select {
+                font-size: 0.9rem;
+            }
+            
+            button {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+            
+            .instance-item {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .btn-sm {
+                width: 100%;
+                margin: 5px 0 0 0;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                padding: 8px 14px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .btn-sm {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+            
+            .instance-info h3 {
+                font-size: 1rem;
+            }
+            
+            .instance-info p {
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 <body>

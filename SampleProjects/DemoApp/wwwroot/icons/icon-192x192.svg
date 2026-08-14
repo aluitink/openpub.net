@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#3498db"/>
+  <path d="M96 20 L160 60 V132 L96 172 L32 132 V60 Z" fill="white"/>
+  <circle cx="96" cy="96" r="40" fill="#2ecc71"/>
+  <path d="M96 56 L120 68 V124 L96 136 L72 124 V68 Z" fill="white"/>
+  <text x="96" y="160" font-family="Arial" font-size="20" fill="white" text-anchor="middle">AP</text>
+</svg>

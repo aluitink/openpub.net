@@ -20,14 +20,33 @@ header {
     z-index: 100;
 }
 
-header h1 {
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1rem;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    flex: 1;
 }
 
 nav {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.mobile-menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
 }
 
 nav button {
@@ -615,4 +634,323 @@ button:disabled {
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
     color: #7f8c8d;
+}
+
+/* Mobile-Responsive UI - Phase 7 */
+@media (max-width: 1024px) {
+    main {
+        max-width: 95%;
+    }
+    
+    .tutorials-container {
+        flex-direction: column;
+    }
+    
+    .tutorials-list {
+        width: 100%;
+        flex: none;
+    }
+    
+    .tutorials-viewer {
+        width: 100%;
+        flex: none;
+    }
+    
+    .instance-selectors {
+        flex-direction: column;
+    }
+    
+    .instance-selectors select {
+        width: 100%;
+    }
+    
+    .config-comparison table {
+        font-size: 0.85rem;
+    }
+    
+    .config-comparison th,
+    .config-comparison td {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 0.75rem;
+    }
+    
+    .header-top {
+        margin-bottom: 0.5rem;
+    }
+    
+    header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    nav {
+        display: none;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    nav button {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    nav.mobile-nav-visible {
+        display: flex;
+    }
+    
+    main {
+        margin: 1rem auto;
+        padding: 0 0.75rem;
+    }
+    
+    section {
+        padding: 1rem;
+    }
+    
+    section h2 {
+        font-size: 1.25rem;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+        font-size: 0.9rem;
+        padding: 0.4rem;
+    }
+    
+    .form-group button {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .result-box {
+        max-height: 300px;
+        font-size: 0.9rem;
+    }
+    
+    .queue-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-box {
+        padding: 0.75rem;
+    }
+    
+    .stat-box h4 {
+        font-size: 0.9rem;
+    }
+    
+    .stat-box p {
+        font-size: 0.85rem;
+    }
+    
+    .queue-controls {
+        flex-direction: column;
+    }
+    
+    .queue-controls button {
+        width: 100%;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .button-group button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .button-group button:last-child {
+        margin-bottom: 0;
+    }
+    
+    .instance-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .instance-item button {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .instance-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .instance-actions {
+        width: 100%;
+    }
+    
+    .instance-actions button {
+        width: 100%;
+    }
+    
+    .stream-controls {
+        flex-direction: column;
+    }
+    
+    .stream-controls .button-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .stream-controls select,
+    .stream-controls input[type="text"] {
+        font-size: 0.9rem;
+        width: 100%;
+    }
+    
+    .stream-controls button {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+    
+    .tutorials-container {
+        gap: 1rem;
+    }
+    
+    .tutorial-controls {
+        flex-direction: column;
+    }
+    
+    .tutorial-controls button {
+        width: 100%;
+    }
+    
+    .instance-selectors {
+        flex-direction: column;
+    }
+    
+    .instance-selectors select,
+    .instance-selectors button {
+        width: 100%;
+    }
+    
+    .config-comparison table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .peers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .peer-card {
+        width: 100%;
+    }
+    
+    .peers-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .peer-card {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .health-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .health-stats .stat-box {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.25rem;
+    }
+    
+    section {
+        padding: 0.75rem;
+    }
+    
+    section h2 {
+        font-size: 1.1rem;
+    }
+    
+    .form-group label {
+        font-size: 0.9rem;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group button {
+        font-size: 0.9rem;
+    }
+    
+    .result-box {
+        max-height: 250px;
+        padding: 0.75rem;
+    }
+    
+    .stat-box {
+        padding: 0.5rem;
+    }
+    
+    .stat-box h4 {
+        font-size: 0.85rem;
+    }
+    
+    .stat-box p {
+        font-size: 0.8rem;
+    }
+    
+    .queue-controls button {
+        font-size: 0.85rem;
+    }
+    
+    .button-group button {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.7rem;
+    }
+    
+    .instance-item {
+        padding: 0.75rem;
+    }
+    
+    .instance-item button {
+        font-size: 0.7rem;
+    }
+    
+    .stream-controls select,
+    .stream-controls input[type="text"],
+    .stream-controls button {
+        font-size: 0.85rem;
+    }
+    
+    .tutorials-viewer {
+        padding: 0;
+    }
+    
+    .tutorial-controls button {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.7rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .peers-grid {
+        flex-direction: column;
+    }
 }
