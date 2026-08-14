@@ -19,6 +19,7 @@
             <button onclick="showSection('queues')">Queues</button>
             <button onclick="showSection('http-signature')">HTTP Sig</button>
             <button onclick="showSection('status')">Status</button>
+            <button onclick="showSection('signature-debugger')">Sig Debugger</button>
             <button onclick="showSection('webfinger-simulator')">WebFinger</button>
             <button onclick="showSection('federation-dashboard')">Federation</button>
         </nav>
@@ -167,6 +168,39 @@
                 <button id="clearQueueBtn">Clear Queue</button>
             </div>
             <div id="queueList" class="result-box"></div>
+        </section>
+
+        <section id="signature-debugger" class="hidden">
+            <h2>Signature Debugger</h2>
+            <div class="form-group">
+                <label for="sigDebuggerKeyIdInput">Key ID:</label>
+                <input type="text" id="sigDebuggerKeyIdInput" placeholder="e.g., test-key-123">
+            </div>
+            <div class="form-group">
+                <label for="sigDebuggerPrivateKeyInput">Private Key (PEM):</label>
+                <textarea id="sigDebuggerPrivateKeyInput" rows="3" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="sigDebuggerUrlInput">URL:</label>
+                <input type="text" id="sigDebuggerUrlInput" value="http://localhost:8080/demo/activities">
+            </div>
+            <div class="form-group">
+                <label for="sigDebuggerMethodSelect">HTTP Method:</label>
+                <select id="sigDebuggerMethodSelect">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button id="sigDebuggerGenerateBtn">Generate Step-by-Step</button>
+                <button id="sigDebuggerCompareBtn">Compare with Expected</button>
+                <button id="sigDebuggerVerifyBtn">Verify Signature</button>
+                <button id="sigDebuggerClearBtn">Clear</button>
+            </div>
+            <div id="sigDebuggerResult" class="result-box"></div>
+            <div id="sigDebuggerSteps" class="result-box" style="margin-top: 10px;"></div>
         </section>
 
         <section id="http-signature" class="hidden">

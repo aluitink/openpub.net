@@ -37,6 +37,8 @@ async function showSection(sectionId) {
         loadTemplates();
     } else if (sectionId === 'queues') {
         loadQueueStats();
+    } else if (sectionId === 'signature-debugger') {
+        loadSignatureDebuggerSection();
     } else if (sectionId === 'http-signature') {
         loadHttpSignatureSection();
     } else if (sectionId === 'federation') {
@@ -186,6 +188,10 @@ document.getElementById('clearQueueBtn').addEventListener('click', clearQueue);
 document.getElementById('generateTestSignatureBtn').addEventListener('click', generateTestSignature);
 document.getElementById('signRequestBtn').addEventListener('click', signOutboundRequest);
 document.getElementById('verifySignatureBtn').addEventListener('click', verifySignature);
+document.getElementById('sigDebuggerGenerateBtn').addEventListener('click', generateSignatureStepByStep);
+document.getElementById('sigDebuggerCompareBtn').addEventListener('click', compareSignatures);
+document.getElementById('sigDebuggerVerifyBtn').addEventListener('click', verifySignatureDebugger);
+document.getElementById('sigDebuggerClearBtn').addEventListener('click', clearSignatureDebugger);
 
 async function loadConfig() {
     const resultDiv = document.getElementById('configResult');
@@ -532,6 +538,170 @@ async function verifySignature() {
     } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
     }
+}
+
+async function generateSignatureStepByStep() {
+    const resultDiv = document.getElementById('sigDebuggerResult');
+    const stepsDiv = document.getElementById('sigDebuggerSteps');
+    const keyId = document.getElementById('sigDebuggerKeyIdInput').value.trim();
+    const privateKey = document.getElementById('sigDebuggerPrivateKeyInput').value.trim();
+    const url = document.getElementById('sigDebuggerUrlInput').value.trim();
+    const method = document.getElementById('sigDebuggerMethodSelect').value;
+    
+    if (!keyId || !privateKey) {
+        alert('Please generate or provide a key pair first');
+        return;
+    }
+    
+    stepsDiv.innerHTML = '';
+    resultDiv.innerHTML = '';
+    
+    try {
+        resultDiv.innerHTML = '<strong>Step 1: Loading Configuration</strong><br>';
+        
+        const data = await fetchJson(`${API_BASE}/demo/http-signature/generate-test`);
+        if (data.error) {
+            resultDiv.innerHTML += `Error generating test key: ${data.error}<br>`;
+            return;
+        }
+        
+        document.getElementById('sigDebuggerKeyIdInput').value = data.keyId;
+        document.getElementById('sigDebuggerPrivateKeyInput').value = data.privateKey;
+        
+        resultDiv.innerHTML += `Generated Key ID: ${data.keyId}<br>`;
+        
+        stepsDiv.innerHTML += '<strong>Step 2: Signature Generation Details</strong><br>';
+        stepsDiv.innerHTML += `<br>Input Parameters:<br>`;
+        stepsDiv.innerHTML += `&nbsp;&nbsp;Key ID: ${keyId}<br>`;
+        stepsDiv.innerHTML += `&nbsp;&nbsp;Private Key: ${privateKey.substring(0, 30)}...<br>`;
+        stepsDiv.innerHTML += `&nbsp;&nbsp;URL: ${url}<br>`;
+        stepsDiv.innerHTML += `&nbsp;&nbsp;HTTP Method: ${method}<br>`;
+        
+        resultDiv.innerHTML += '<strong>Step 3: Creating Signature String</strong><br>';
+        
+        const signData = await fetchJson(`${API_BASE}/demo/http-signature/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyId, privateKey, url, method })
+        });
+        
+        if (signData.error) {
+            resultDiv.innerHTML += `Error signing: ${signData.error}<br>`;
+            return;
+        }
+        
+        stepsDiv.innerHTML += `<br><strong>Step 4: Generated Signature Headers</strong><br>`;
+        stepsDiv.innerHTML += `<pre>${JSON.stringify(signData.headers, null, 2)}</pre><br>`;
+        
+        resultDiv.innerHTML += `<strong>Signature Generated Successfully!</strong><br>`;
+        resultDiv.innerHTML += `Algorithm: ${signData.algorithm}<br>`;
+        resultDiv.innerHTML += `Timestamp: ${signData.timestamp}<br>`;
+        
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function compareSignatures() {
+    const resultDiv = document.getElementById('sigDebuggerResult');
+    const keyId = document.getElementById('sigDebuggerKeyIdInput').value.trim();
+    const privateKey = document.getElementById('sigDebuggerPrivateKeyInput').value.trim();
+    const url = document.getElementById('sigDebuggerUrlInput').value.trim();
+    const method = document.getElementById('sigDebuggerMethodSelect').value;
+    
+    if (!keyId || !privateKey) {
+        alert('Please generate or provide a key pair first');
+        return;
+    }
+    
+    try {
+        const generated = await fetchJson(`${API_BASE}/demo/http-signature/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyId, privateKey, url, method })
+        });
+        
+        if (generated.error) {
+            resultDiv.textContent = `Error: ${generated.error}`;
+            return;
+        }
+        
+        const expected = await fetchJson(`${API_BASE}/demo/http-signature/expected?keyId=${encodeURIComponent(keyId)}&url=${encodeURIComponent(url)}&method=${encodeURIComponent(method)}`);
+        
+        resultDiv.innerHTML = `<strong>Signature Comparison</strong><br><br>`;
+        resultDiv.innerHTML += `<strong>Generated Signature:</strong><br><pre>${JSON.stringify(generated.headers, null, 2)}</pre><br>`;
+        resultDiv.innerHTML += `<strong>Expected Signature:</strong><br><pre>${JSON.stringify(expected, null, 2)}</pre><br>`;
+        
+        if (generated.headers['Signature'] === expected['Signature']) {
+            resultDiv.innerHTML += `<br><span style="color: green;">✓ Signatures match!</span>`;
+        } else {
+            resultDiv.innerHTML += `<br><span style="color: red;">✗ Signatures do not match</span>`;
+        }
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function verifySignatureDebugger() {
+    const resultDiv = document.getElementById('sigDebuggerResult');
+    const keyId = document.getElementById('sigDebuggerKeyIdInput').value.trim();
+    const privateKey = document.getElementById('sigDebuggerPrivateKeyInput').value.trim();
+    const url = document.getElementById('sigDebuggerUrlInput').value.trim();
+    const method = document.getElementById('sigDebuggerMethodSelect').value;
+    
+    if (!keyId || !privateKey) {
+        alert('Please generate or provide a key pair first');
+        return;
+    }
+    
+    try {
+        const signData = await fetchJson(`${API_BASE}/demo/http-signature/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyId, privateKey, url, method })
+        });
+        
+        if (signData.error) {
+            resultDiv.textContent = `Error generating signature: ${signData.error}`;
+            return;
+        }
+        
+        const verifyData = await fetchJson(`${API_BASE}/demo/http-signature/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                signature: signData.headers['Signature'],
+                signedHeaders: method 
+            })
+        });
+        
+        if (verifyData.error) {
+            resultDiv.textContent = `Error: ${verifyData.error}`;
+        } else {
+            resultDiv.innerHTML = `<strong>Signature Verification:</strong><br>`;
+            resultDiv.innerHTML += `Valid: ${verifyData.valid ? '<span style="color: green;">✓ Yes</span>' : '<span style="color: red;">✗ No</span>'}<br>`;
+            resultDiv.innerHTML += `Signature: ${verifyData.signature}<br>`;
+            resultDiv.innerHTML += `Signed Headers: ${verifyData.signedHeaders}<br>`;
+            resultDiv.innerHTML += `Timestamp: ${verifyData.timestamp}<br>`;
+        }
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+function clearSignatureDebugger() {
+    document.getElementById('sigDebuggerKeyIdInput').value = '';
+    document.getElementById('sigDebuggerPrivateKeyInput').value = '';
+    document.getElementById('sigDebuggerUrlInput').value = 'http://localhost:8080/demo/activities';
+    document.getElementById('sigDebuggerMethodSelect').value = 'POST';
+    document.getElementById('sigDebuggerResult').textContent = '';
+    document.getElementById('sigDebuggerSteps').textContent = '';
+    alert('Signature Debugger cleared');
+}
+
+function loadSignatureDebuggerSection() {
+    document.getElementById('sigDebuggerResult').textContent = 'Ready. Generate a test key pair to begin.';
+    document.getElementById('sigDebuggerSteps').textContent = '';
 }
 
 function loadHttpSignatureSection() {
