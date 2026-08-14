@@ -23,6 +23,7 @@
             <button onclick="showSection('content-moderation')">Moderation</button>
             <button onclick="showSection('webfinger-simulator')">WebFinger</button>
             <button onclick="showSection('federation-dashboard')">Federation</button>
+            <button onclick="showSection('analytics-dashboard')">Analytics</button>
         </nav>
     </header>
 
@@ -258,6 +259,40 @@
             
             <h3>Moderation Settings</h3>
             <div id="moderationSettingsResult" class="result-box"></div>
+        </section>
+
+        <section id="analytics-dashboard" class="hidden">
+            <h2>Analytics Dashboard</h2>
+            
+            <div class="button-group" style="margin-bottom: 20px;">
+                <label>Time Range:</label>
+                <button onclick="updateTimeRange(7)">7 Days</button>
+                <button onclick="updateTimeRange(30)">30 Days</button>
+                <button onclick="updateTimeRange(90)">90 Days</button>
+                <span style="margin-left: 15px;">Selected: <strong id="timeRangeDisplay">7 Days</strong></span>
+            </div>
+            
+            <div class="button-group" style="margin-bottom: 20px;">
+                <button onclick="exportAnalytics('json')">Export JSON</button>
+                <button onclick="exportAnalytics('csv')">Export CSV</button>
+                <button onclick="loadAnalyticsSection()">Refresh Data</button>
+            </div>
+            
+            <h3>Activity Counts by Type</h3>
+            <div class="chart-container">
+                <canvas id="activityCountsChart"></canvas>
+            </div>
+            
+            <h3>Top Actors by Activity</h3>
+            <div id="topActorsList" class="result-box"></div>
+            
+            <h3>Federation Partner Stats</h3>
+            <div id="federationStatsTable" class="result-box"></div>
+            
+            <h3>Daily/Weekly/Monthly Trends</h3>
+            <div class="chart-container">
+                <canvas id="trendsChart"></canvas>
+            </div>
         </section>
 
         <section id="http-signature" class="hidden">

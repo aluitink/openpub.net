@@ -602,6 +602,98 @@ app.MapPost("/demo/federation/clear-failed", () =>
     });
 });
 
+app.MapGet("/demo/analytics/counts", () =>
+{
+    return Results.Ok(new
+    {
+        TotalActivities = 1523,
+        TodayActivities = 127,
+        UniqueActors = 89,
+        TotalPosts = 892,
+        TotalReplies = 345,
+        TotalBoosts = 156,
+        TotalLikes = 123,
+        Timestamp = DateTime.UtcNow
+    });
+});
+
+app.MapGet("/demo/analytics/top-actors", () =>
+{
+    return Results.Ok(new[]
+    {
+        new { Actor = "alice@example.com", Posts = 234, Replies = 56, Boosts = 23, Likes = 189 },
+        new { Actor = "bob@social.net", Posts = 198, Replies = 89, Boosts = 45, Likes = 167 },
+        new { Actor = "carol@fediverse.org", Posts = 167, Replies = 112, Boosts = 34, Likes = 145 },
+        new { Actor = "dave@mastodon.social", Posts = 145, Replies = 67, Boosts = 56, Likes = 123 },
+        new { Actor = "eve@pixelfed.net", Posts = 123, Replies = 45, Boosts = 23, Likes = 234 }
+    });
+});
+
+app.MapGet("/demo/analytics/federation", () =>
+{
+    return Results.Ok(new
+    {
+        TotalFollowers = 456,
+        TotalFollowing = 312,
+        ActivePeers = 23,
+        FailedDeliveries = 7,
+        AverageDeliveryTime = 1.8
+    });
+});
+
+app.MapGet("/demo/analytics/trends", () =>
+{
+    return Results.Ok(new
+    {
+        DailyActivities = new[]
+        {
+            new { Day = "Mon", Activities = 189 },
+            new { Day = "Tue", Activities = 212 },
+            new { Day = "Wed", Activities = 198 },
+            new { Day = "Thu", Activities = 234 },
+            new { Day = "Fri", Activities = 256 },
+            new { Day = "Sat", Activities = 178 },
+            new { Day = "Sun", Activities = 145 }
+        },
+        TopDays = new[]
+        {
+            new { Day = "Fri", Type = "Most Active", Value = 256 },
+            new { Day = "Sun", Type = "Least Active", Value = 145 }
+        }
+    });
+});
+
+app.MapGet("/demo/analytics/export", (string format = "json") =>
+{
+    var data = new
+    {
+        GeneratedAt = DateTime.UtcNow.ToString("o"),
+        Counts = new
+        {
+            TotalActivities = 1523,
+            TodayActivities = 127,
+            UniqueActors = 89
+        },
+        TopActors = new[]
+        {
+            new { Actor = "alice@example.com", Posts = 234 },
+            new { Actor = "bob@social.net", Posts = 198 }
+        }
+    };
+    
+    if (format?.ToLower() == "csv")
+    {
+        var csv = new StringWriter();
+        csv.WriteLine("Metric,Value,Timestamp");
+        csv.WriteLine($"TotalActivities,{data.Counts.TotalActivities},{data.GeneratedAt}");
+        csv.WriteLine($"TodayActivities,{data.Counts.TodayActivities},{data.GeneratedAt}");
+        csv.WriteLine($"UniqueActors,{data.Counts.UniqueActors},{data.GeneratedAt}");
+        return Results.Content(csv.ToString(), "text/csv");
+    }
+    
+    return Results.Ok(data);
+});
+
 app.Run();
 
 public class QueueItem

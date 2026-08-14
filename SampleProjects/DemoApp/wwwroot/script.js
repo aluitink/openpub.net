@@ -49,6 +49,8 @@ async function showSection(sectionId) {
         loadWebFingerSimulatorSection();
     } else if (sectionId === 'federation-dashboard') {
         loadFederationDashboard();
+    } else if (sectionId === 'analytics-dashboard') {
+        loadAnalyticsSection();
     } else if (sectionId === 'service-simulator') {
         loadServiceSimulatorSection();
     } else if (sectionId === 'protocol-debug') {
@@ -1277,6 +1279,188 @@ async function loadFederationDashboard() {
     } catch (error) {
         document.getElementById('federationDashboardResult').textContent = `Error: ${error.message}`;
     }
+}
+
+let activityCountsChart = null;
+let trendsChart = null;
+
+async function loadAnalyticsSection() {
+    const timeRange = document.getElementById('timeRangeDisplay').textContent.replace('Selected: ', '').trim();
+    const days = timeRange === '7 Days' ? 7 : timeRange === '30 Days' ? 30 : 90;
+    
+    document.getElementById('topActorsList').textContent = 'Loading top actors...';
+    document.getElementById('federationStatsTable').textContent = 'Loading federation stats...';
+    
+    await Promise.all([
+        fetchActivityCounts(days),
+        fetchTopActors(days),
+        fetchFederationStats(days),
+        fetchTrends(days)
+    ]);
+}
+
+async function fetchActivityCounts(days) {
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/analytics/counts?days=${days}`);
+        
+        const ctx = document.getElementById('activityCountsChart').getContext('2d');
+        if (activityCountsChart) {
+            activityCountsChart.destroy();
+        }
+        
+        activityCountsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels || [],
+                datasets: [{
+                    label: 'Activity Count',
+                    data: data.data || [],
+                    backgroundColor: '#3498db'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    } catch (error) {
+        document.getElementById('topActorsList').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function fetchTopActors(days) {
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/analytics/top-actors?days=${days}`);
+        
+        const resultDiv = document.getElementById('topActorsList');
+        if (data.error) {
+            resultDiv.textContent = `Error: ${data.error}`;
+            return;
+        }
+        
+        if (data.actors && Array.isArray(data.actors)) {
+            resultDiv.innerHTML = data.actors.map((actor, index) =>
+                `<div class="actor-item" style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <strong>#${index + 1}</strong> ${actor.actor || 'Unknown'}<br>
+                    <span style="color: #27ae60;">${actor.count || 0} activities</span>
+                </div>`
+            ).join('');
+        } else {
+            resultDiv.innerHTML = JSON.stringify(data, null, 2);
+        }
+    } catch (error) {
+        document.getElementById('topActorsList').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function fetchFederationStats(days) {
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/analytics/federation?days=${days}`);
+        
+        const resultDiv = document.getElementById('federationStatsTable');
+        if (data.error) {
+            resultDiv.textContent = `Error: ${data.error}`;
+            return;
+        }
+        
+        if (data.partners && Array.isArray(data.partners)) {
+            resultDiv.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #3498db; color: white;">
+                            <th style="padding: 10px; border: 1px solid #ddd;">Partner</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Status</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Inbound</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Outbound</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Success Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.partners.map(partner =>
+                            `<tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${partner.domain}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${partner.online ? '<span style="color: green;">✓ Online</span>' : '✗ Offline'}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${partner.inbound || 0}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${partner.outbound || 0}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${partner.successRate ? partner.successRate + '%' : 'N/A'}</td>
+                            </tr>`
+                        ).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            resultDiv.innerHTML = JSON.stringify(data, null, 2);
+        }
+    } catch (error) {
+        document.getElementById('federationStatsTable').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function fetchTrends(days) {
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/analytics/trends?days=${days}`);
+        
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+        if (trendsChart) {
+            trendsChart.destroy();
+        }
+        
+        trendsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels || [],
+                datasets: [{
+                    label: 'Daily Activities',
+                    data: data.data || [],
+                    borderColor: '#e74c3c',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error loading trends:', error);
+    }
+}
+
+function exportAnalytics(format) {
+    const timeRange = document.getElementById('timeRangeDisplay').textContent.replace('Selected: ', '').trim();
+    const days = timeRange === '7 Days' ? 7 : timeRange === '30 Days' ? 30 : 90;
+    
+    fetchJson(`${API_BASE}/demo/analytics/export?format=${format}&days=${days}`)
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+                return;
+            }
+            
+            const blob = new Blob([data.content], { type: data.contentType || 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `analytics.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            alert(`Export failed: ${error.message}`);
+        });
+}
+
+function updateTimeRange(days) {
+    const timeRangeDisplay = document.getElementById('timeRangeDisplay');
+    timeRangeDisplay.textContent = days + (days === 7 ? ' Days' : (days === 30 ? ' Days' : ' Days'));
+    
+    loadAnalyticsSection();
 }
 
 async function retryFederationFailed() {
