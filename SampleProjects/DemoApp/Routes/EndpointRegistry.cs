@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 using System.IO;
 using System;
@@ -23,23 +24,37 @@ public static class EndpointRegistry
     {
         app.MapGet("/", () => Results.Redirect("/index.html"));
 
-        app.MapGet("/demo/keys", async (IKeyGenerationService keyService) =>
+        app.MapGet("/demo/keys", async (IKeyGenerationService keyService, IMemoryCache cache) =>
         {
-            var (privateKey, publicKey) = keyService.GenerateRSAKeyPair();
+            var cacheKey = "key_pair";
+            var keys = cache.GetOrCreate(cacheKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+                return keyService.GenerateRSAKeyPair();
+            });
+
             return Results.Ok(new
             {
-                PrivateKey = privateKey,
-                PublicKey = publicKey
+                PrivateKey = keys.privateKeyPem,
+                PublicKey = keys.publicKeyPem
             });
-        });
+        })
+        .WithTags("Cache");
 
-        app.MapGet("/demo/actors", async (ActivityPubDbContext db) =>
+        app.MapGet("/demo/actors", async (ActivityPubDbContext db, IMemoryCache cache) =>
         {
-            var actors = await db.Actors.ToListAsync();
-            return Results.Ok(actors);
-        });
+            var actors = await cache.GetOrCreateAsync("actors_list", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                return await db.Actors.AsNoTracking().OrderBy(a => a.Username).ToListAsync();
+            });
 
-        app.MapPost("/demo/actors", async (ActivityPubDbContext db, HttpContext context) =>
+            return Results.Ok(actors);
+        })
+        .WithTags("Actors")
+        .CacheOutput(output => output.Expire(TimeSpan.FromMinutes(5)));
+
+        app.MapPost("/demo/actors", async (ActivityPubDbContext db, HttpContext context, IMemoryCache cache) =>
         {
             var keyService = app.Services.GetRequiredService<IKeyGenerationService>();
             var keys = keyService.GenerateRSAKeyPair();
@@ -58,10 +73,14 @@ public static class EndpointRegistry
             await db.Actors.AddAsync(actor);
             await db.SaveChangesAsync();
 
-            return Results.Created($"/actors/{actor.Id}", actor);
-        });
+            cache.Remove("actors_list");
+            cache.Remove($"actors_list_{username}");
 
-        app.MapPost("/demo/activities", async (ActivityPubDbContext db, HttpContext context) =>
+            return Results.Created($"/actors/{actor.Id}", actor);
+        })
+        .WithTags("Actors");
+
+        app.MapPost("/demo/activities", async (ActivityPubDbContext db, HttpContext context, IMemoryCache cache) =>
         {
             var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
             var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
@@ -77,11 +96,14 @@ public static class EndpointRegistry
             await db.Activities.AddAsync(activity);
             await db.SaveChangesAsync();
 
+            cache.Remove("activities_list");
+
             var hubContext = app.Services.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<ActivityHub>>();
             await hubContext.Clients.All.SendAsync("ReceiveActivity", jsonData);
 
             return Results.Created($"/activities/{activity.Id}", activity);
-        });
+        })
+        .WithTags("Activities");
 
         app.MapGet("/demo/status", () =>
         {
@@ -93,9 +115,18 @@ public static class EndpointRegistry
             });
         });
 
-        app.MapGet("/demo/activities/paginated", async (ActivityPubDbContext db, int page = 1, int pageSize = 10) =>
+        app.MapGet("/demo/activities/paginated", async (ActivityPubDbContext db, int page = 1, int pageSize = 10, IMemoryCache cache = null) =>
         {
-            var activities = await db.Activities
+            var cacheKey = $"paginated_activities_{page}_{pageSize}";
+            var activities = page <= 10 ? await cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                return await db.Activities.AsNoTracking()
+                    .OrderByDescending(a => a.Id)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }) : await db.Activities.AsNoTracking()
                 .OrderByDescending(a => a.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -111,7 +142,8 @@ public static class EndpointRegistry
                 TotalItems = total,
                 TotalPages = (int)Math.Ceiling((double)total / pageSize)
             });
-        });
+        })
+        .WithTags("Activities");
 
         app.MapGet("/demo/templates", () =>
         {
@@ -669,5 +701,20 @@ public static class EndpointRegistry
 
             return Results.Ok(data);
         });
+
+        app.MapGet("/demo/metrics", (PerformanceMetricsService metrics) =>
+        {
+            var metricsData = metrics.GetMetrics();
+            return Results.Ok(new
+            {
+                Timestamp = DateTime.UtcNow,
+                TotalRequests = metricsData["totalRequests"],
+                ErrorCount = metricsData["errorCount"],
+                ProcessedItems = metricsData["processedItems"],
+                Endpoints = metricsData["endpoints"],
+                AverageEndpointTimes = metricsData["averageEndpointTimes"]
+            });
+        })
+        .WithTags("Performance");
     }
 }
