@@ -26,6 +26,7 @@
             <button onclick="showSection('analytics-dashboard')">Analytics</button>
             <button onclick="showSection('api-documentation')">API Docs</button>
             <button onclick="showSection('interactive-tutorials')">Tutorials</button>
+            <button onclick="showSection('multi-instance')">Instances</button>
         </nav>
     </header>
 
@@ -390,6 +391,54 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <section id="multi-instance" class="hidden">
+            <h2>Multi-Instance Management</h2>
+            
+            <h3>Instance List</h3>
+            <div id="instanceList" class="result-box">
+                <p>No instances configured</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="instanceName">Instance Name:</label>
+                <input type="text" id="instanceName" placeholder="e.g., production, staging">
+            </div>
+            <div class="form-group">
+                <label for="instanceUrl">Instance URL:</label>
+                <input type="text" id="instanceUrl" placeholder="e.g., https://example.com">
+            </div>
+            <div class="form-group">
+                <label for="instanceActor">Default Actor:</label>
+                <input type="text" id="instanceActor" placeholder="e.g., https://example.com/users/admin">
+            </div>
+            <div class="button-group">
+                <button id="addInstanceBtn" onclick="addInstance()">Add Instance</button>
+                <button id="refreshInstancesBtn" onclick="loadInstancesSection()">Refresh List</button>
+            </div>
+            
+            <h3>Current Instance Status</h3>
+            <div id="currentInstanceStatus" class="result-box">
+                <p>Select an instance to view status</p>
+            </div>
+            
+            <h3>Actor Profiles</h3>
+            <div id="actorProfiles" class="result-box">
+                <p>No actor profiles loaded</p>
+            </div>
+            
+            <h3>Configuration Comparison</h3>
+            <div class="button-group">
+                <select id="compareInstance1Select" style="width: 200px;">
+                    <option value="">-- Select Instance 1 --</option>
+                </select>
+                <select id="compareInstance2Select" style="width: 200px;">
+                    <option value="">-- Select Instance 2 --</option>
+                </select>
+                <button onclick="compareConfigurations()">Compare Configurations</button>
+            </div>
+            <div id="configComparison" class="result-box"></div>
         </section>
 
         <section id="http-signature" class="hidden">

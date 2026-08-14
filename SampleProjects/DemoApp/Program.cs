@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -214,4 +215,159 @@ public class PerformanceMetricsService
             };
         }
     }
+}
+
+[ApiController]
+[Route("api/demo/instances")]
+public class MultiInstanceController : ControllerBase
+{
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<MultiInstanceController> _logger;
+
+    public MultiInstanceController(IMemoryCache cache, ILogger<MultiInstanceController> logger)
+    {
+        _cache = cache;
+        _logger = logger;
+    }
+
+    [HttpGet]
+    public IActionResult GetInstances()
+    {
+        var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
+        var currentId = _cache.Get<string>("CurrentInstanceId");
+        
+        return Ok(new
+        {
+            instances = instances.Select(i => new
+            {
+                id = i.Id,
+                name = i.Name,
+                url = i.Url,
+                defaultActor = i.DefaultActor,
+                status = i.Status,
+                createdAt = i.CreatedAt
+            }),
+            currentId = currentId
+        });
+    }
+
+    [HttpPost]
+    public IActionResult AddInstance([FromBody] InstanceConfig instance)
+    {
+        if (string.IsNullOrEmpty(instance.Id)) instance.Id = "instance-" + Guid.NewGuid().ToString().Substring(0, 8);
+        if (string.IsNullOrEmpty(instance.Status)) instance.Status = "pending";
+        instance.CreatedAt = DateTime.UtcNow;
+
+        var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
+        instances.Add(instance);
+        _cache.Set("Instances", instances);
+
+        _logger.LogInformation("Added instance: {InstanceId}", instance.Id);
+
+        return Ok(new { success = true, instanceId = instance.Id });
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult RemoveInstance(string id)
+    {
+        var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
+        var instance = instances.FirstOrDefault(i => i.Id == id);
+        
+        if (instance == null)
+            return NotFound(new { error = "Instance not found" });
+
+        instances.Remove(instance);
+        _cache.Set("Instances", instances);
+
+        if (_cache.Get<string>("CurrentInstanceId") == id)
+        {
+            _cache.Set("CurrentInstanceId", instances.FirstOrDefault()?.Id);
+        }
+
+        _logger.LogInformation("Removed instance: {InstanceId}", id);
+
+        return Ok(new { success = true });
+    }
+
+    [HttpPost("{id}/switch")]
+    public IActionResult SwitchInstance(string id)
+    {
+        var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
+        var instance = instances.FirstOrDefault(i => i.Id == id);
+
+        if (instance == null)
+            return NotFound(new { error = "Instance not found" });
+
+        _cache.Set("CurrentInstanceId", id);
+
+        _logger.LogInformation("Switched to instance: {InstanceId}", id);
+
+        return Ok(new { success = true, instanceName = instance.Name });
+    }
+
+    [HttpGet("{id}/status")]
+    public IActionResult GetInstanceStatus(string id)
+    {
+        var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
+        var instance = instances.FirstOrDefault(i => i.Id == id);
+
+        if (instance == null)
+            return NotFound(new { error = "Instance not found" });
+
+        var status = new InstanceStatus
+        {
+            Id = instance.Id,
+            Name = instance.Name,
+            Url = instance.Url,
+            Status = instance.Status,
+            ResponseTime = "N/A",
+            Timestamp = DateTime.UtcNow.ToString("o"),
+            Actors = instance.DefaultActor
+        };
+
+        return Ok(status);
+    }
+
+    [HttpGet("{id}/config")]
+    public IActionResult GetInstanceConfig(string id)
+    {
+        var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
+        var instance = instances.FirstOrDefault(i => i.Id == id);
+
+        if (instance == null)
+            return NotFound(new { error = "Instance not found" });
+
+        var config = new
+        {
+            name = instance.Name,
+            url = instance.Url,
+            domain = instance.Url.Split('/').LastOrDefault(),
+            port = 80,
+            defaultActor = instance.DefaultActor,
+            enabled = instance.Status == "active"
+        };
+
+        return Ok(config);
+    }
+}
+
+public class InstanceConfig
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string DefaultActor { get; set; } = string.Empty;
+    public string Status { get; set; } = "pending";
+    public DateTime CreatedAt { get; set; }
+}
+
+public class InstanceStatus
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string ResponseTime { get; set; } = string.Empty;
+    public string Timestamp { get; set; } = string.Empty;
+    public string Actors { get; set; } = string.Empty;
 }

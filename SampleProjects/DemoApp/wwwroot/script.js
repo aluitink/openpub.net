@@ -5,6 +5,8 @@ let currentTemplate = null;
 let currentTutorial = null;
 let currentTutorialStep = 0;
 let completedTutorials = new Set();
+let currentInstanceId = null;
+let instances = [];
 
 const tutorialData = {
     setup: {
@@ -200,6 +202,8 @@ async function showSection(sectionId) {
     } else if (sectionId === 'interactive-tutorials') {
         loadTutorialsSection();
         document.getElementById('markCompleteBtn').addEventListener('click', markComplete);
+    } else if (sectionId === 'multi-instance') {
+        loadInstancesSection();
     } else if (sectionId === 'service-simulator') {
         loadServiceSimulatorSection();
     } else if (sectionId === 'protocol-debug') {
@@ -2099,4 +2103,269 @@ function updateProgress() {
     if (progressText) {
         progressText.textContent = `${progress.completed}/${progress.total} completed (${progress.percentage}%)`;
     }
+}
+
+async function loadInstancesSection() {
+    const instanceList = document.getElementById('instanceList');
+    const statusDiv = document.getElementById('currentInstanceStatus');
+    const actorDiv = document.getElementById('actorProfiles');
+    const compareSelect1 = document.getElementById('compareInstance1Select');
+    const compareSelect2 = document.getElementById('compareInstance2Select');
+    
+    instanceList.textContent = 'Loading instances...';
+    statusDiv.textContent = '';
+    actorDiv.textContent = '';
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/instances`);
+        
+        if (data.error) {
+            instanceList.textContent = `Error loading instances: ${data.error}`;
+            return;
+        }
+        
+        instances = Array.isArray(data) ? data : (data.instances || []);
+        currentInstanceId = data.currentId || null;
+        
+        if (instances.length === 0) {
+            instanceList.innerHTML = '<p>No instances configured. Add one using the form above.</p>';
+        } else {
+            instanceList.innerHTML = instances.map(instance => `
+                <div class="instance-item" style="padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; background: ${currentInstanceId === instance.id ? '#d5f5e3' : '#f9f9f9'};">
+                    <h4 style="margin-top: 0;">${instance.name || instance.id}</h4>
+                    <p><strong>URL:</strong> ${instance.url}</p>
+                    <p><strong>Actor:</strong> ${instance.defaultActor || 'Not configured'}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="status-${instance.status || 'unknown'}">${instance.status || 'unknown'}</span>
+                    </p>
+                    <button onclick="switchInstance('${instance.id}')" ${currentInstanceId === instance.id ? 'disabled' : ''}>Switch to Instance</button>
+                    <button onclick="removeInstance('${instance.id}')">Remove</button>
+                    <button onclick="checkInstanceStatus('${instance.id}')">Check Status</button>
+                </div>
+            `).join('');
+        }
+        
+        compareSelect1.innerHTML = '<option value="">-- Select Instance 1 --</option>' + 
+            instances.map(i => `<option value="${i.id}">${i.name || i.id}</option>`).join('');
+        compareSelect2.innerHTML = '<option value="">-- Select Instance 2 --</option>' + 
+            instances.map(i => `<option value="${i.id}">${i.name || i.id}</option>`).join('');
+        
+        if (currentInstanceId) {
+            await checkInstanceStatus(currentInstanceId);
+        }
+    } catch (error) {
+        instanceList.textContent = `Error: ${error.message}`;
+    }
+}
+
+function addInstance() {
+    const name = document.getElementById('instanceName').value.trim();
+    const url = document.getElementById('instanceUrl').value.trim();
+    const actor = document.getElementById('instanceActor').value.trim();
+    
+    if (!name || !url) {
+        alert('Please enter at least a name and URL for the instance');
+        return;
+    }
+    
+    const instance = {
+        id: 'instance-' + Date.now(),
+        name: name,
+        url: url,
+        defaultActor: actor,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+    
+    fetchJson(`${API_BASE}/demo/instances`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(instance)
+    })
+    .then(data => {
+        if (data.error) {
+            alert(`Error adding instance: ${data.error}`);
+        } else {
+            alert(`Instance "${name}" added successfully!`);
+            document.getElementById('instanceName').value = '';
+            document.getElementById('instanceUrl').value = '';
+            document.getElementById('instanceActor').value = '';
+            loadInstancesSection();
+        }
+    })
+    .catch(error => {
+        alert(`Error: ${error.message}`);
+    });
+}
+
+function removeInstance(instanceId) {
+    if (!confirm('Are you sure you want to remove this instance?')) return;
+    
+    fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instanceId)}`, {
+        method: 'DELETE'
+    })
+    .then(data => {
+        if (data.error) {
+            alert(`Error removing instance: ${data.error}`);
+        } else {
+            alert('Instance removed successfully');
+            loadInstancesSection();
+        }
+    })
+    .catch(error => {
+        alert(`Error: ${error.message}`);
+    });
+}
+
+function switchInstance(instanceId) {
+    currentInstanceId = instanceId;
+    
+    fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instanceId)}/switch`, {
+        method: 'POST'
+    })
+    .then(data => {
+        if (data.error) {
+            alert(`Error switching instance: ${data.error}`);
+        } else {
+            alert(`Switched to instance: ${data.instanceName || instanceId}`);
+            loadInstancesSection();
+        }
+    })
+    .catch(error => {
+        alert(`Error: ${error.message}`);
+    });
+}
+
+function checkInstanceStatus(instanceId) {
+    const statusDiv = document.getElementById('currentInstanceStatus');
+    statusDiv.textContent = 'Checking instance status...';
+    
+    fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instanceId)}/status`)
+        .then(data => {
+            if (data.error) {
+                statusDiv.innerHTML = `<strong>Error checking status:</strong> ${data.error}`;
+            } else {
+                statusDiv.innerHTML = `
+                    <strong>Instance Status:</strong>
+                    <br>Status: <span class="status-${data.status || 'unknown'}">${data.status || 'unknown'}</span>
+                    <br>URL: ${data.url || 'N/A'}
+                    <br>Version: ${data.version || 'N/A'}
+                    <br>Response Time: ${data.responseTime || 'N/A'}
+                    <br>Timestamp: ${data.timestamp || 'N/A'}
+                    ${data.actors ? `<br><strong>Actors:</strong> ${data.actors}` : ''}
+                `;
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        });
+}
+
+function compareConfigurations() {
+    const instance1Id = document.getElementById('compareInstance1Select').value;
+    const instance2Id = document.getElementById('compareInstance2Select').value;
+    const comparisonDiv = document.getElementById('configComparison');
+    
+    if (!instance1Id || !instance2Id) {
+        alert('Please select two instances to compare');
+        return;
+    }
+    
+    comparisonDiv.textContent = 'Loading configurations...';
+    
+    Promise.all([
+        fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instance1Id)}/config`),
+        fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instance2Id)}/config`)
+    ])
+    .then(results => {
+        const [config1, config2] = results;
+        
+        if (config1.error || config2.error) {
+            comparisonDiv.innerHTML = `<strong>Error:</strong> ${config1.error || config2.error}`;
+            return;
+        }
+        
+        comparisonDiv.innerHTML = `
+            <h4>Configuration Comparison</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr>
+                        <th style="padding: 10px; border: 1px solid #ddd; background: #3498db; color: white;">Setting</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; background: #d5f5e3; color: #275e35;">${config1.name || instance1Id}</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; background: #d5f5e3; color: #275e35;">${config2.name || instance2Id}</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">Match</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Name</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.name || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config2.name || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.name === config2.name ? '✓' : '✗'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>URL</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.url || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config2.url || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.url === config2.url ? '✓' : '✗'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Domain</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.domain || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config2.domain || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.domain === config2.domain ? '✓' : '✗'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Port</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.port || 'N/A'}</td>
+                        <td style="padding: 10px; border: 10px solid #ddd;">${config2.port || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.port === config2.port ? '✓' : '✗'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Default Actor</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.defaultActor || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config2.defaultActor || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.defaultActor === config2.defaultActor ? '✓' : '✗'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Enabled</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.enabled !== undefined ? (config1.enabled ? 'Yes' : 'No') : 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config2.enabled !== undefined ? (config2.enabled ? 'Yes' : 'No') : 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${config1.enabled === config2.enabled ? '✓' : '✗'}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+    })
+    .catch(error => {
+        comparisonDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+    });
+}
+
+function getInstanceStatus(instanceId) {
+    return fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instanceId)}/status`);
+}
+
+function checkInstanceStatus(instanceId) {
+    const statusDiv = document.getElementById('currentInstanceStatus');
+    statusDiv.textContent = 'Checking instance status...';
+    
+    fetchJson(`${API_BASE}/demo/instances/${encodeURIComponent(instanceId)}/status`)
+        .then(data => {
+            if (data.error) {
+                statusDiv.innerHTML = `<strong>Error checking status:</strong> ${data.error}`;
+            } else {
+                statusDiv.innerHTML = `
+                    <strong>Instance Status:</strong>
+                    <br>Status: <span class="status-${data.status || 'unknown'}">${data.status || 'unknown'}</span>
+                    <br>URL: ${data.url || 'N/A'}
+                    <br>Response Time: ${data.responseTime || 'N/A'}
+                    <br>Timestamp: ${data.timestamp || 'N/A'}
+                    ${data.actors ? `<br><strong>Actors:</strong> ${data.actors}` : ''}
+                `;
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        });
 }
