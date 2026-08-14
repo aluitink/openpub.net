@@ -51,6 +51,8 @@ async function showSection(sectionId) {
         loadFederationDashboard();
     } else if (sectionId === 'analytics-dashboard') {
         loadAnalyticsSection();
+    } else if (sectionId === 'api-documentation') {
+        loadApiDocsSection();
     } else if (sectionId === 'service-simulator') {
         loadServiceSimulatorSection();
     } else if (sectionId === 'protocol-debug') {
@@ -1504,4 +1506,260 @@ function loadFederationSection() {
 function loadModerationSection() {
     document.getElementById('moderationLogs').textContent = 'Loading moderation settings...';
     document.getElementById('mrfRulesList').textContent = 'No MRF rules configured';
+}
+
+const apiSpec = {
+    endpoints: [
+        { method: 'GET', path: '/demo/status', category: 'System', description: 'Get service status', response: { status: 'healthy', version: '1.0.0' } },
+        { method: 'GET', path: '/demo/actors', category: 'Actors', description: 'List all actors', response: [{ id: 1, username: 'testuser' }] },
+        { method: 'POST', path: '/demo/actors', category: 'Actors', description: 'Create a new actor', request: { username: 'string' }, response: { id: 1, username: 'testuser', createdAt: '2026-08-14' } },
+        { method: 'GET', path: '/demo/actors/{id}', category: 'Actors', description: 'Get actor by ID', response: { id: 1, username: 'testuser' } },
+        { method: 'PUT', path: '/demo/actors/{id}', category: 'Actors', description: 'Update actor', request: { username: 'string' }, response: { id: 1, username: 'updateduser' } },
+        { method: 'DELETE', path: '/demo/actors/{id}', category: 'Actors', description: 'Delete actor', response: { success: true } },
+        { method: 'GET', path: '/demo/activities', category: 'Activities', description: 'List activities', response: [{ id: 1, type: 'Create', content: 'Hello' }] },
+        { method: 'POST', path: '/demo/activities', category: 'Activities', description: 'Submit new activity', request: { activityId: 'string', jsonData: 'object' }, response: { id: 1, submitted: true } },
+        { method: 'GET', path: '/demo/activities/{id}', category: 'Activities', description: 'Get activity by ID', response: { id: 1, type: 'Create', content: 'Hello' } },
+        { method: 'POST', path: '/demo/keys', category: 'Keys', description: 'Generate RSA key pair', response: { privateKey: '...', publicKey: '...' } },
+        { method: 'GET', path: '/demo/templates', category: 'Templates', description: 'List message templates', response: [{ id: 'create-note', name: 'Create Note', category: 'Activity' }] },
+        { method: 'POST', path: '/demo/moderation/apply', category: 'Moderation', description: 'Apply moderation settings', request: { blockKeywords: [], blockDomains: [] }, response: { success: true } },
+        { method: 'POST', path: '/demo/federation/peers', category: 'Federation', description: 'Add federation peer', request: { domain: 'string' }, response: { success: true } },
+        { method: 'GET', path: '/demo/config', category: 'Config', description: 'Get configuration', response: { domain: 'localhost', port: 8080 } },
+        { method: 'POST', path: '/demo/config', category: 'Config', description: 'Save configuration', request: { domain: 'string' }, response: { success: true } }
+    ],
+    errorCodes: {
+        '400': 'Bad Request - Invalid parameters or malformed JSON',
+        '401': 'Unauthorized - Missing or invalid authentication',
+        '403': 'Forbidden - Insufficient permissions',
+        '404': 'Not Found - Resource not found',
+        '405': 'Method Not Allowed - HTTP method not supported',
+        '409': 'Conflict - Resource already exists',
+        '422': 'Unprocessable Entity - Validation failed',
+        '500': 'Internal Server Error - Server error occurred',
+        '502': 'Bad Gateway - Upstream service error',
+        '503': 'Service Unavailable - Service temporarily unavailable'
+    },
+    responseSchemas: {
+        Actor: {
+            id: 'integer',
+            username: 'string',
+            inbox: 'string (URL)',
+            outbox: 'string (URL)',
+            followers: 'string (URL)',
+            following: 'string (URL)'
+        },
+        Activity: {
+            id: 'string (URL)',
+            type: 'string (Create, Update, Delete, etc.)',
+            actor: 'string (URL)',
+            object: 'object or string',
+            published: 'string (ISO 8601 date)',
+            to: 'array of URLs',
+            cc: 'array of URLs (optional)'
+        },
+        Error: {
+            error: 'string',
+            message: 'string',
+            statusCode: 'integer',
+            timestamp: 'string (ISO 8601)'
+        }
+    }
+};
+
+async function loadApiDocsSection() {
+    document.getElementById('apiSearchInput').value = '';
+    await fetchEndpoints();
+    displayResponseSchemas();
+    displayErrorCodes();
+}
+
+async function fetchEndpoints() {
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/api/endpoints`);
+        const endpoints = data.error ? apiSpec.endpoints : (Array.isArray(data) ? data : apiSpec.endpoints);
+        displayEndpoints(endpoints);
+        tryEndpointData = endpoints[0];
+        updateTryEndpointForm(tryEndpointData);
+    } catch (error) {
+        displayEndpoints(apiSpec.endpoints);
+        tryEndpointData = apiSpec.endpoints[0];
+        updateTryEndpointForm(tryEndpointData);
+    }
+}
+
+let tryEndpointData = null;
+
+function displayEndpoints(endpoints) {
+    const listDiv = document.getElementById('apiEndpointsList');
+    if (!endpoints || endpoints.length === 0) {
+        listDiv.innerHTML = '<p>No endpoints found.</p>';
+        return;
+    }
+    
+    listDiv.innerHTML = endpoints.map(ep => `
+        <div class="endpoint-item" style="padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <span style="padding: 3px 8px; border-radius: 3px; background: ${getMethodColor(ep.method)}; color: white; font-weight: bold; margin-right: 10px;">
+                    ${ep.method}
+                </span>
+                <span style="font-family: monospace; font-size: 14px;">${ep.path}</span>
+            </div>
+            <p style="margin: 5px 0; color: #666;">${ep.description || ''}</p>
+            <p style="margin: 5px 0; font-size: 12px; color: #888;">Category: ${ep.category || 'Uncategorized'}</p>
+            <button onclick="tryEndpoint(${JSON.stringify(ep).replace(/"/g, '&quot;')})" style="margin-top: 10px; padding: 5px 10px; cursor: pointer;">
+                Try It Out
+            </button>
+        </div>
+    `).join('');
+}
+
+function getMethodColor(method) {
+    const colors = {
+        'GET': '#27ae60',
+        'POST': '#3498db',
+        'PUT': '#f39c12',
+        'DELETE': '#e74c3c'
+    };
+    return colors[method] || '#7f8c8d';
+}
+
+function updateTryEndpointForm(endpoint) {
+    if (!endpoint) return;
+    document.getElementById('tryEndpointUrl').value = endpoint.path;
+    document.getElementById('tryEndpointMethod').value = endpoint.method;
+}
+
+async function tryEndpoint(endpoint) {
+    if (!endpoint || !endpoint.path) {
+        alert('Invalid endpoint');
+        return;
+    }
+    
+    const resultDiv = document.getElementById('tryItOutResponse');
+    const method = document.getElementById('tryEndpointMethod').value;
+    const url = `${API_BASE}${endpoint.path}`;
+    
+    resultDiv.innerHTML = 'Making request...';
+    
+    try {
+        const fetchOptions = {
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        
+        if (method === 'POST' || method === 'PUT') {
+            const bodyData = getSampleRequestBody(endpoint);
+            if (bodyData) {
+                fetchOptions.body = JSON.stringify(bodyData);
+            }
+        }
+        
+        const data = await fetchJson(url, fetchOptions);
+        
+        resultDiv.innerHTML = `<strong>Response Status:</strong> ${data.error ? 'Error' : 'Success'}<br><br>
+            <strong>Response Data:</strong><br>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px;">${JSON.stringify(data, null, 2)}</pre>`;
+        
+        if (data.error) {
+            showErrorCode(getErrorCodeFromError(data.error));
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}<br><br>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px;">${error.stack || ''}</pre>`;
+    }
+}
+
+function getSampleRequestBody(endpoint) {
+    if (endpoint.request) {
+        return endpoint.request;
+    }
+    
+    const method = endpoint.method;
+    if (method === 'POST' || method === 'PUT') {
+        if (endpoint.path.includes('actors')) {
+            return { username: 'testuser' };
+        } else if (endpoint.path.includes('activities')) {
+            return { activityId: 'test-' + Date.now(), jsonData: JSON.stringify({ type: 'Create', content: 'Test' }) };
+        } else if (endpoint.path.includes('config')) {
+            return { domain: 'localhost' };
+        } else if (endpoint.path.includes('moderation')) {
+            return { blockKeywords: ['badword'], blockDomains: [] };
+        }
+    }
+    
+    return null;
+}
+
+function showResponse(data) {
+    const resultDiv = document.getElementById('tryItOutResponse');
+    resultDiv.innerHTML = `<strong>Response Data:</strong><br>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px;">${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+function showErrorCode(code) {
+    const errorDiv = document.getElementById('errorCodes');
+    const codeStr = String(code);
+    
+    if (apiSpec.errorCodes[codeStr]) {
+        alert(`Error ${codeStr}: ${apiSpec.errorCodes[codeStr]}`);
+        errorDiv.innerHTML = `<strong>Error Code ${codeStr} Details:</strong>
+            <br><p style="color: #e74c3c;">${apiSpec.errorCodes[codeStr]}</p>`;
+    } else {
+        alert(`Unknown error: ${code}`);
+    }
+}
+
+function filterEndpoints(category) {
+    const listDiv = document.getElementById('apiEndpointsList');
+    const searchValue = document.getElementById('apiSearchInput').value.toLowerCase();
+    
+    let filtered = apiSpec.endpoints;
+    
+    if (category && category !== 'all') {
+        filtered = filtered.filter(ep => ep.method === category);
+    }
+    
+    if (searchValue) {
+        filtered = filtered.filter(ep => 
+            ep.path.toLowerCase().includes(searchValue) ||
+            (ep.description && ep.description.toLowerCase().includes(searchValue)) ||
+            ep.category?.toLowerCase().includes(searchValue)
+        );
+    }
+    
+    displayEndpoints(filtered);
+}
+
+function displayResponseSchemas() {
+    const schemasDiv = document.getElementById('responseSchemas');
+    schemasDiv.innerHTML = Object.entries(apiSpec.responseSchemas).map(([name, schema]) => `
+        <div style="padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">
+            <h4 style="margin-top: 0;">${name}</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                ${Object.entries(schema).map(([field, type]) => `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">${field}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #666;">${type}</td>
+                    </tr>
+                `).join('')}
+            </table>
+        </div>
+    `).join('');
+}
+
+function displayErrorCodes() {
+    const errorDiv = document.getElementById('errorCodes');
+    errorDiv.innerHTML = Object.entries(apiSpec.errorCodes).map(([code, description]) => `
+        <div style="padding: 10px; margin-bottom: 10px; border-left: 4px solid #e74c3c; background: #fef5f5;">
+            <strong>HTTP ${code}</strong>: ${description}
+        </div>
+    `).join('');
+}
+
+function getErrorCodeFromError(errorMsg) {
+    const match = errorMsg.match(/HTTP (\d+)/);
+    return match ? parseInt(match[1]) : 500;
+}
+
+function loadApiDocumentationSection() {
+    loadApiDocsSection();
 }

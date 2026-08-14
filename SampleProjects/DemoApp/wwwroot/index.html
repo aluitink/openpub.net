@@ -24,6 +24,7 @@
             <button onclick="showSection('webfinger-simulator')">WebFinger</button>
             <button onclick="showSection('federation-dashboard')">Federation</button>
             <button onclick="showSection('analytics-dashboard')">Analytics</button>
+            <button onclick="showSection('api-documentation')">API Docs</button>
         </nav>
     </header>
 
@@ -293,6 +294,52 @@
             <div class="chart-container">
                 <canvas id="trendsChart"></canvas>
             </div>
+        </section>
+
+        <section id="api-documentation" class="hidden">
+            <h2>API Documentation</h2>
+            
+            <div class="search-box" style="margin-bottom: 20px;">
+                <input type="text" id="apiSearchInput" placeholder="Search endpoints..." oninput="filterEndpoints(this.value)">
+            </div>
+            
+            <div class="button-group" style="margin-bottom: 20px;">
+                <button onclick="filterEndpoints('all')">All</button>
+                <button onclick="filterEndpoints('GET')">GET</button>
+                <button onclick="filterEndpoints('POST')">POST</button>
+                <button onclick="filterEndpoints('PUT')">PUT</button>
+                <button onclick="filterEndpoints('DELETE')">DELETE</button>
+            </div>
+            
+            <h3>API Endpoints</h3>
+            <div id="apiEndpointsList" class="result-box"></div>
+            
+            <h3>Try It Out</h3>
+            <div id="tryItOutSection" class="result-box">
+                <div id="tryItOutForm" class="form-group">
+                    <label for="tryEndpointUrl">Endpoint URL:</label>
+                    <input type="text" id="tryEndpointUrl" readonly style="width: 100%;">
+                    <div style="margin-top: 10px;">
+                        <label for="tryEndpointMethod">Method:</label>
+                        <select id="tryEndpointMethod">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button onclick="tryEndpoint(tryEndpointData)">Try It</button>
+                    </div>
+                </div>
+                <div id="tryItOutResponse" class="response-box"></div>
+            </div>
+            
+            <h3>Response Schemas</h3>
+            <div id="responseSchemas" class="result-box"></div>
+            
+            <h3>Error Codes</h3>
+            <div id="errorCodes" class="result-box"></div>
         </section>
 
         <section id="http-signature" class="hidden">
