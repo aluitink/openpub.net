@@ -29,13 +29,15 @@ public class MRFService : IMRFService
             return null;
         }
 
-        activity = ApplyRules(activity);
+        var filteredActivity = ApplyRules(activity);
 
-        if (activity == null)
+        if (filteredActivity == null)
         {
             _logger.LogInformation("Activity filtered by MRF rules");
             return null;
         }
+
+        activity = filteredActivity;
 
         if (activity.Type == "Create" && activity.Object is not ActivityPub.Core.Models.Object)
         {

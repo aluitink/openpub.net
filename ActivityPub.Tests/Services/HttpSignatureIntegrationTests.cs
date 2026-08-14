@@ -16,7 +16,7 @@ public class HttpSignatureIntegrationTests
     public void HttpSignature_VerifySignatureWithRealKey()
     {
         var logger = Mock.Of<ILogger<HttpSignatureMiddleware>>();
-        var middleware = new HttpSignatureMiddleware(null, logger);
+        var middleware = new HttpSignatureMiddleware(_ => Task.CompletedTask, logger);
         
         using var rsa = RSA.Create();
         var privateKeyPem = rsa.ExportPkcs8PrivateKeyPem();

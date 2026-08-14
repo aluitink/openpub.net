@@ -38,6 +38,9 @@ public class ActivityValidationService : IActivityValidationService
 
             var jsonObject = node.AsObject();
 
+            if (!ValidateContext(jsonObject, errors))
+                return false;
+
             if (!ValidateActivityType(jsonObject, errors))
                 return false;
 
@@ -60,6 +63,24 @@ public class ActivityValidationService : IActivityValidationService
         }
 
         return errors.Count == 0;
+    }
+
+    private bool ValidateContext(JsonObject node, List<string> errors)
+    {
+        if (!node.ContainsKey("@context") || node["@context"] == null || string.IsNullOrEmpty(node["@context"]?.ToString()))
+        {
+            errors.Add("@context is required for ActivityPub JSON-LD");
+            return false;
+        }
+
+        var context = node["@context"]?.ToString();
+        if (!Uri.TryCreate(context, UriKind.Absolute, out _))
+        {
+            errors.Add("@context must be a valid absolute URI or array of URIs");
+            return false;
+        }
+
+        return true;
     }
 
     private bool ValidateActivityType(JsonObject node, List<string> errors)
@@ -173,9 +194,72 @@ public class ActivityValidationService : IActivityValidationService
 
         return true;
     }
+
+    public bool ValidateWithCorrections(string activityJson, out List<string> errors, out List<string> corrections)
+    {
+        errors = new List<string>();
+        corrections = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(activityJson))
+        {
+            errors.Add("Activity JSON is null or empty");
+            return false;
+        }
+
+        try
+        {
+            var node = JsonNode.Parse(activityJson);
+            if (node == null)
+            {
+                errors.Add("Failed to parse activity JSON");
+                return false;
+            }
+
+            var jsonObject = node.AsObject();
+
+            if (!ValidateContext(jsonObject, errors))
+            {
+                corrections.Add("Add @context: https://www.w3.org/ns/activitystreams");
+            }
+
+            if (!ValidateActivityType(jsonObject, errors))
+            {
+                corrections.Add("Add type: Create or another valid activity type");
+            }
+
+            if (!ValidateId(jsonObject, errors))
+            {
+                corrections.Add("Add id with a valid absolute URI (e.g., https://example.com/activities/123)");
+            }
+
+            if (!ValidateActor(jsonObject, errors))
+            {
+                corrections.Add("Add actor with a valid actor object or URL");
+            }
+
+            if (!ValidateObject(jsonObject, errors))
+            {
+                corrections.Add("Add object with a valid URL or object");
+            }
+
+            if (!ValidateTimestamp(jsonObject, errors))
+            {
+                corrections.Add("Add published timestamp in ISO 8601 format (e.g., 2024-01-01T00:00:00Z)");
+            }
+        }
+        catch (JsonException ex)
+        {
+            errors.Add($"JSON parsing error: {ex.Message}");
+            corrections.Add("Ensure valid JSON syntax");
+            return false;
+        }
+
+        return errors.Count == 0;
+    }
 }
 
 public interface IActivityValidationService
 {
     bool Validate(string activityJson, out List<string> errors);
+    bool ValidateWithCorrections(string activityJson, out List<string> errors, out List<string> corrections);
 }

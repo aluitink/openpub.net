@@ -43,7 +43,7 @@ public class WebSubServiceTests
         var options = new WebSubOptions();
         var service = new WebSubService(new Mock<IHttpClientFactory>().Object, options);
 
-        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync(null, "https://example.com/actor", "3600", "test-challenge", "https://callback.example.com/websub"));
+        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("", "https://example.com/actor", "3600", "test-challenge", "https://callback.example.com/websub"));
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class WebSubServiceTests
         var options = new WebSubOptions();
         var service = new WebSubService(new Mock<IHttpClientFactory>().Object, options);
 
-        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("subscribe", null, "3600", "test-challenge", "https://callback.example.com/websub"));
+        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("subscribe", "", "3600", "test-challenge", "https://callback.example.com/websub"));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class WebSubServiceTests
         var options = new WebSubOptions();
         var service = new WebSubService(new Mock<IHttpClientFactory>().Object, options);
 
-        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("subscribe", "https://example.com/actor", "3600", null, "https://callback.example.com/websub"));
+        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("subscribe", "https://example.com/actor", "3600", "", "https://callback.example.com/websub"));
     }
 
     [Fact]
@@ -70,6 +70,6 @@ public class WebSubServiceTests
         var options = new WebSubOptions();
         var service = new WebSubService(new Mock<IHttpClientFactory>().Object, options);
 
-        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("subscribe", "https://example.com/actor", "3600", "test-challenge", null));
+        Assert.Throws<ArgumentException>(() => service.VerifySubscriptionAsync("subscribe", "https://example.com/actor", "3600", "test-challenge", ""));
     }
 }

@@ -134,7 +134,7 @@ public class ActivityCacheServiceTests
     {
         var cache = new ActivityCacheService();
 
-        var result = await cache.GetAsync(null);
+        var result = await cache.GetAsync(string.Empty);
 
         Assert.Null(result);
     }
@@ -144,7 +144,7 @@ public class ActivityCacheServiceTests
     {
         var cache = new ActivityCacheService();
 
-        await cache.SetAsync("test-key", null);
+        await cache.SetAsync("test-key", null!);
 
         Assert.Equal(0, cache.GetCount());
     }
@@ -166,7 +166,7 @@ public class ActivityCacheServiceTests
             }
         };
 
-        await cache.SetAsync(null, activity);
+        await cache.SetAsync(string.Empty, activity);
 
         Assert.Equal(0, cache.GetCount());
     }

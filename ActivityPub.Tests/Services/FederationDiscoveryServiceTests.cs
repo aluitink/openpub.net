@@ -31,7 +31,7 @@ public class FederationDiscoveryServiceTests
     public async Task DiscoverEndpointAsync_NullDomain_ReturnsNull()
     {
         // Act
-        var result = await _service.DiscoverEndpointAsync(null);
+        var result = await _service.DiscoverEndpointAsync(string.Empty);
 
         // Assert
         Assert.Null(result);

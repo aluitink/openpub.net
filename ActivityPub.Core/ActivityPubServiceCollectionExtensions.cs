@@ -49,6 +49,7 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<InboxProcessorService>();
         services.AddScoped<ActivityHandlerFactory>();
         services.AddScoped<WebFingerCacheService>();
+        services.AddScoped<IActivityValidationService, ActivityValidationService>();
 
         return services;
     }

@@ -158,7 +158,7 @@ public class MRFServiceTests
         var activity = new Activity
         {
             Id = "https://example.com/activity/1",
-            Type = null,
+            Type = null!,
             Object = new ActivityPub.Core.Models.Object
             {
                 Id = "https://example.com/object/1",

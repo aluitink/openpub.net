@@ -46,6 +46,7 @@ public class ActivityValidationServiceTests
     {
         var activity = """
         {
+            "@context": "https://www.w3.org/ns/activitystreams",
             "type": "Create",
             "id": "https://example.com/activities/123",
             "actor": {
@@ -68,6 +69,7 @@ public class ActivityValidationServiceTests
     {
         var activity = """
         {
+            "@context": "https://www.w3.org/ns/activitystreams",
             "id": "https://example.com/activities/123",
             "actor": {
                 "id": "https://example.com/users/test",
@@ -88,6 +90,7 @@ public class ActivityValidationServiceTests
     {
         var activity = """
         {
+            "@context": "https://www.w3.org/ns/activitystreams",
             "type": "Create",
             "id": "https://example.com/activities/123",
             "object": "https://example.com/objects/456"

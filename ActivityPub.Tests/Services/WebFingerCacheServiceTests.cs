@@ -42,7 +42,7 @@ public class WebFingerCacheServiceTests
 
         Assert.NotNull(result);
         Assert.Equal("acct:test@example.com", result.Subject);
-        Assert.Equal(1, result.Links.Length);
+        Assert.Single(result.Links);
     }
 
     [Fact]
