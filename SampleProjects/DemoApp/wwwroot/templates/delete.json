@@ -1,0 +1,19 @@
+{
+  "id": "delete",
+  "name": "Delete Object",
+  "category": "Object",
+  "description": "Delete an object",
+  "activityType": "Delete",
+  "objectType": "Note",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Delete",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/notes/uuid-here",
+      "type": "Note"
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

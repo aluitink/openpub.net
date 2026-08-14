@@ -1,0 +1,38 @@
+{
+  "id": "question",
+  "name": "Question Object",
+  "category": "Object",
+  "description": "Create a question object",
+  "activityType": "Create",
+  "objectType": "Question",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Create",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/questions/uuid-here",
+      "type": "Question",
+      "name": "Question Title",
+      "oneOf": [
+        {
+          "name": "Option 1",
+          "replies": {
+            "totalItems": 0,
+            "type": "Collection"
+          }
+        },
+        {
+          "name": "Option 2",
+          "replies": {
+            "totalItems": 0,
+            "type": "Collection"
+          }
+        }
+      ],
+      "closed": "2026-09-14T00:00:00Z",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

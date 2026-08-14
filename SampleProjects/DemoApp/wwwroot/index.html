@@ -14,6 +14,7 @@
             <button onclick="showSection('actors')">Actors</button>
             <button onclick="showSection('activities')">Activities</button>
             <button onclick="showSection('templates')">Templates</button>
+            <button onclick="showSection('explorer')">Explorer</button>
             <button onclick="showSection('config')">Config</button>
             <button onclick="showSection('queues')">Queues</button>
             <button onclick="showSection('http-signature')">HTTP Sig</button>
@@ -79,6 +80,22 @@
                 <button id="submitFromTemplateBtn">Submit Activity</button>
             </div>
             <div id="templateResult" class="result-box"></div>
+        </section>
+
+        <section id="explorer" class="hidden">
+            <h2>ActivityPub Explorer</h2>
+            <div class="form-group">
+                <label for="actorUrlInput">Actor URL:</label>
+                <input type="text" id="actorUrlInput" placeholder="e.g., https://example.com/users/username">
+            </div>
+            <div class="button-group">
+                <button id="loadActorBtn">Load Actor Profile</button>
+                <button id="loadActivitiesBtn">Load Activity Collection</button>
+                <button id="traceChainBtn">Trace Activity Chain</button>
+            </div>
+            <div id="explorerResult" class="result-box"></div>
+            <h3>Activity Collections</h3>
+            <div id="explorerActivities" class="result-box"></div>
         </section>
 
         <section id="config" class="hidden">

@@ -1,0 +1,23 @@
+{
+  "id": "page",
+  "name": "Page Object",
+  "category": "Object",
+  "description": "Create a page object",
+  "activityType": "Create",
+  "objectType": "Page",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Create",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/pages/uuid-here",
+      "type": "Page",
+      "name": "Page Title",
+      "content": "<p>Page content</p>",
+      "url": "https://localhost:8080/pages/page.html",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

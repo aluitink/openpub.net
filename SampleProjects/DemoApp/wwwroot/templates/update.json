@@ -1,0 +1,23 @@
+{
+  "id": "update",
+  "name": "Update Object",
+  "category": "Object",
+  "description": "Update an object",
+  "activityType": "Update",
+  "objectType": "Note",
+  "template": {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    "id": "https://localhost:8080/activities/uuid-here",
+    "type": "Update",
+    "actor": "https://localhost:8080/users/username",
+    "object": {
+      "id": "https://localhost:8080/notes/uuid-here",
+      "type": "Note",
+      "name": "Updated Title",
+      "content": "Updated content",
+      "updated": "2026-08-14T00:00:00Z",
+      "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    },
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}

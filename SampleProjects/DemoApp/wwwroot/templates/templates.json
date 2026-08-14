@@ -107,6 +107,66 @@
       "name": "Move Actor",
       "category": "Protocol",
       "description": "Move to a new actor URL"
+    },
+    {
+      "id": "accept",
+      "name": "Accept Activity",
+      "category": "Relationship",
+      "description": "Accept an activity"
+    },
+    {
+      "id": "reject",
+      "name": "Reject Activity",
+      "category": "Relationship",
+      "description": "Reject an activity"
+    },
+    {
+      "id": "undo",
+      "name": "Undo Activity",
+      "category": "Protocol",
+      "description": "Undo an activity"
+    },
+    {
+      "id": "delete",
+      "name": "Delete Object",
+      "category": "Object",
+      "description": "Delete an object"
+    },
+    {
+      "id": "update",
+      "name": "Update Object",
+      "category": "Object",
+      "description": "Update an object"
+    },
+    {
+      "id": "image",
+      "name": "Image Object",
+      "category": "Object",
+      "description": "Create an image object"
+    },
+    {
+      "id": "video",
+      "name": "Video Object",
+      "category": "Object",
+      "description": "Create a video object"
+    },
+    {
+      "id": "audio",
+      "name": "Audio Object",
+      "category": "Object",
+      "description": "Create an audio object"
+    },
+    {
+      "id": "page",
+      "name": "Page Object",
+      "category": "Object",
+      "description": "Create a page object"
+    },
+    {
+      "id": "question",
+      "name": "Question Object",
+      "category": "Object",
+      "description": "Create a question object"
     }
   ]
 }

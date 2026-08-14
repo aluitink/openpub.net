@@ -392,6 +392,52 @@ app.MapGet("/demo/protocol/validate", async (HttpContext context) =>
     });
 });
 
+app.MapGet("/demo/explorer/activities", async (string actorUrl, HttpClient httpClient) =>
+{
+    if (string.IsNullOrWhiteSpace(actorUrl))
+        return Results.BadRequest("Actor URL parameter required");
+    
+    try
+    {
+        var response = await httpClient.GetStringAsync(actorUrl);
+        var activities = new
+        {
+            ActorUrl = actorUrl,
+            Activities = new[]
+            {
+                new { Id = Guid.NewGuid().ToString(), Type = "Create", Content = "Sample activity from explorer" }
+            }
+        };
+        
+        return Results.Ok(activities);
+    }
+    catch
+    {
+        return Results.Ok(new
+        {
+            ActorUrl = actorUrl,
+            Activities = Array.Empty<object>()
+        });
+    }
+});
+
+app.MapGet("/demo/explorer/trace", async (string actorUrl, HttpClient httpClient) =>
+{
+    if (string.IsNullOrWhiteSpace(actorUrl))
+        return Results.BadRequest("Actor URL parameter required");
+    
+    return Results.Ok(new
+    {
+        ActorUrl = actorUrl,
+        Chain = new[]
+        {
+            new { Id = Guid.NewGuid().ToString(), Type = "Follow", Timestamp = DateTime.UtcNow.ToString("o") },
+            new { Id = Guid.NewGuid().ToString(), Type = "Accept", Timestamp = DateTime.UtcNow.ToString("o") }
+        },
+        TraceCompleted = true
+    });
+});
+
 app.Run();
 
 public class QueueItem

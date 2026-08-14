@@ -45,6 +45,8 @@ async function showSection(sectionId) {
         loadServiceSimulatorSection();
     } else if (sectionId === 'protocol-debug') {
         loadProtocolDebugSection();
+    } else if (sectionId === 'explorer') {
+        loadExplorerSection();
     }
 }
 
@@ -647,4 +649,93 @@ async function validateProtocol() {
     } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
     }
+}
+
+document.getElementById('actorUrlInput').addEventListener('change', () => {
+    const url = document.getElementById('actorUrlInput').value.trim();
+    if (url) {
+        document.getElementById('loadActorBtn').disabled = false;
+        document.getElementById('loadActivitiesBtn').disabled = false;
+    }
+});
+
+document.getElementById('loadActorBtn').addEventListener('click', async () => {
+    const url = document.getElementById('actorUrlInput').value.trim();
+    const resultDiv = document.getElementById('explorerResult');
+    
+    if (!url) {
+        alert('Please enter an actor URL');
+        return;
+    }
+    
+    resultDiv.textContent = 'Loading actor profile...';
+    
+    try {
+        const data = await fetchJson(url);
+        
+        if (data.error) {
+            resultDiv.textContent = `Error fetching actor: ${data.error}`;
+        } else {
+            resultDiv.innerHTML = `<strong>Actor Profile:</strong>\n${JSON.stringify(data, null, 2)}`;
+        }
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+});
+
+document.getElementById('loadActivitiesBtn').addEventListener('click', async () => {
+    const url = document.getElementById('actorUrlInput').value.trim();
+    const resultDiv = document.getElementById('explorerActivities');
+    
+    if (!url) {
+        alert('Please enter an actor URL');
+        return;
+    }
+    
+    resultDiv.textContent = 'Loading activity collection...';
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/explorer/activities?actorUrl=${encodeURIComponent(url)}`);
+        
+        if (data.error) {
+            resultDiv.textContent = `Error fetching activities: ${data.error}`;
+        } else {
+            resultDiv.innerHTML = `<strong>Activity Collection:</strong>\n${JSON.stringify(data, null, 2)}`;
+        }
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+});
+
+document.getElementById('traceChainBtn').addEventListener('click', async () => {
+    const url = document.getElementById('actorUrlInput').value.trim();
+    const resultDiv = document.getElementById('explorerResult');
+    
+    if (!url) {
+        alert('Please enter an actor URL');
+        return;
+    }
+    
+    resultDiv.textContent = 'Tracing activity chain...';
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/explorer/trace?actorUrl=${encodeURIComponent(url)}`);
+        
+        if (data.error) {
+            resultDiv.textContent = `Error tracing chain: ${data.error}`;
+        } else {
+            resultDiv.innerHTML = `<strong>Activity Chain:</strong>\n${JSON.stringify(data, null, 2)}`;
+        }
+    } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+});
+
+function loadExplorerSection() {
+    document.getElementById('actorUrlInput').value = '';
+    document.getElementById('explorerResult').textContent = '';
+    document.getElementById('explorerActivities').textContent = '';
+    document.getElementById('loadActorBtn').disabled = true;
+    document.getElementById('loadActivitiesBtn').disabled = true;
+    document.getElementById('traceChainBtn').disabled = true;
 }
