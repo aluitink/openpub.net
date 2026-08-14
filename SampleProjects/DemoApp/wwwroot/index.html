@@ -20,6 +20,7 @@
             <button onclick="showSection('http-signature')">HTTP Sig</button>
             <button onclick="showSection('status')">Status</button>
             <button onclick="showSection('signature-debugger')">Sig Debugger</button>
+            <button onclick="showSection('content-moderation')">Moderation</button>
             <button onclick="showSection('webfinger-simulator')">WebFinger</button>
             <button onclick="showSection('federation-dashboard')">Federation</button>
         </nav>
@@ -201,6 +202,62 @@
             </div>
             <div id="sigDebuggerResult" class="result-box"></div>
             <div id="sigDebuggerSteps" class="result-box" style="margin-top: 10px;"></div>
+        </section>
+
+        <section id="content-moderation" class="hidden">
+            <h2>Content Moderation</h2>
+            
+            <h3>MRF Rules Editor</h3>
+            <div class="form-group">
+                <label for="mrfRuleKeyword">Rule Keyword:</label>
+                <input type="text" id="mrfRuleKeyword" placeholder="Enter keyword for MRF rule">
+            </div>
+            <div class="form-group">
+                <label for="mrfRuleAction">Action:</label>
+                <select id="mrfRuleAction">
+                    <option value="reject">Reject</option>
+                    <option value="accept">Accept</option>
+                    <option value="transform">Transform</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button id="addMrfRuleBtn">Add Rule</button>
+                <button id="removeMrfRuleBtn">Remove Rule</button>
+                <button id="filterMrfRulesBtn">Filter Rules</button>
+            </div>
+            <div id="mrfRulesList" class="result-box"></div>
+            
+            <h3>Block Keywords</h3>
+            <div class="form-group">
+                <label for="blockKeywordsInput">Keywords (comma-separated):</label>
+                <textarea id="blockKeywordsInput" rows="2" placeholder="keyword1, keyword2, keyword3"></textarea>
+            </div>
+            
+            <h3>Block Domains</h3>
+            <div class="form-group">
+                <label for="blockDomainsInput">Domains (comma-separated):</label>
+                <textarea id="blockDomainsInput" rows="2" placeholder="domain1.com, domain2.com, domain3.com"></textarea>
+            </div>
+            
+            <h3>Shadow Banning</h3>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="shadowBanningToggle">
+                    Enable Shadow Banning
+                </label>
+            </div>
+            
+            <h3>Moderation Logs</h3>
+            <div class="button-group">
+                <button id="viewModerationLogsBtn">View Logs</button>
+                <button id="clearModerationBtn">Clear All</button>
+                <button id="applyModerationSettingsBtn">Apply Settings</button>
+                <button id="saveModerationSettingsBtn">Save Settings</button>
+            </div>
+            <div id="moderationLogs" class="result-box"></div>
+            
+            <h3>Moderation Settings</h3>
+            <div id="moderationSettingsResult" class="result-box"></div>
         </section>
 
         <section id="http-signature" class="hidden">

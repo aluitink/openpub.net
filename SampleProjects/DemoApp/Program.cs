@@ -438,6 +438,170 @@ app.MapGet("/demo/explorer/trace", async (string actorUrl, HttpClient httpClient
     });
 });
 
+app.MapGet("/demo/federation/stats", () =>
+{
+    return Results.Ok(new
+    {
+        Outbound = new
+        {
+            Total = 12,
+            Pending = 3,
+            Processing = 1,
+            Completed = 8,
+            Failed = 1
+        },
+        Inbound = new
+        {
+            Total = 45,
+            Pending = 2,
+            Processing = 0,
+            Completed = 40,
+            Failed = 3
+        },
+        SuccessRate = 97.5,
+        AvgDeliveryTime = 2.3
+    });
+});
+
+app.MapGet("/demo/federation/peers", () =>
+{
+    return Results.Ok(new[]
+    {
+        new
+        {
+            Domain = "example.com",
+            Online = true,
+            InboxUrl = "https://example.com/inbox",
+            Version = "ActivityPub 2.0"
+        },
+        new
+        {
+            Domain = "mastodon.social",
+            Online = true,
+            InboxUrl = "https://mastodon.social/inbox",
+            Version = "ActivityPub 2.0"
+        }
+    });
+});
+
+app.MapGet("/demo/moderation/settings", () =>
+{
+    return Results.Ok(new
+    {
+        BlockKeywords = new string[] { "spam", "scam" },
+        BlockDomains = new string[] { "example-bad.com" },
+        ShadowBanning = false,
+        MrfRules = new[]
+        {
+            new { Keyword = "spam", Action = "reject", Priority = 1 },
+            new { Keyword = "scam", Action = "transform", Priority = 2 }
+        }
+    });
+});
+
+app.MapPost("/demo/moderation/mrf/rules", async (HttpContext context) =>
+{
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+    
+    var keyword = data?.GetValueOrDefault("keyword") ?? "";
+    var action = data?.GetValueOrDefault("action") ?? "reject";
+    
+    return Results.Ok(new
+    {
+        Success = !string.IsNullOrWhiteSpace(keyword),
+        Keyword = keyword,
+        Action = action,
+        Message = "MRF rule added successfully"
+    });
+});
+
+app.MapDelete("/demo/moderation/mrf/rules", async (HttpContext context) =>
+{
+    var keyword = context.Request.Query["keyword"].ToString();
+    
+    if (string.IsNullOrWhiteSpace(keyword))
+        return Results.BadRequest("Keyword parameter required");
+    
+    return Results.Ok(new
+    {
+        Success = true,
+        Keyword = keyword,
+        Message = "MRF rule removed successfully"
+    });
+});
+
+app.MapGet("/demo/moderation/logs", () =>
+{
+    return Results.Ok(new
+    {
+        Logs = new[]
+        {
+            new { Timestamp = DateTime.UtcNow.AddMinutes(-5).ToString("o"), Rule = "spam", Action = "reject", Details = "Blocked post containing spam keyword" },
+            new { Timestamp = DateTime.UtcNow.AddMinutes(-10).ToString("o"), Rule = "example-bad.com", Action = "transform", Details = "Modified post from blocked domain" },
+            new { Timestamp = DateTime.UtcNow.AddMinutes(-15).ToString("o"), Rule = "shadow-ban", Action = "accept", Details = "User shadow-banned" }
+        }
+    });
+});
+
+app.MapPost("/demo/moderation/apply", async (HttpContext context) =>
+{
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var data = JsonSerializer.Deserialize<Dictionary<string, object>>(requestBody);
+    
+    var blockKeywords = data?.GetValueOrDefault("BlockKeywords") as string[];
+    var blockDomains = data?.GetValueOrDefault("BlockDomains") as string[];
+    var shadowBanning = data?.GetValueOrDefault("ShadowBanning") as bool? ?? false;
+    
+    return Results.Ok(new
+    {
+        Success = true,
+        KeywordsBlocked = blockKeywords?.Length ?? 0,
+        DomainsBlocked = blockDomains?.Length ?? 0,
+        ShadowBanningEnabled = shadowBanning,
+        Message = "Moderation settings applied"
+    });
+});
+
+app.MapPost("/demo/moderation/save", async (HttpContext context) =>
+{
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var data = JsonSerializer.Deserialize<Dictionary<string, object>>(requestBody);
+    
+    var blockKeywords = data?.GetValueOrDefault("BlockKeywords") as string[];
+    var blockDomains = data?.GetValueOrDefault("BlockDomains") as string[];
+    var shadowBanning = data?.GetValueOrDefault("ShadowBanning") as bool? ?? false;
+    
+    return Results.Ok(new
+    {
+        Success = true,
+        KeywordsCount = blockKeywords?.Length ?? 0,
+        DomainsCount = blockDomains?.Length ?? 0,
+        ShadowBanning = shadowBanning,
+        Message = "Moderation settings saved"
+    });
+});
+
+app.MapPost("/demo/federation/retry", () =>
+{
+    return Results.Ok(new
+    {
+        Success = true,
+        Retried = 0,
+        Message = "No failed items to retry"
+    });
+});
+
+app.MapPost("/demo/federation/clear-failed", () =>
+{
+    return Results.Ok(new
+    {
+        Success = true,
+        Cleared = 0,
+        Message = "No failed items to clear"
+    });
+});
+
 app.Run();
 
 public class QueueItem

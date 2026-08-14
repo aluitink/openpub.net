@@ -39,6 +39,8 @@ async function showSection(sectionId) {
         loadQueueStats();
     } else if (sectionId === 'signature-debugger') {
         loadSignatureDebuggerSection();
+    } else if (sectionId === 'content-moderation') {
+        loadModerationSection();
     } else if (sectionId === 'http-signature') {
         loadHttpSignatureSection();
     } else if (sectionId === 'federation') {
@@ -192,6 +194,13 @@ document.getElementById('sigDebuggerGenerateBtn').addEventListener('click', gene
 document.getElementById('sigDebuggerCompareBtn').addEventListener('click', compareSignatures);
 document.getElementById('sigDebuggerVerifyBtn').addEventListener('click', verifySignatureDebugger);
 document.getElementById('sigDebuggerClearBtn').addEventListener('click', clearSignatureDebugger);
+document.getElementById('addMrfRuleBtn').addEventListener('click', addMrfRule);
+document.getElementById('removeMrfRuleBtn').addEventListener('click', removeMrfRuleUI);
+document.getElementById('filterMrfRulesBtn').addEventListener('click', filterMrfRules);
+document.getElementById('viewModerationLogsBtn').addEventListener('click', viewModerationLogs);
+document.getElementById('applyModerationSettingsBtn').addEventListener('click', applyModerationSettings);
+document.getElementById('saveModerationSettingsBtn').addEventListener('click', saveModerationSettings);
+document.getElementById('clearModerationBtn').addEventListener('click', clearModeration);
 
 async function loadConfig() {
     const resultDiv = document.getElementById('configResult');
@@ -704,6 +713,249 @@ function loadSignatureDebuggerSection() {
     document.getElementById('sigDebuggerSteps').textContent = '';
 }
 
+async function loadModerationSection() {
+    document.getElementById('moderationLogs').textContent = 'Loading moderation settings...';
+    document.getElementById('mrfRulesList').textContent = '';
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/moderation/settings`);
+        if (data.error) {
+            document.getElementById('moderationLogs').textContent = `Error loading settings: ${data.error}`;
+            return;
+        }
+        
+        if (data.blockKeywords) {
+            document.getElementById('blockKeywordsInput').value = Array.isArray(data.blockKeywords) 
+                ? data.blockKeywords.join(', ') 
+                : data.blockKeywords;
+        }
+        
+        if (data.blockDomains) {
+            document.getElementById('blockDomainsInput').value = Array.isArray(data.blockDomains) 
+                ? data.blockDomains.join(', ') 
+                : data.blockDomains;
+        }
+        
+        if (data.shadowBanning !== undefined) {
+            document.getElementById('shadowBanningToggle').checked = data.shadowBanning;
+        }
+        
+        if (data.mrfRules && Array.isArray(data.mrfRules)) {
+            document.getElementById('mrfRulesList').innerHTML = data.mrfRules.map(rule => 
+                `<div class="mrf-rule-item">
+                    <strong>Keyword:</strong> ${rule.keyword} | 
+                    <strong>Action:</strong> ${rule.action} | 
+                    <strong>Priority:</strong> ${rule.priority}
+                    <button onclick="removeMrfRule('${rule.keyword}')">Remove</button>
+                </div>`
+            ).join('');
+        } else {
+            document.getElementById('mrfRulesList').textContent = 'No MRF rules configured';
+        }
+        
+        document.getElementById('moderationLogs').textContent = 'Moderation section loaded successfully';
+    } catch (error) {
+        document.getElementById('moderationLogs').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function addMrfRule() {
+    const resultDiv = document.getElementById('mrfRulesList');
+    const keyword = document.getElementById('mrfRuleKeyword').value.trim();
+    const action = document.getElementById('mrfRuleAction').value;
+    
+    if (!keyword) {
+        alert('Please enter a keyword for the MRF rule');
+        return;
+    }
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/moderation/mrf/rules`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword, action })
+        });
+        
+        if (data.error) {
+            resultDiv.innerHTML = `Error adding rule: ${data.error}`;
+        } else {
+            await loadModerationSection();
+            document.getElementById('mrfRuleKeyword').value = '';
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+    }
+}
+
+async function removeMrfRule(keyword) {
+    const resultDiv = document.getElementById('mrfRulesList');
+    
+    if (!keyword) {
+        return;
+    }
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/moderation/mrf/rules?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'DELETE'
+        });
+        
+        if (data.error) {
+            resultDiv.innerHTML = `Error removing rule: ${data.error}`;
+        } else {
+            await loadModerationSection();
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+    }
+}
+
+function removeMrfRuleUI() {
+    const keyword = document.getElementById('mrfRuleKeyword').value.trim();
+    if (!keyword) {
+        alert('Please enter a keyword to remove');
+        return;
+    }
+    removeMrfRule(keyword);
+}
+
+function filterMrfRules() {
+    const keyword = document.getElementById('mrfRuleKeyword').value.trim().toLowerCase();
+    const rulesList = document.getElementById('mrfRulesList');
+    
+    if (!keyword) {
+        loadModerationSection();
+        return;
+    }
+    
+    rulesList.innerHTML = '';
+    
+    if (!rulesList.dataset.allRules) {
+        rulesList.dataset.allRules = rulesList.innerHTML;
+    }
+    
+    if (keyword) {
+        rulesList.innerHTML = 'Filter not implemented in demo mode';
+    } else {
+        loadModerationSection();
+    }
+}
+
+async function viewModerationLogs() {
+    const resultDiv = document.getElementById('moderationLogs');
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/moderation/logs`);
+        
+        if (data.error) {
+            resultDiv.innerHTML = `Error: ${data.error}`;
+            return;
+        }
+        
+        if (data.logs && Array.isArray(data.logs)) {
+            resultDiv.innerHTML = data.logs.length > 0
+                ? data.logs.map(log => 
+                    `<div class="moderation-log">
+                        <strong>Time:</strong> ${log.timestamp}<br>
+                        <strong>Rule:</strong> ${log.rule}<br>
+                        <strong>Action:</strong> ${log.action}<br>
+                        <strong>Details:</strong> ${log.details}
+                    </div>`
+                ).join('<hr>')
+                : 'No moderation logs found';
+        } else {
+            resultDiv.innerHTML = JSON.stringify(data, null, 2);
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+    }
+}
+
+async function applyModerationSettings() {
+    const resultDiv = document.getElementById('moderationSettingsResult');
+    
+    const settings = {
+        BlockKeywords: document.getElementById('blockKeywordsInput').value.trim()
+            .split(',')
+            .map(k => k.trim())
+            .filter(k => k.length > 0),
+        BlockDomains: document.getElementById('blockDomainsInput').value.trim()
+            .split(',')
+            .map(d => d.trim())
+            .filter(d => d.length > 0),
+        ShadowBanning: document.getElementById('shadowBanningToggle').checked
+    };
+    
+    if (!settings.BlockKeywords.length && !settings.BlockDomains.length) {
+        alert('Please enter at least one keyword or domain to block');
+        return;
+    }
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/moderation/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        
+        if (data.error) {
+            resultDiv.innerHTML = `Error: ${data.error}`;
+        } else {
+            resultDiv.innerHTML = `<strong>Settings applied successfully:</strong>
+                <br>Keywords blocked: ${settings.BlockKeywords.length}
+                <br>Domains blocked: ${settings.BlockDomains.length}
+                <br>Shadow banning: ${settings.ShadowBanning ? 'Enabled' : 'Disabled'}`;
+            await loadModerationSection();
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+    }
+}
+
+async function saveModerationSettings() {
+    const resultDiv = document.getElementById('moderationSettingsResult');
+    
+    const settings = {
+        BlockKeywords: document.getElementById('blockKeywordsInput').value.trim()
+            .split(',')
+            .map(k => k.trim())
+            .filter(k => k.length > 0),
+        BlockDomains: document.getElementById('blockDomainsInput').value.trim()
+            .split(',')
+            .map(d => d.trim())
+            .filter(d => d.length > 0),
+        ShadowBanning: document.getElementById('shadowBanningToggle').checked
+    };
+    
+    try {
+        const data = await fetchJson(`${API_BASE}/demo/moderation/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        
+        if (data.error) {
+            resultDiv.innerHTML = `Error: ${data.error}`;
+        } else {
+            resultDiv.innerHTML = `<strong>Settings saved successfully:</strong>
+                <br>Keywords: ${settings.BlockKeywords.length}
+                <br>Domains: ${settings.BlockDomains.length}
+                <br>Shadow Banning: ${settings.ShadowBanning ? 'Enabled' : 'Disabled'}`;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+    }
+}
+
+function clearModeration() {
+    document.getElementById('blockKeywordsInput').value = '';
+    document.getElementById('blockDomainsInput').value = '';
+    document.getElementById('shadowBanningToggle').checked = false;
+    document.getElementById('mrfRuleKeyword').value = '';
+    document.getElementById('mrfRulesList').textContent = 'Rules cleared';
+    document.getElementById('moderationSettingsResult').textContent = '';
+    document.getElementById('moderationLogs').textContent = 'All moderation data cleared';
+}
+
 function loadHttpSignatureSection() {
     document.getElementById('httpSignatureResult').textContent = 'Ready. Generate a test key pair to begin.';
 }
@@ -1063,4 +1315,9 @@ function removePeer(domain) {
 
 function loadFederationSection() {
     document.getElementById('federationResult').textContent = 'Ready. Enter an actor URL or WebFinger resource to discover endpoints.';
+}
+
+function loadModerationSection() {
+    document.getElementById('moderationLogs').textContent = 'Loading moderation settings...';
+    document.getElementById('mrfRulesList').textContent = 'No MRF rules configured';
 }
