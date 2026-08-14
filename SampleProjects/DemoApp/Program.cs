@@ -3,6 +3,7 @@ using DemoApp.Services;
 using ActivityPub.Core;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Repositories;
+using ActivityPub.Core.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
@@ -29,9 +30,6 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
-builder.Services.AddMemoryCache();
-builder.Services.AddResponseCaching();
-
 builder.Services.AddActivityPub(options =>
 {
     options.Domain = "localhost";
@@ -47,11 +45,21 @@ builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddHostedService<QueueProcessorBackgroundService>();
 builder.Services.AddSingleton<PerformanceMetricsService>();
 
+builder.Services.AddSingleton<RateLimiterService>();
+builder.Services.AddSingleton<TokenService>();
+builder.Services.AddSingleton<IPFilterService>();
+builder.Services.AddSingleton<AuditLogger>();
+
 var app = builder.Build();
 
 app.UseRouting();
 app.UseStaticFiles();
-app.UseResponseCaching();
+
+app.UseMiddleware<RateLimitingMiddleware>(new ActivityPub.Core.Middleware.RateLimitOptions
+{
+    Window = TimeSpan.FromMinutes(1),
+    MaxRequests = 100
+});
 
 app.UseEndpoints(endpoints =>
 {

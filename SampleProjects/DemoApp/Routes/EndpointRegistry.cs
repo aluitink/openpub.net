@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DemoApp.Services;
 
 namespace DemoApp.Routing;
 
@@ -716,5 +717,284 @@ public static class EndpointRegistry
             });
         })
         .WithTags("Performance");
+
+        app.MapGet("/security/rate-limit/info", (RateLimiterService rateLimiter, HttpContext context) =>
+        {
+            var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return Results.Ok(rateLimiter.GetRateLimitInfo(clientIp));
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/rate-limit/configure", async (HttpContext context) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, object>>(requestBody);
+
+            int maxRequests = data?.GetValueOrDefault("maxRequests") is int mr ? mr : 100;
+            int windowMinutes = data?.GetValueOrDefault("windowMinutes") is int wm ? wm : 1;
+
+            return Results.Ok(new
+            {
+                Success = true,
+                MaxRequests = maxRequests,
+                WindowMinutes = windowMinutes,
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapGet("/security/tokens", (TokenService tokenService) =>
+        {
+            return Results.Ok(new
+            {
+                Tokens = tokenService.GetAllTokens().Select(t => new
+                {
+                    Token = t.Token,
+                    ActorId = t.ActorId,
+                    CreatedAt = t.CreatedAt,
+                    ExpiresAt = t.ExpiresAt,
+                    IsActive = t.IsActive,
+                    Description = t.Description
+                }).ToList(),
+                Count = tokenService.GetAllTokens().Count
+            });
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/tokens/generate", async (HttpContext context, TokenService tokenService) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+
+            string actorId = data?.GetValueOrDefault("actorId") ?? "anonymous";
+            string? description = data?.GetValueOrDefault("description");
+            int expiryHours = data?.GetValueOrDefault("expiryHours") is string eh && int.TryParse(eh, out int hours) ? hours : 24;
+
+            var token = tokenService.GenerateToken(actorId, description, expiryHours);
+
+            return Results.Ok(new
+            {
+                Token = token,
+                ActorId = actorId,
+                Description = description,
+                ExpiresAt = DateTime.UtcNow.AddHours(expiryHours),
+                Success = true
+            });
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/tokens/validate", async (HttpContext context, TokenService tokenService) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+
+            string token = data?.GetValueOrDefault("token") ?? "";
+
+            var result = tokenService.ValidateToken(token);
+
+            return Results.Ok(new
+            {
+                Valid = result.IsValid,
+                ActorId = result.ActorId,
+                Message = result.ErrorMessage,
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/tokens/revoke", async (HttpContext context, TokenService tokenService) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+
+            string token = data?.GetValueOrDefault("token") ?? "";
+
+            var success = tokenService.RevokeToken(token);
+
+            return Results.Ok(new
+            {
+                Success = success,
+                Message = success ? "Token revoked successfully" : "Token not found",
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapGet("/security/ip-filter/whitelist", (IPFilterService ipFilter) =>
+        {
+            return Results.Ok(new
+            {
+                Whitelist = ipFilter.GetWhitelist(),
+                Count = ipFilter.GetWhitelist().Count
+            });
+        })
+        .WithTags("Security");
+
+        app.MapGet("/security/ip-filter/blacklist", (IPFilterService ipFilter) =>
+        {
+            return Results.Ok(new
+            {
+                Blacklist = ipFilter.GetBlacklist(),
+                Count = ipFilter.GetBlacklist().Count
+            });
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/ip-filter/whitelist/add", async (HttpContext context, IPFilterService ipFilter) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+
+            string ipAddress = data?.GetValueOrDefault("ipAddress") ?? "";
+            string? reason = data?.GetValueOrDefault("reason");
+
+            ipFilter.AddToWhitelist(ipAddress, reason);
+
+            return Results.Ok(new
+            {
+                Success = true,
+                IP = ipAddress,
+                Reason = reason,
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapDelete("/security/ip-filter/whitelist/remove", async (HttpContext context) =>
+        {
+            string ipAddress = context.Request.Query["ipAddress"].ToString();
+
+            var ipFilter = context.RequestServices.GetRequiredService<IPFilterService>();
+            ipFilter.RemoveFromWhitelist(ipAddress);
+
+            return Results.Ok(new
+            {
+                Success = true,
+                IP = ipAddress,
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/ip-filter/blacklist/add", async (HttpContext context, IPFilterService ipFilter) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+
+            string ipAddress = data?.GetValueOrDefault("ipAddress") ?? "";
+            string? reason = data?.GetValueOrDefault("reason");
+
+            ipFilter.AddToBlacklist(ipAddress, reason);
+
+            return Results.Ok(new
+            {
+                Success = true,
+                IP = ipAddress,
+                Reason = reason,
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapDelete("/security/ip-filter/blacklist/remove", async (HttpContext context) =>
+        {
+            string ipAddress = context.Request.Query["ipAddress"].ToString();
+
+            var ipFilter = context.RequestServices.GetRequiredService<IPFilterService>();
+            ipFilter.RemoveFromBlacklist(ipAddress);
+
+            return Results.Ok(new
+            {
+                Success = true,
+                IP = ipAddress,
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapGet("/security/audit-logs", (AuditLogger auditLogger, string? eventType = null, int limit = 100) =>
+        {
+            var entries = auditLogger.GetEntries(eventType, null, null, limit);
+            return Results.Ok(new
+            {
+                Entries = entries.Select(e => new
+                {
+                    Id = e.Id,
+                    Timestamp = e.Timestamp,
+                    EventType = e.EventType,
+                    ActorId = e.ActorId,
+                    ClientIP = e.ClientIP,
+                    Endpoint = e.Endpoint,
+                    Details = e.Details,
+                    Success = e.Success
+                }).ToList(),
+                Count = entries.Count
+            });
+        })
+        .WithTags("Security");
+
+        app.MapGet("/security/audit-logs/login-attempts", (AuditLogger auditLogger, int limit = 100) =>
+        {
+            var entries = auditLogger.GetLoginAttempts(limit);
+            return Results.Ok(new
+            {
+                Entries = entries.Select(e => new
+                {
+                    Id = e.Id,
+                    Timestamp = e.Timestamp,
+                    EventType = e.EventType,
+                    ActorId = e.ActorId,
+                    ClientIP = e.ClientIP
+                }).ToList(),
+                Count = entries.Count
+            });
+        })
+        .WithTags("Security");
+
+        app.MapGet("/security/audit-logs/statistics", (AuditLogger auditLogger) =>
+        {
+            var stats = auditLogger.GetStatistics();
+            return Results.Ok(stats);
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/login", async (HttpContext context, AuditLogger auditLogger) =>
+        {
+            string requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+
+            string actorId = data?.GetValueOrDefault("actorId") ?? "";
+            bool success = !string.IsNullOrWhiteSpace(actorId);
+
+            auditLogger.Log("login_attempt", actorId, 
+                context.Connection.RemoteIpAddress?.ToString(), 
+                "/security/login", 
+                $"Login attempt: {actorId}", 
+                success);
+
+            return Results.Ok(new
+            {
+                Success = success,
+                ActorId = actorId,
+                Message = success ? "Login successful" : "Invalid credentials",
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
+
+        app.MapPost("/security/rate-limit/hit", async (HttpContext context, AuditLogger auditLogger) =>
+        {
+            string clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            auditLogger.Log("rate_limit", null, clientIp, context.Request.Path.ToString(), 
+                "Rate limit exceeded", false);
+
+            return Results.Ok(new
+            {
+                Success = true,
+                Message = "Rate limit event logged",
+                Timestamp = DateTime.UtcNow
+            });
+        })
+        .WithTags("Security");
     }
 }
