@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace DemoApp.Services;
 
@@ -72,6 +73,16 @@ public class ActorService : IActorService
 
     public async Task<ActorEntity> CreateActorAsync(string username, string publicKey)
     {
+        if (string.IsNullOrWhiteSpace(username))
+            throw new ValidationException("Username is required");
+
+        if (string.IsNullOrWhiteSpace(publicKey))
+            throw new ValidationException("Public key is required");
+
+        var existingActor = await _context.Actors.FirstOrDefaultAsync(a => a.Username == username);
+        if (existingActor != null)
+            throw new ValidationException($"Actor '{username}' already exists");
+
         var actor = new ActorEntity
         {
             Username = username,

@@ -64,20 +64,17 @@ builder.Services.AddResponseCaching();
 var app = builder.Build();
 
 app.UseResponseCaching();
+app.UseSecurityHeaders();
+app.UseRateLimiting(options =>
+{
+    options.Window = TimeSpan.FromMinutes(1);
+    options.MaxRequests = 100;
+});
 app.UseRouting();
 app.UseStaticFiles();
 
-app.UseMiddleware<RateLimitingMiddleware>(new ActivityPub.Core.Middleware.RateLimitOptions
-{
-    Window = TimeSpan.FromMinutes(1),
-    MaxRequests = 100
-});
-
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-    endpoints.MapHub<ActivityHub>("/activityHub");
-});
+app.MapControllers();
+app.MapHub<ActivityHub>("/activityHub");
 
 app.MapEndpoints();
 
