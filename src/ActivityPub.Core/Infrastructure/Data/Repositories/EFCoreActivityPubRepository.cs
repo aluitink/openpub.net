@@ -153,8 +153,9 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             return new List<string>();
         }
 
+        var actorId = actor.Id;
         var followingActivities = await _context.Activities
-            .Where(a => a.JsonData.Contains($"\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actor.Id}\""))
+            .Where(a => a.JsonData.Contains($"\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actorId}\""))
             .OrderBy(a => a.CreatedAt)
             .Skip(skip)
             .Take(limit)
@@ -172,8 +173,9 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             return new List<string>();
         }
 
+        var actorId = actor.Id;
         var followingActivities = await _context.Activities
-            .Where(a => a.JsonData.Contains($"\"type\":\"Follow\"") && a.JsonData.Contains($"\"actor\":\"{actor.Id}\""))
+            .Where(a => a.JsonData.Contains($"\"type\":\"Follow\"") && a.JsonData.Contains($"\"actor\":\"{actorId}\""))
             .OrderBy(a => a.CreatedAt)
             .Skip(skip)
             .Take(limit)
@@ -340,8 +342,9 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             return new List<string>();
         }
 
+        var actorId = actor.Id;
         var followerActivities = await _context.Activities
-            .Where(a => a.JsonData.Contains("\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actor.Id}\""))
+            .Where(a => a.JsonData.Contains("\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actorId}\""))
             .OrderBy(a => a.CreatedAt)
             .Select(a => a.JsonData)
             .ToListAsync();

@@ -14,10 +14,10 @@ public class MemoryFederationCache : IFederationCache
     private readonly ConcurrentDictionary<string, bool> _cacheKeys;
 
     // Cache TTL settings
-    private static readonly TimeSpan ActorCacheTtl = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan ActivityCacheTtl = TimeSpan.FromMinutes(5);
-    private static readonly TimeSpan WebFingerCacheTtl = TimeSpan.FromMinutes(10);
-    private static readonly TimeSpan InboxResponseCacheTtl = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan ActorCacheTtl = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan ActivityCacheTtl = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan WebFingerCacheTtl = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan InboxResponseCacheTtl = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// Creates a new MemoryFederationCache instance
@@ -67,15 +67,9 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(domain))
             return;
 
-        var keysToRemove = new List<string>();
-
-        foreach (var key in _cacheKeys.Keys)
-        {
-            if (key.Contains(domain, StringComparison.OrdinalIgnoreCase))
-            {
-                keysToRemove.Add(key);
-            }
-        }
+        var keysToRemove = _cacheKeys.Keys
+            .Where(key => key.Contains(domain, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         foreach (var key in keysToRemove)
         {
@@ -124,15 +118,9 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(actorId))
             return;
 
-        var keysToRemove = new List<string>();
-
-        foreach (var key in _cacheKeys.Keys)
-        {
-            if (key.Contains(actorId, StringComparison.OrdinalIgnoreCase))
-            {
-                keysToRemove.Add(key);
-            }
-        }
+        var keysToRemove = _cacheKeys.Keys
+            .Where(key => key.Contains(actorId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         foreach (var key in keysToRemove)
         {
@@ -181,15 +169,9 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(domain))
             return;
 
-        var keysToRemove = new List<string>();
-
-        foreach (var key in _cacheKeys.Keys)
-        {
-            if (key.Contains(domain, StringComparison.OrdinalIgnoreCase))
-            {
-                keysToRemove.Add(key);
-            }
-        }
+        var keysToRemove = _cacheKeys.Keys
+            .Where(key => key.Contains(domain, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         foreach (var key in keysToRemove)
         {
@@ -238,15 +220,9 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(actorId))
             return;
 
-        var keysToRemove = new List<string>();
-
-        foreach (var key in _cacheKeys.Keys)
-        {
-            if (key.Contains(actorId, StringComparison.OrdinalIgnoreCase))
-            {
-                keysToRemove.Add(key);
-            }
-        }
+        var keysToRemove = _cacheKeys.Keys
+            .Where(key => key.Contains(actorId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         foreach (var key in keysToRemove)
         {
@@ -261,20 +237,14 @@ public class MemoryFederationCache : IFederationCache
 
     public async Task ClearAsync()
     {
-        foreach (var key in _cacheKeys.Keys)
+        foreach (var key in _cacheKeys.Keys.ToList())
         {
             _cache.Remove(key);
         }
         _cacheKeys.Clear();
     }
 
-    public int Count
-    {
-        get
-        {
-            return _cacheKeys.Count;
-        }
-    }
+    public int Count => _cacheKeys.Count;
 
     #endregion
 }

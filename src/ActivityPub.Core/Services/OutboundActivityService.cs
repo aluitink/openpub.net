@@ -69,7 +69,6 @@ public class OutboundActivityService : IOutboundActivityService
             // Create HTTP request
             var request = new HttpRequestMessage(HttpMethod.Post, inboxUrl);
             request.Content = new StringContent(activity, Encoding.UTF8, "application/activity+json");
-            request.Content = new StringContent(activity, Encoding.UTF8, "application/activity+json");
 
             // Sign the request
             var keyId = $"{actorId}#main-key";
