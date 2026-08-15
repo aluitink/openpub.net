@@ -1,0 +1,48 @@
+@page "/Admin/Activities"
+@model ActivitiesModel
+@{
+    ViewData["Title"] = "Activity Feed";
+}
+
+<h1>Activity Feed</h1>
+
+<a href="/">Back to Dashboard</a>
+
+@if (Model.Activities != null && Model.Activities.Any())
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Actor</th>
+                <th>Published</th>
+                <th>To</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var activity in Model.Activities)
+            {
+                <tr>
+                    <td><code>@activity.Id</code></td>
+                    <td><span class="badge">@activity.Type</span></td>
+                    <td><code>@activity.Actor</code></td>
+                    <td>@activity.Published</td>
+                    <td>
+                        @if (activity.To != null)
+                        {
+                            foreach (var target in activity.To)
+                            {
+                                <code>@target </code>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No activities found.</p>
+}

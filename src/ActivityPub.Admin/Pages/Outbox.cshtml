@@ -1,0 +1,44 @@
+@page "/Admin/Outbox"
+@model OutboxModel
+@{
+    ViewData["Title"] = "Outbox Monitoring";
+}
+
+<h1>Outbox Monitoring</h1>
+
+<a href="/">Back to Dashboard</a>
+
+@if (Model.OutboxActivities != null && Model.OutboxActivities.Any())
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Activity ID</th>
+                <th>Status</th>
+                <th>Target Inbox</th>
+                <th>Attempts</th>
+                <th>Last Attempt</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.OutboxActivities)
+            {
+                <tr>
+                    <td><code>@entry.ActivityId</code></td>
+                    <td>
+                        <span class="badge @(entry.Status == "Delivered" ? "success" : entry.Status == "Failed" ? "danger" : "warning")">
+                            @entry.Status
+                        </span>
+                    </td>
+                    <td><code>@entry.TargetInbox</code></td>
+                    <td>@entry.Attempts</td>
+                    <td>@entry.LastAttempt?.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No outbox entries found.</p>
+}

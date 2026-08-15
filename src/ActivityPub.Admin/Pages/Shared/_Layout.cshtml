@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ActivityPub Admin</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">ActivityPub Admin</a>
+            <a href="/Admin/Activities">Activities</a>
+            <a href="/Admin/Actors">Actors</a>
+            <a href="/Admin/Outbox">Outbox</a>
+        </nav>
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+    <footer>
+        <p>ActivityPub.NET Admin Dashboard</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "ActivityPub Admin";
+}
+
+<h1>ActivityPub Admin Dashboard</h1>
+
+<div class="dashboard-grid">
+    <a href="/Admin/Activities" class="card">
+        <h2>Activity Feed</h2>
+        <p>View recent activities and events</p>
+    </a>
+    <a href="/Admin/Actors" class="card">
+        <h2>Actor Management</h2>
+        <p>Manage registered actors</p>
+    </a>
+    <a href="/Admin/Outbox" class="card">
+        <h2>Outbox Monitoring</h2>
+        <p>Monitor outbound deliveries</p>
+    </a>
+</div>

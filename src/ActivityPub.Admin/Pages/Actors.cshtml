@@ -1,0 +1,42 @@
+@page "/Admin/Actors"
+@model ActorsModel
+@{
+    ViewData["Title"] = "Actor Management";
+}
+
+<h1>Actor Management</h1>
+
+<a href="/">Back to Dashboard</a>
+
+@if (Model.Actors != null && Model.Actors.Any())
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Preferred Username</th>
+                <th>Summary</th>
+                <th>Inbox</th>
+                <th>Outbox</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var actor in Model.Actors)
+            {
+                <tr>
+                    <td><code>@actor.Id</code></td>
+                    <td><span class="badge">@actor.Type</span></td>
+                    <td>@actor.PreferredUsername</td>
+                    <td>@actor.Summary</td>
+                    <td><code>@actor.Inbox</code></td>
+                    <td><code>@actor.Outbox</code></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No actors found.</p>
+}
