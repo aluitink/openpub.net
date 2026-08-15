@@ -52,3 +52,11 @@ appsettings.Development.json
 *.user
 *.userosscache
 *.sln.cache
+
+# Build scripts
+scripts/*.user
+scripts/*.cache
+
+# Publish output
+publish/
+publish/**

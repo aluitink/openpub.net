@@ -1,0 +1,118 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          ActivityPub.Core/bin/Release/
+          ActivityPub.Tests/bin/Release/
+        retention-days: 7
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Run unit tests
+      run: |
+        dotnet test ActivityPub.Tests/ActivityPub.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~UnitTests" --logger "console;verbosity=detailed"
+    
+    - name: Run integration tests
+      run: |
+        dotnet test ActivityPub.Tests/ActivityPub.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~IntegrationTests" --logger "console;verbosity=detailed"
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: TestResults/
+
+  code-quality:
+    name: Code Quality
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Analyze with SonarQube
+      uses: SonarSource/sonarqube-scan-action@v4
+      env:
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        SONAR_AUTH_TOKEN: ${{ secrets.SONAR_AUTH_TOKEN }}
+      if: ${{ env.SONAR_HOST_URL != '' && env.SONAR_AUTH_TOKEN != '' }}
+
+  publish:
+    name: Publish
+    needs: [build, test, code-quality]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Publish
+      run: |
+        dotnet publish ActivityPub.Core/ActivityPub.Core.csproj --configuration Release --output ./publish
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    
+    - name: Publish to NuGet
+      run: |
+        if [ -f "./publish/*.nupkg" ]; then
+          dotnet nuget push ./publish/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+        fi
