@@ -29,5 +29,5 @@ public class Note : Object
     /// Additional properties that are not explicitly defined
     /// </summary>
     [JsonExtensionData]
-    public IDictionary<string, object?>? AdditionalProperties { get; set; }
+    public new IDictionary<string, object?>? AdditionalProperties { get; set; }
 }

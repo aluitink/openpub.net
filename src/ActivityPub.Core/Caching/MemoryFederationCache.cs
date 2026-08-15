@@ -36,7 +36,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(uri))
             return null;
 
-        if (_cache.TryGetValue(uri, out Actor actor))
+        if (_cache.TryGetValue(uri, out Actor? actor))
         {
             return actor;
         }
@@ -87,7 +87,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(activityId))
             return null;
 
-        if (_cache.TryGetValue(activityId, out Activity activity))
+        if (_cache.TryGetValue(activityId, out Activity? activity))
         {
             return activity;
         }
@@ -138,7 +138,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(key))
             return null;
 
-        if (_cache.TryGetValue(key, out WebFingerResponse response))
+        if (_cache.TryGetValue(key, out WebFingerResponse? response))
         {
             return response;
         }

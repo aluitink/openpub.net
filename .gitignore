@@ -38,6 +38,7 @@ test-results/
 # Coverage data
 coverage/
 *.coverage
+coverage.xml
 
 # Debug symbols
 *.dbg
