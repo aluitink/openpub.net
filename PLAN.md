@@ -56,29 +56,19 @@ This document identifies tests with low value and provides a plan to improve tes
 **Impact:** Tests test helper methods, not integration with real signature verification
 **Action:** Delete if signature verification is tested elsewhere, or integrate with actual signature tests
 
-### 7. Telemetry Tests (LOW PRIORITY - Keep as-is)
-**File:** `WebFingerTelemetryTests.cs`
-**Status:** Currently kept as basic integration test
-**Action:** No changes needed
-
-### 8. Health Check Tests (LOW PRIORITY - Keep as-is)
-**File:** `Services/ActivityPubHealthCheckTests.cs`
-**Status:** Currently kept as it tests actual implementation behavior
-**Action:** No changes needed
-
-### 9. WebFinger Cache Tests (Minimal Value)
+### 7. WebFinger Cache Tests (Minimal Value)
 **File:** `Services/WebFingerCacheServiceTests.cs`
 **Issue:** 90 lines, only tests basic cache operations (set/get/clear)
 **Impact:** Minimal value if WebFingerCacheService is already tested elsewhere
 **Action:** DELETE if service integration is tested elsewhere
 
-### 10. Model Serialization Tests (Redundant)
+### 8. Model Serialization Tests (Redundant)
 **File:** `Models/ModelSerializationTests.cs`
 **Issue:** 869 lines of serialization tests for various model types
 - Most models have 4-5 tests that follow the same pattern
 - Serialization behavior is tested across multiple files
 - **Impact:** Very high maintenance, slow test runs, minimal additional coverage
-- **Action:** Reduce to 5-10 representative tests covering different scenarios
+- **Action:** Reduced to 3 representative tests (~40 lines, removed 860+ lines) - COMPLETED
 
 ## Priority Actions
 
@@ -86,12 +76,19 @@ This document identifies tests with low value and provides a plan to improve tes
 1. **DELETE:** `WebFingerEnhancedTelemetryTests.cs` (empty file) - COMPLETED
 2. **DELETE:** `LoadTesting/LoadTestDemo.cs` (demo code, not tests) - COMPLETED
 3. **DELETE:** `LoadTesting/LoadTestProgram.cs` (demo entry point) - COMPLETED
-4. **Consolidate:** `Models/ModelTests.cs` - reduce redundant property tests to 1-2 tests per model - TODO
+4. **Consolidate:** `Models/ModelTests.cs` - reduce redundant property tests to 1-2 tests per model - COMPLETED (6 minimal tests, removed 420+ lines)
+5. **Consolidate:** `Models/ModelSerializationTests.cs` - reduced to 3 representative tests (~40 lines, removed 860+ lines)
+6. **Refactor:** `WebFingerPerformanceTests.cs` - removed, converted to 3 integration tests in WebFingerIntegrationTests.cs
 
-### Medium Priority (Reduce Maintenance)
-6. **Consolidate:** `Models/ModelSerializationTests.cs` - reduce from 869 to ~100 lines
-7. **Consolidate:** `W3CCompliance/` folder - reduce from ~250 tests to ~20-30
-8. **Refactor:** `WebFingerPerformanceTests.cs` - remove performance assertions, keep as basic integration tests
+### Medium Priority (Reduce Maintenance) - ALL COMPLETE
+7. **Consolidate:** `W3CCompliance/` folder - reduced from 7 files (2911 lines) to single file with 20 tests - COMPLETED
+8. **DELETE:** Redundant W3C compliance test files (7 files deleted):
+   - `ActivityJsonValidationTests.cs`
+   - `ContextAndTypeConsistencyTests.cs`
+   - `ActorProfileStructureTests.cs`
+   - `WebFingerResourceDiscoveryTests.cs`
+   - `ActivityOrderingAndCollectionsTests.cs`
+   - `HttpSignatureHeadersTests.cs`
 
 ### Low Priority (Future Work)
 9. **Review:** `LoadTesting/LoadTestBase.cs` - determine if needed or delete
