@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Improvement Plan
 
 **Last Updated:** Aug 15, 2026
-**Status:** Phases 1-18 complete. Next phases planned below.
+**Status:** Phases 1-19 complete. Next phases planned below.
 
 ---
 
@@ -27,12 +27,13 @@
 | 16 | Final Cleanup - Stale files, nullable warnings, .gitignore | ✅ Complete |
 | 17 | CI/CD Pipeline Setup - GitHub Actions, CODEOWNERS | ✅ Complete |
 | 18 | Admin Dashboard Scaffolding - ActivityPub.Admin | ✅ Complete |
+| 19 | CLI Tool Scaffolding - ActivityPub.Cli | ✅ Complete |
 
 ---
 
 ## Current Build State
 
-- **Build:** 0 errors, 52 warnings (all in DemoApp/sample projects)
+- **Build:** 0 errors, 0 warnings
 - **Tests:** 386 passing, 0 failed
 - **Format:** Clean (dotnet format --verify-no-changes passes)
 - **Target Framework:** .NET 10.0
@@ -64,15 +65,18 @@
 4. ✅ Ensure it references ActivityPub.Core
 5. ✅ Add layout, error page, and CSS styling
 
-### Phase 19: CLI Tool Scaffolding
+### Phase 19: CLI Tool Scaffolding ✅ Complete
 
 **Goal:** Scaffold `ActivityPub.Cli` as a command-line administration tool.
 
 **Tasks:**
-1. Create `src/ActivityPub.Cli/ActivityPub.Cli.csproj` (Console app with System.CommandLine)
-2. Implement basic commands: `actor list`, `activity fetch`, `inbox monitor`
-3. Add to solution file
-4. Ensure it references ActivityPub.Core
+1. ✅ Create `src/ActivityPub.Cli/ActivityPub.Cli.csproj` (Console app with System.CommandLine)
+2. ✅ Implement actor commands: list, get, follow, unfollow
+3. ✅ Implement activity commands: list, get, fetch, delete
+4. ✅ Implement inbox commands: monitor, pending, stats
+5. ✅ Implement webhook commands: list, pending, history, delete
+6. ✅ Add to solution file
+7. ✅ Ensure it references ActivityPub.Core
 
 ### Phase 20: Integration Test Expansion
 
@@ -115,7 +119,8 @@
 ├── ActivityPub.sln
 ├── src/
 │   ├── ActivityPub.Core/        # Core library (Controllers, Services, Models, Infrastructure)
-│   └── ActivityPub.Admin/       # Admin dashboard (Razor Pages)
+│   ├── ActivityPub.Admin/       # Admin dashboard (Razor Pages)
+│   └── ActivityPub.Cli/         # CLI administration tool (System.CommandLine)
 ├── ActivityPub.Tests/           # Test suite (386 tests)
 │   ├── UnitTests/
 │   ├── IntegrationTests/        # Includes Scale/ subfolder
