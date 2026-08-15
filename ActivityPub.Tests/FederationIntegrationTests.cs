@@ -615,10 +615,10 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
 
         var actor = new Actor
         {
-            Id = "https://localhost/users/shareduser",
+            Id = $"https://localhost/users/shareduser-{Guid.NewGuid():N}",
             Type = "Person",
-            PreferredUsername = "shareduser",
-            Inbox = "https://localhost/users/shareduser/inbox",
+            PreferredUsername = $"shareduser-{Guid.NewGuid():N}",
+            Inbox = $"https://localhost/users/shareduser-{Guid.NewGuid():N}/inbox",
             SharedInbox = "https://localhost/inbox"
         };
 
@@ -626,12 +626,12 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
 
         var activity = new Activity
         {
-            Id = "https://localhost/users/shareduser/activities/shared1",
+            Id = $"https://localhost/users/shareduser-{Guid.NewGuid():N}/activities/shared1",
             Type = "Create",
-            Actor = "https://localhost/users/shareduser",
+            Actor = actor.Id,
             Object = new Note
             {
-                Id = "https://localhost/users/shareduser/notes/shared1",
+                Id = $"https://localhost/users/shareduser-{Guid.NewGuid():N}/notes/shared1",
                 Type = "Note",
                 Content = "Shared inbox test"
             }
@@ -647,8 +647,9 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         // Assert
         Assert.True(queued);
 
-        var pendingDeliveries = await repository.GetPendingSharedInboxDeliveriesAsync(10);
-        Assert.Contains(pendingDeliveries, d => d.ActivityId == activity.Id);
+        var pendingDeliveries = await repository.GetPendingSharedInboxDeliveriesAsync(1000);
+        var matchingDelivery = pendingDeliveries.Where(d => d.ActivityId == activity.Id && d.TargetActorId == actor.Id).FirstOrDefault();
+        Assert.NotNull(matchingDelivery);
     }
 
     #endregion
