@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Improvement Plan
 
 **Last Updated:** Aug 15, 2026
-**Status:** Phases 1-17 complete. Next phases planned below.
+**Status:** Phases 1-18 complete. Next phases planned below.
 
 ---
 
@@ -26,12 +26,13 @@
 | 15 | Deployment Documentation - Docker, K8s, scripts | ✅ Complete |
 | 16 | Final Cleanup - Stale files, nullable warnings, .gitignore | ✅ Complete |
 | 17 | CI/CD Pipeline Setup - GitHub Actions, CODEOWNERS | ✅ Complete |
+| 18 | Admin Dashboard Scaffolding - ActivityPub.Admin | ✅ Complete |
 
 ---
 
 ## Current Build State
 
-- **Build:** 0 errors, 0 warnings
+- **Build:** 0 errors, 52 warnings (all in DemoApp/sample projects)
 - **Tests:** 386 passing, 0 failed
 - **Format:** Clean (dotnet format --verify-no-changes passes)
 - **Target Framework:** .NET 10.0
@@ -52,15 +53,16 @@
 4. ✅ Run dotnet format to fix whitespace inconsistencies across codebase
 5. ✅ Fix xUnit1031 and ASP0019 analyzer warnings
 
-### Phase 18: Admin Dashboard Scaffolding
+### Phase 18: Admin Dashboard Scaffolding ✅ Complete
 
 **Goal:** Scaffold `ActivityPub.Admin` as a minimal admin dashboard project.
 
 **Tasks:**
-1. Create `src/ActivityPub.Admin/ActivityPub.Admin.csproj` (ASP.NET Core MVC/Razor)
-2. Add basic admin pages: Activity feed viewer, Actor management, Outbox monitoring
-3. Add to solution file
-4. Ensure it references ActivityPub.Core
+1. ✅ Create `src/ActivityPub.Admin/ActivityPub.Admin.csproj` (ASP.NET Core Razor Pages)
+2. ✅ Add basic admin pages: Activity feed viewer, Actor management, Outbox monitoring
+3. ✅ Add to solution file
+4. ✅ Ensure it references ActivityPub.Core
+5. ✅ Add layout, error page, and CSS styling
 
 ### Phase 19: CLI Tool Scaffolding
 
@@ -112,7 +114,8 @@
 /workspace/
 ├── ActivityPub.sln
 ├── src/
-│   └── ActivityPub.Core/        # Core library (Controllers, Services, Models, Infrastructure)
+│   ├── ActivityPub.Core/        # Core library (Controllers, Services, Models, Infrastructure)
+│   └── ActivityPub.Admin/       # Admin dashboard (Razor Pages)
 ├── ActivityPub.Tests/           # Test suite (386 tests)
 │   ├── UnitTests/
 │   ├── IntegrationTests/        # Includes Scale/ subfolder
