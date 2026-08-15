@@ -12,7 +12,6 @@ public sealed class WebFingerJsonConverter : JsonConverter<WebFingerJrd>
 {
     public override WebFingerJrd? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // We only support writing, not reading
         throw new NotSupportedException("Reading JRD responses is not supported by this converter.");
     }
 
@@ -20,11 +19,9 @@ public sealed class WebFingerJsonConverter : JsonConverter<WebFingerJrd>
     {
         writer.WriteStartObject();
         
-        // Write subject
         writer.WritePropertyName("subject");
         writer.WriteStringValue(value.Subject);
         
-        // Write links array
         writer.WritePropertyName("links");
         writer.WriteStartArray();
         
@@ -49,7 +46,3 @@ public sealed class WebFingerJsonConverter : JsonConverter<WebFingerJrd>
         writer.WriteEndObject();
     }
 }
-
-// This class definition has been moved to ActivityPub.Core.Models.WebFingerJrd.cs
-// This file only contains the JSON converter implementation
-

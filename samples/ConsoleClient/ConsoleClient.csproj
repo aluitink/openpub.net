@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ActivityPub.Core\ActivityPub.Core.csproj" />
+    <ProjectReference Include="..\..\src\ActivityPub.Core\ActivityPub.Core.csproj" />
   </ItemGroup>
 
 </Project>
