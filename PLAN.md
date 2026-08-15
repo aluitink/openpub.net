@@ -56,11 +56,11 @@ This document identifies tests with low value and provides a plan to improve tes
 **Impact:** Tests test helper methods, not integration with real signature verification
 **Action:** Delete if signature verification is tested elsewhere, or integrate with actual signature tests
 
-### 7. WebFinger Cache Tests (Minimal Value)
-**File:** `Services/WebFingerCacheServiceTests.cs`
+### 7. WebFinger Cache Tests (Minimal Value) - ALL COMPLETE
+**File:** `Services/WebFingerCacheServiceTests.cs` - DELETED
 **Issue:** 90 lines, only tests basic cache operations (set/get/clear)
 **Impact:** Minimal value if WebFingerCacheService is already tested elsewhere
-**Action:** DELETE if service integration is tested elsewhere
+**Action:** DELETE - COMPLETED (cache service tested via integration tests)
 
 ### 8. Model Serialization Tests (Redundant)
 **File:** `Models/ModelSerializationTests.cs`
@@ -90,9 +90,9 @@ This document identifies tests with low value and provides a plan to improve tes
    - `ActivityOrderingAndCollectionsTests.cs`
    - `HttpSignatureHeadersTests.cs`
 
-### Low Priority (Future Work)
-9. **Review:** `LoadTesting/LoadTestBase.cs` - determine if needed or delete
-10. **Review:** `Services/WebFingerCacheServiceTests.cs` - determine if cache service needs dedicated tests
+### Low Priority (Future Work) - ALL COMPLETE
+9. **Review:** `LoadTesting/LoadTestBase.cs` - KEEP (utility methods used by other tests) - COMPLETED
+10. **Review:** `Services/WebFingerCacheServiceTests.cs` - DELETED (low value, covered by integration tests) - COMPLETED
 
 ## Expected Outcomes
 - **Test suite size:** Reduce by 60-70%
