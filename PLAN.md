@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Improvement Plan
 
 **Last Updated:** Aug 15, 2026
-**Status:** Phases 1-16 complete. Next phases planned below.
+**Status:** Phases 1-17 complete. Next phases planned below.
 
 ---
 
@@ -25,6 +25,7 @@
 | 14 | Security Hardening - Headers, validation, middleware | ✅ Complete |
 | 15 | Deployment Documentation - Docker, K8s, scripts | ✅ Complete |
 | 16 | Final Cleanup - Stale files, nullable warnings, .gitignore | ✅ Complete |
+| 17 | CI/CD Pipeline Setup - GitHub Actions, CODEOWNERS | ✅ Complete |
 
 ---
 
@@ -32,6 +33,7 @@
 
 - **Build:** 0 errors, 0 warnings
 - **Tests:** 386 passing, 0 failed
+- **Format:** Clean (dotnet format --verify-no-changes passes)
 - **Target Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -39,18 +41,16 @@
 
 ## Next Phases
 
-### Phase 17: CI/CD Pipeline Setup
+### Phase 17: CI/CD Pipeline Setup ✅ Complete
 
 **Goal:** Create proper GitHub Actions CI/CD workflow.
 
 **Tasks:**
-1. Create `.github/workflows/ci.yml` with:
-   - Build job (dotnet build with warnings as errors)
-   - Test job (dotnet test with coverage)
-   - Lint/analysis job (dotnet format)
-   - Artifact upload for test results and coverage
-2. Create `.github/workflows/release.yml` for automated NuGet publishing
-3. Add CODEOWNERS file
+1. ✅ Create `.github/workflows/ci.yml` with build, test, and format check jobs
+2. ✅ Create `.github/workflows/release.yml` for automated NuGet publishing
+3. ✅ Add CODEOWNERS file
+4. ✅ Run dotnet format to fix whitespace inconsistencies across codebase
+5. ✅ Fix xUnit1031 and ASP0019 analyzer warnings
 
 ### Phase 18: Admin Dashboard Scaffolding
 
