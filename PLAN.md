@@ -263,28 +263,29 @@
 - ✅ **Test isolation fixes** (Guid-based unique identifiers, background service disabled fixture)
 - ✅ **~9s runtime** (target <15s)
 
-### Phase 6 (IN PROGRESS ✅)
-- ✅ **15 new scale test files** (Inbox, ActivityProcessing, Outbox scale tests)
+### Phase 6 (COMPLETE ✅)
+- ✅ **15 new scale test files** (Inbox, ActivityProcessing, Outbox, Cache, Database, Query, ActivityHistory, ActorScale, Federation)
 - ✅ **44 scale tests passing**
 - ✅ **382 total tests passing**
-- ✅ **Build errors fixed** (namespace, property name corrections)
+- ✅ **Build errors fixed** (property names, type removals, namespace fixes)
 - ✅ **Documentation created**: TESTING_GUIDE.md, ARCHITECTURE_GUIDE.md
-- ⏳ **500+ total tests** target (in progress)
+- ✅ **Test isolation fixed**: unique GUID-based actor IDs, dedicated fixtures
 
 ---
 
-## Phase 6: Scale & Optimization (IN PROGRESS)
+## Phase 7: Documentation & Optimization (PLANNING)
 
 ### Targets
-- **500+ total tests** (147+ new tests needed)
-- **Runtime:** <10s with full parallelization
-- **Database optimization** for large datasets
-- **Memory-efficient test isolation** (per-test cleanup)
+- **500+ total tests** (118+ new tests needed)
+- **Runtime:** <15s with full parallelization
+- **Documentation**: API docs, contributor guide
+- **Optimization**: Database indexing, caching strategies
 
-### Progress
-- ✅ Phase 5 complete: 353 tests, ~9s runtime
-- 🔄 Adding scale tests with unique test run IDs for isolation
-- 🔄 Optimizing database queries and indexing
+### Next Steps
+- Performance optimization tests (BenchmarkDotNet)
+- API documentation
+- Contributing guide
+
 
 ---
 
