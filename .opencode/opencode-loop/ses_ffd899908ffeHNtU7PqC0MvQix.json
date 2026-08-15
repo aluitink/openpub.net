@@ -35,9 +35,9 @@
       "dryRun": false,
       "multi": false,
       "batch": 0,
-      "runCount": 21,
+      "runCount": 25,
       "failureCount": 0,
-      "lastRunAt": 1786783299538,
+      "lastRunAt": 1786801597798,
       "lastCompactAt": 0,
       "lastCompactRunCount": 0,
       "watchSnapshot": {},
@@ -51,7 +51,7 @@
         "modelID": "qwen3-coder-next-80b"
       },
       "activeRecoveryMs": 45000,
-      "lastFinishedAt": 1786783392899
+      "lastFinishedAt": 1786800797018
     }
   ]
 }

@@ -71,7 +71,7 @@ public class MemoryFederationCache : IFederationCache
 
         foreach (var key in _cacheKeys.Keys)
         {
-            if (key.StartsWith($"actor:{domain}", StringComparison.OrdinalIgnoreCase))
+            if (key.Contains(domain, StringComparison.OrdinalIgnoreCase))
             {
                 keysToRemove.Add(key);
             }

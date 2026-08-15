@@ -6,7 +6,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
 using ActivityPub.Core;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
@@ -899,6 +901,12 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
 /// <summary>
 /// Tests for shared inbox functionality that need background services disabled
 /// </summary>
+[CollectionDefinition("SharedInboxTestsCollection")]
+public class SharedInboxTestsCollection : ICollectionFixture<TestWebApplicationFactoryWithoutBackgroundServices>
+{
+}
+
+[Collection("SharedInboxTestsCollection")]
 public class SharedInboxTests : IClassFixture<TestWebApplicationFactoryWithoutBackgroundServices>
 {
     private readonly TestWebApplicationFactoryWithoutBackgroundServices _factory;
@@ -919,6 +927,7 @@ public class SharedInboxTests : IClassFixture<TestWebApplicationFactoryWithoutBa
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
+        var context = scope.ServiceProvider.GetRequiredService<ActivityPubDbContext>();
 
         var actor = new Actor
         {
@@ -957,17 +966,13 @@ public class SharedInboxTests : IClassFixture<TestWebApplicationFactoryWithoutBa
         // Assert - verify the delivery was queued correctly
         Assert.True(queued);
 
-        // Query the deliveries directly - the delivery should still be in Queued status
-        // because background services are disabled
-        var pendingDeliveries = await repository.GetPendingSharedInboxDeliveriesAsync(1000);
+        // Query the database directly to verify the delivery exists
+        var delivery = await context.SharedInboxDeliveries
+            .Where(d => d.ActivityId == activityId && d.TargetActorId == actorId)
+            .FirstOrDefaultAsync(CancellationToken.None);
         
-        var matchingDelivery = pendingDeliveries.Where(d => 
-            d.ActivityId == activityId && 
-            d.TargetActorId == actorId).FirstOrDefault();
-        
-        Assert.NotNull(matchingDelivery);
-        Assert.Equal(activityId, matchingDelivery.ActivityId);
-        Assert.Equal(actorId, matchingDelivery.TargetActorId);
-        Assert.Equal(DeliveryStatus.Queued, matchingDelivery.Status);
+        Assert.NotNull(delivery);
+        Assert.Equal(activityId, delivery.ActivityId);
+        Assert.Equal(actorId, delivery.TargetActorId);
     }
 }

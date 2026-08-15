@@ -11,7 +11,7 @@ public class TestWebApplicationFactoryWithoutBackgroundServices : TestWebApplica
     {
         builder.UseEnvironment(Environments.Production);
         
-        // Disable background services
+        // Disable background services BEFORE creating the host
         builder.ConfigureServices(services =>
         {
             services.RemoveAll(typeof(IHostedService));

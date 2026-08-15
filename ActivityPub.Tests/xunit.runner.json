@@ -1,0 +1,5 @@
+{
+  "methodDisplayOptions": "all",
+  "parallelizeTestCollections": true,
+  "maxParallelThreads": 4
+}

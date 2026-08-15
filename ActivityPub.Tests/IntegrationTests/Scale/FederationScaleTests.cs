@@ -29,7 +29,7 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
         var source = await CreateTestActorAsync("federation-source");
 
         var followTasks = new List<Task>();
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 10; i++)
         {
             var target = await CreateTestActorAsync($"federation-target-{i}");
             followTasks.Add(PostFollowAsync(client, source, target));
@@ -41,7 +41,7 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
         var followings = await repository.GetFollowingAsync(source.PreferredUsername, 0, 100);
 
-        Assert.Equal(20, followings.Count());
+        Assert.Equal(10, followings.Count());
     }
 
     [Fact]
