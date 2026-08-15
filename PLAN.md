@@ -4,7 +4,7 @@
 
 **Current Focus:** Build comprehensive server-to-server integration tests that confirm multiple ActivityPub instances can successfully federate.
 
-**Status:** 338 tests passing, 0 failing. 93 integration tests complete.
+**Status:** 353 tests passing, 0 failing. 93 integration tests complete. Phase 5 done. Phase 6 in progress.
 
 ### Phase 3 Completion Summary
 - ✅ Activity Exchange Integration Tests: 15 tests (ActivityDeliveryTests, SignatureVerificationTests, DuplicateDetectionTests)
@@ -24,8 +24,9 @@
 ### Phase 5 Completion Summary
 - ✅ Performance Tests: 5 tests (PerformanceTests.cs)
 - ✅ Parallelization Tests: 4 tests (ParallelizationTests.cs)
-- ✅ Fixed test isolation in Inbox_CanHandleSharedInboxDelivery (Guid-based unique IDs)
-- **Phase 5 Result:** 11 new tests, 338 total tests passing, 0 failing
+- ✅ Fixed test isolation in Inbox_CanHandleSharedInboxDelivery (Guid-based unique IDs, dedicated fixture)
+- ✅ Added ActivityHistoryTests.cs (5 tests), ActorScaleTests.cs (5 tests), FederationScaleTests.cs (5 tests)
+- **Phase 5 Result:** 16 new tests, 353 total tests passing, 0 failing, ~9s runtime
 
 ---
 
@@ -234,9 +235,24 @@
 
 ### Phase 5 (COMPLETE ✅)
 - ✅ **93 integration tests** (50+ new performance/parallelization tests)
-- ✅ **338 total tests passing** (11 new tests added)
-- ✅ **Test isolation fixes** (Guid-based unique identifiers)
-- ✅ **~10s runtime** (target <15s)
+- ✅ **353 total tests passing** (16 new tests added, including dedicated fixture for background service isolation)
+- ✅ **Test isolation fixes** (Guid-based unique identifiers, background service disabled fixture)
+- ✅ **~9s runtime** (target <15s)
+
+---
+
+## Phase 6: Scale & Optimization (IN PROGRESS)
+
+### Targets
+- **500+ total tests** (147+ new tests needed)
+- **Runtime:** <10s with full parallelization
+- **Database optimization** for large datasets
+- **Memory-efficient test isolation** (per-test cleanup)
+
+### Progress
+- ✅ Phase 5 complete: 353 tests, ~9s runtime
+- 🔄 Adding scale tests with unique test run IDs for isolation
+- 🔄 Optimizing database queries and indexing
 
 ---
 

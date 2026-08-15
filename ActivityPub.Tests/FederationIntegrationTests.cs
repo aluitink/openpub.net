@@ -10,6 +10,7 @@ using Xunit;
 using ActivityPub.Core;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Repositories;
 using ActivityPub.Core.Services;
 using ActivityPub.Core.Middleware;
 using ActivityPub.Core.Infrastructure;
@@ -606,51 +607,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         Assert.Contains(activity.Id, activities);
     }
 
-    [Fact]
-    public async Task Inbox_CanHandleSharedInboxDelivery()
-    {
-        // Arrange
-        using var scope = _factory.Services.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var actor = new Actor
-        {
-            Id = $"https://localhost/users/shareduser-{Guid.NewGuid():N}",
-            Type = "Person",
-            PreferredUsername = $"shareduser-{Guid.NewGuid():N}",
-            Inbox = $"https://localhost/users/shareduser-{Guid.NewGuid():N}/inbox",
-            SharedInbox = "https://localhost/inbox"
-        };
-
-        await repository.SaveUserActorAsync(actor);
-
-        var activity = new Activity
-        {
-            Id = $"https://localhost/users/shareduser-{Guid.NewGuid():N}/activities/shared1",
-            Type = "Create",
-            Actor = actor.Id,
-            Object = new Note
-            {
-                Id = $"https://localhost/users/shareduser-{Guid.NewGuid():N}/notes/shared1",
-                Type = "Note",
-                Content = "Shared inbox test"
-            }
-        };
-
-        // Act
-        var queued = await repository.QueueSharedInboxDeliveryAsync(
-            activity.Id,
-            JsonSerializer.Serialize(activity),
-            actor.Id
-        );
-
-        // Assert
-        Assert.True(queued);
-
-        var pendingDeliveries = await repository.GetPendingSharedInboxDeliveriesAsync(1000);
-        var matchingDelivery = pendingDeliveries.Where(d => d.ActivityId == activity.Id && d.TargetActorId == actor.Id).FirstOrDefault();
-        Assert.NotNull(matchingDelivery);
-    }
 
     #endregion
 
@@ -937,4 +894,80 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
     }
 
     #endregion
+}
+
+/// <summary>
+/// Tests for shared inbox functionality that need background services disabled
+/// </summary>
+public class SharedInboxTests : IClassFixture<TestWebApplicationFactoryWithoutBackgroundServices>
+{
+    private readonly TestWebApplicationFactoryWithoutBackgroundServices _factory;
+
+    public SharedInboxTests(TestWebApplicationFactoryWithoutBackgroundServices factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task Inbox_CanHandleSharedInboxDelivery()
+    {
+        // Arrange - use a unique test run ID to avoid conflicts with previous test runs
+        var testRunId = Guid.NewGuid().ToString("n").Substring(0, 8);
+        var username = $"shareduser-{testRunId}";
+        var actorId = $"https://localhost/users/{username}";
+        var inboxUrl = $"https://localhost/users/{username}/inbox";
+
+        using var scope = _factory.Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
+
+        var actor = new Actor
+        {
+            Id = actorId,
+            Type = "Person",
+            PreferredUsername = username,
+            Inbox = inboxUrl,
+            SharedInbox = "https://localhost/inbox"
+        };
+
+        await repository.SaveUserActorAsync(actor);
+
+        var activityId = $"https://localhost/users/{username}/activities/shared1";
+        var noteId = $"https://localhost/users/{username}/notes/shared1";
+
+        var activity = new Activity
+        {
+            Id = activityId,
+            Type = "Create",
+            Actor = actorId,
+            Object = new Note
+            {
+                Id = noteId,
+                Type = "Note",
+                Content = "Shared inbox test"
+            }
+        };
+
+        // Act
+        var queued = await repository.QueueSharedInboxDeliveryAsync(
+            activity.Id,
+            JsonSerializer.Serialize(activity),
+            actor.Id
+        );
+
+        // Assert - verify the delivery was queued correctly
+        Assert.True(queued);
+
+        // Query the deliveries directly - the delivery should still be in Queued status
+        // because background services are disabled
+        var pendingDeliveries = await repository.GetPendingSharedInboxDeliveriesAsync(1000);
+        
+        var matchingDelivery = pendingDeliveries.Where(d => 
+            d.ActivityId == activityId && 
+            d.TargetActorId == actorId).FirstOrDefault();
+        
+        Assert.NotNull(matchingDelivery);
+        Assert.Equal(activityId, matchingDelivery.ActivityId);
+        Assert.Equal(actorId, matchingDelivery.TargetActorId);
+        Assert.Equal(DeliveryStatus.Queued, matchingDelivery.Status);
+    }
 }
