@@ -1,0 +1,36 @@
+@startuml Data Flow Diagram
+
+title ActivityPub Data Flow
+
+actor User
+participant "Web Client" as Client
+participant "ActivityPub Core" as Core
+participant "Database" as DB
+participant "Remote Server" as Remote
+
+== User Action ==
+Client -> Core: POST /inbox
+Core -> Core: Validate Signature
+Core -> Core: Process Activity
+Core -> DB: Save Activity
+DB --> Core: Confirmation
+Core --> Client: 202 Accepted
+
+== Remote Federation ==
+Remote -> Core: GET /.well-known/webfinger
+Core -> Core: Resolve Actor
+Core --> Remote: WebFinger Response
+
+Remote -> Core: POST /inbox
+Core -> Core: Verify Signature
+Core -> Core: Store Activity
+Core -> DB: Save Activity
+DB --> Core: Saved
+Core --> Remote: 200 OK
+
+== Outbound Activity ==
+Core -> Core: Create Activity
+Core -> Remote: POST Activity
+Remote --> Core: 200 OK
+
+@enduml

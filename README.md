@@ -59,19 +59,39 @@ app.Run();
 - [Testing](docs/testing.md) - Testing strategy and guidelines
 - [Contributing](docs/contributing.md) - How to contribute
 - [API Reference](docs/api-reference/) - Full API documentation
+- [Directory Structure](docs/directory-structure.md) - Project folder structure
+- [Migration Guide](docs/migration-guide.md) - Migrating from old structure
 
 ## Directory Structure
 
 ```
 /workspace/
-├── src/              # Source code
-│   ├── ActivityPub.Core/   # Core library
-│   ├── ActivityPub.Cli/    # Command-line tool
-│   └── ActivityPub.Admin/  # Admin dashboard
-├── tests/            # Test suite
-├── samples/          # Sample applications
-├── docs/             # Documentation
-└── scripts/          # Build and deployment scripts
+├── src/                           # Source code
+│   ├── ActivityPub.Core/          # Core library
+│   │   ├── Core/                  # Domain models and interfaces
+│   │   ├── Services/              # Business logic
+│   │   ├── API/                   # API layer (controllers, middleware)
+│   │   ├── Infrastructure/        # Data, caching, logging, metrics
+│   │   └── Plugins/               # Plugin system
+│   ├── ActivityPub.Cli/           # Command-line tool
+│   └── ActivityPub.Admin/         # Admin dashboard
+├── ActivityPub.Tests/             # Test suite
+│   ├── UnitTests/                 # Unit tests
+│   ├── IntegrationTests/          # Integration tests
+│   └── ScaleTests/                # Performance tests
+├── samples/                       # Sample applications
+├── docs/                          # Documentation
+│   ├── overview.md
+│   ├── architecture.md
+│   ├── testing.md
+│   ├── migration-guide.md
+│   ├── directory-structure.md
+│   ├── api-reference/
+│   └── contributing.md
+└── scripts/                       # Build and deployment scripts
+    ├── build.sh
+    ├── test.sh
+    └── publish.sh
 ```
 
 ## Development

@@ -1,0 +1,57 @@
+@startuml ActivityPub Core Architecture
+
+title ActivityPub.Core Architecture
+
+actor User
+actor RemoteServer
+
+rectangle "src/ActivityPub.Core/" {
+    rectangle "API Layer" {
+        [HTTP Middleware]
+        [Controllers]
+        [Filters]
+    }
+    
+    rectangle "Core Layer" {
+        [Activity Models]
+        [Actor Models]
+        [Collection Models]
+        [WebFinger Models]
+    }
+    
+    rectangle "Services Layer" {
+        [Inbox Processor]
+        [Outbound Activity]
+        [Federation Discovery]
+        [WebFinger Cache]
+        [Key Fetching]
+        [Signature Service]
+    }
+    
+    rectangle "Infrastructure Layer" {
+        [Data Layer (EF Core)]
+        [Cache Layer]
+        [Metrics]
+        [Logging]
+        [Telemetry]
+    }
+}
+
+User --> [Controllers] : HTTP Request
+[Controllers] --> [HTTP Middleware]
+[HTTP Middleware] --> [Inbox Processor]
+[Inbox Processor] --> [Services Layer]
+[Services Layer] --> [Infrastructure Layer]
+[Inbox Processor] --> [Activity Models]
+[Inbox Processor] --> [Actor Models]
+
+RemoteServer --> [HTTP Middleware] : ActivityPub Activity
+[HTTP Middleware] --> [Signature Service]
+[Signature Service] --> [Key Fetching]
+[Signature Service] --> [Activity Models]
+
+[Outbound Activity] --> [RemoteServer] : HTTP POST
+[Outbound Activity] --> [Federation Discovery]
+[Outbound Activity] --> [WebFinger Cache]
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml Layered Architecture
+
+title ActivityPub.Core Layered Architecture
+
+package "Presentation Layer" {
+    [Controllers]
+    [Middleware]
+}
+
+package "Application Layer" {
+    [Services]
+    [Handlers]
+}
+
+package "Domain Layer" {
+    [Models]
+    [Interfaces]
+    [Events]
+}
+
+package "Infrastructure Layer" {
+    [Data Access]
+    [Caching]
+    [Logging]
+    [Metrics]
+}
+
+package "External Systems" {
+    [Database]
+    [Cache Server]
+    [Remote ActivityPub Servers]
+}
+
+Controllers --> Services
+Services --> Models
+Services --> Interfaces
+Services --> Events
+Services --> Data Access
+Services --> Caching
+Services --> Logging
+Services --> Metrics
+Data Access --> Database
+Caching --> Cache Server
+Controllers --> Remote ActivityPub Servers
+
+@enduml
