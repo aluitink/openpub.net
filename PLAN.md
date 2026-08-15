@@ -1,295 +1,293 @@
-# ActivityPub-dotnet Integration Test Plan
+# Project Reorganization Plan
 
-## Executive Summary
+## Current State Analysis
 
-**Current Focus:** Build comprehensive server-to-server integration tests that confirm multiple ActivityPub instances can successfully federate.
+### Issues Identified
+1. **Unclear Folder Structure** - Services, Models, Repositories scattered without clear boundaries
+2. **Mixed Concerns** - Infrastructure, Metrics, Telemetry mixed with core logic
+3. **Redundant Files** - Multiple `Class1.cs`, empty files, duplicate naming
+4. **Documentation Gaps** - Missing high-level overview, contribution guide
+5. **Test Organization** - Integration tests not clearly categorized by feature
+6. **Sample Projects** - Inconsistent structure, overlapping functionality
 
-**Status:** 382 tests passing, 0 failing. 93 integration tests complete. Phase 6 done. Phase 7 in progress.
-
-### Phase 3 Completion Summary
-- ✅ Activity Exchange Integration Tests: 15 tests (ActivityDeliveryTests, SignatureVerificationTests, DuplicateDetectionTests)
-- ✅ Multi-Instance Federation Tests: 8 tests (MultiInstanceFederationTests)
-- ✅ All tests passing with proper error handling
-
-### Phase 4 Completion Summary
-- ✅ Activity Exchange Tests: 15 tests (ActivityExchangeTests.cs)
-- ✅ Additional Multi-Instance Tests: 7 tests (AdditionalMultiInstanceTests.cs)
-- ✅ Additional Validation Tests: 15 tests (AdditionalValidationTests.cs)
-- ✅ WebFinger Resolution Tests: 5 tests (WebFingerResolutionTests.cs)
-- ✅ Inbox Processing Tests: 6 tests (InboxProcessingTests.cs)
-- ✅ HTTP Signature Tests: 5 tests (HttpSignatureProcessingTests.cs)
-- ✅ Activity Retrieval Tests: 5 tests (ActivityRetrievalTests.cs)
-- **Phase 4 Result:** 82 integration tests, 328 total passing tests
-
-### Phase 5 Completion Summary
-- ✅ Performance Tests: 5 tests (PerformanceTests.cs)
-- ✅ Parallelization Tests: 4 tests (ParallelizationTests.cs)
-- ✅ Fixed test isolation in Inbox_CanHandleSharedInboxDelivery (Guid-based unique IDs, dedicated fixture)
-- ✅ Added ActivityHistoryTests.cs (5 tests), ActorScaleTests.cs (5 tests), FederationScaleTests.cs (5 tests)
-- **Phase 5 Result:** 16 new tests, 353 total tests passing, 0 failing, ~9s runtime
-
-### Phase 6 Completion Summary
-- ✅ InboxScaleTests.cs: 5 tests for inbox scale, pagination, filtering, concurrent writes
-- ✅ ActivityProcessingScaleTests.cs: 5 tests for activity processing at scale
-- ✅ OutboxScaleTests.cs: 5 tests for outbox scale and pagination
-- ✅ All tests passing (44 scale tests total, 382 total tests passing)
-- **Phase 6 Result:** 15 new tests, 382 total tests passing, 0 failing, ~20s runtime (parallelized)
-
----
-
-## Current Test Inventory
-
-### Integration Test Files (Phase 3+)
-
-| Test File | Tests | Status |
-|-----------|-------|--------|
-| FederationIntegrationTests.cs | 17 | ✅ Complete |
-| WebFingerIntegrationTests.cs | 3 | ✅ Complete |
-| HttpSignatureIntegrationTests.cs | 3 | ✅ Complete |
-| DiscoveryIntegrationTests.cs | 5 | ✅ Complete |
-| ActivityExchange/ActivityDeliveryTests.cs | 5 | ✅ Phase 3 |
-| ActivityExchange/SignatureVerificationTests.cs | 5 | ✅ Phase 3 |
-| ActivityExchange/DuplicateDetectionTests.cs | 5 | ✅ Phase 3 |
-| MultiInstance/MultiInstanceFederationTests.cs | 8 | ✅ Phase 3 |
-| ActivityExchange/ActivityExchangeTests.cs | 15 | ✅ Phase 4 |
-| MultiInstance/AdditionalMultiInstanceTests.cs | 7 | ✅ Phase 4 |
-| ActivityValidation/AdditionalValidationTests.cs | 15 | ✅ Phase 4 |
-| WebFingerResolution/WebFingerResolutionTests.cs | 5 | ✅ Phase 4 |
-| InboxProcessing/InboxProcessingTests.cs | 6 | ✅ Phase 4 |
-| HttpSignatures/HttpSignatureProcessingTests.cs | 5 | ✅ Phase 4 |
-| ActivityRetrieval/ActivityRetrievalTests.cs | 5 | ✅ Phase 4 |
-| Performance/PerformanceTests.cs | 5 | ✅ Phase 5 |
-| Performance/ParallelizationTests.cs | 4 | ✅ Phase 5 |
+### Current Structure
+```
+/workspace/
+├── ActivityPub.Core/              # Core library (45 files)
+│   ├── Services/                  # 14 service files
+│   ├── Models/                    # 27 model files
+│   ├── Controllers/               # 5 controller files
+│   ├── Repositories/              # 8 entity files
+│   ├── Infrastructure/            # 6 subdirectories (Dashboard, Logging, Metrics, etc.)
+│   ├── Implementations/           # 4 implementation files
+│   ├── Interfaces/                # 3 interface files
+│   ├── BackgroundServices/        # 1 file
+│   ├── Caching/                   # 3 files
+│   ├── Events/                    # 4 files
+│   ├── Metrics/                   # 1 file
+│   ├── Middleware/                # 3 files
+│   ├── Options/                   # 1 file
+│   ├── Plugins/                   # 3 files
+│   ├── Class1.cs                  # Empty placeholder
+│   ├── RejectActivityHandler.cs   # Empty file
+│   └── obj/                       # Build artifacts
+├── ActivityPub.Tests/             # Tests (95 files)
+│   ├── IntegrationTests/          # 15 test files in subdirectories
+│   ├── UnitTests/                 # Missing (tests directly in root)
+│   ├── LoadTesting/               # 1 file
+│   ├── Deferred/                  # 1 file
+│   └── TestResults/               # Test output
+└── SampleProjects/                # 4 sample apps
+    ├── FederationApp/
+    ├── BotApp/
+    ├── DemoApp/
+    └── ConsoleClient/
+```
 
 ---
 
-## Phase 3: Integration Test Expansion (COMPLETE ✅)
+## Proposed Structure
 
-### Results
-- **Total Integration Tests:** 49
-- **Phase 3 Tests Added:** 24 new tests
-- **Status:** All tests passing (275 total)
-
-### Completed Test Categories
-
-#### 1. Activity Exchange Integration Tests (15 tests)
-**Directory:** `IntegrationTests/ActivityExchange/`
-
-✅ ActivityDeliveryTests.cs (5 tests)
-- Valid activity posting and parsing
-- ActivityPub activity parsing
-- Activity validation
-- Content-type header handling
-- Activity propagation verification
-
-✅ SignatureVerificationTests.cs (5 tests)
-- Valid signature acceptance
-- Malformed signature handling
-- Missing signature handling
-- Signature header preservation
-- Multiple signature handling
-
-✅ DuplicateDetectionTests.cs (5 tests)
-- Same activity ID idempotency
-- Different activities acceptance
-- Same content different ID acceptance
-- Inbox activity reception
-- Infinite loop prevention
-
-#### 2. Multi-Instance Federation Tests (8 tests)
-**Directory:** `IntegrationTests/MultiInstance/`
-
-✅ MultiInstanceFederationTests.cs (8 tests)
-- Follow workflow completion
-- Like workflow completion
-- Announce workflow completion
-- Undo workflow completion
-- Delete workflow completion
-- Multiple workflow execution
-- Concurrent federation operations
-- State consistency verification
-
----
-
-## Phase 4: Integration Test Expansion (COMPLETE ✅)
-
-### Results
-- **Integration Tests:** 82 tests (target 75+)
-- **Total Tests:** 328 passing, 1 pre-existing test failing only when run with other tests due to shared in-memory database state
-- **Status:** All new Phase 4 tests passing
-
-### Completed Test Categories
-
-#### 1. Activity Exchange Tests (15 tests)
-**Directory:** `IntegrationTests/ActivityExchange/`
-
-✅ ActivityExchangeTests.cs (15 tests)
-- Activity delivery with valid payloads
-- Activity parsing and validation
-- Content-type header verification
-- Activity propagation testing
-- Duplicate activity handling
-
-#### 2. Additional Multi-Instance Tests (7 tests)
-**Directory:** `IntegrationTests/MultiInstance/`
-
-✅ AdditionalMultiInstanceTests.cs (7 tests)
-- Concurrent federation operations
-- State consistency verification
-- Multiple workflow execution
-- Concurrent follow operations
-- Concurrent activity broadcasting
-
-#### 3. Additional Validation Tests (15 tests)
-**Directory:** `IntegrationTests/ActivityValidation/`
-
-✅ AdditionalValidationTests.cs (15 tests)
-- Activity type validation
-- Required field validation
-- Format validation (URLs, URIs)
-- Content validation
-- Signature validation
-
-#### 4. WebFinger Resolution Tests (5 tests)
-**Directory:** `IntegrationTests/WebFingerResolution/`
-
-✅ WebFingerResolutionTests.cs (5 tests)
-- User discovery
-- Domain discovery
-- Resource lookup
-- Error handling
-- Caching behavior
-
-#### 5. Inbox Processing Tests (6 tests)
-**Directory:** `IntegrationTests/InboxProcessing/`
-
-✅ InboxProcessingTests.cs (6 tests)
-- Activity reception
-- Activity ordering
-- Duplicate prevention
-- Signature verification
-- Activity routing
-
-#### 6. HTTP Signature Tests (5 tests)
-**Directory:** `IntegrationTests/HttpSignatures/`
-
-✅ HttpSignatureProcessingTests.cs (5 tests)
-- Valid signature acceptance
-- Missing signature rejection
-- Malformed signature rejection
-- Signature header parsing
-- Signature verification
-
-#### 7. Activity Retrieval Tests (5 tests)
-**Directory:** `IntegrationTests/ActivityRetrieval/`
-
-✅ ActivityRetrievalTests.cs (5 tests)
-- Public activity retrieval
-- Authenticated activity retrieval
-- Activity not found handling
-- Activity ID validation
-- Activity parsing
+### Root Directory
+```
+/workspace/
+├── docs/                          # NEW: All documentation
+│   ├── overview.md                # NEW: Project overview
+│   ├── architecture.md            # Renamed from ARCHITECTURE_GUIDE.md
+│   ├── testing.md                 # Renamed from TESTING_GUIDE.md
+│   ├── state-report.md            # Renamed from ACTIVITYPUB_STATE_REPORT.md
+│   ├── api-reference/             # NEW: API docs
+│   ├── contributing.md            # NEW: Contribution guide
+│   └── faq.md                     # NEW: FAQ
+├── src/                           # NEW: Source code organized by feature
+│   ├── ActivityPub.Core/          # Core library
+│   ├── ActivityPub.Cli/           # NEW: Command-line tool
+│   └── ActivityPub.Admin/         # NEW: Admin dashboard
+├── tests/                         # NEW: All tests
+│   ├── ActivityPub.Tests/
+│   │   ├── UnitTests/
+│   │   ├── IntegrationTests/
+│   │   └── ScaleTests/            # Renamed from IntegrationTests/Scale
+│   └── SampleProjects/
+│       ├── FederationApp/
+│       ├── BotApp/
+│       ├── DemoApp/
+│       └── ConsoleClient/
+├── samples/                       # NEW: Standalone examples
+│   ├── quickstart/                # NEW: Minimal working example
+│   └── advanced/                  # NEW: Complex examples
+├── scripts/                       # NEW: Build and deployment scripts
+│   ├── build.sh                   # NEW: Cross-platform build
+│   ├── test.sh                    # NEW: Test runner
+│   ├── publish.sh                 # NEW: Publish script
+│   └── ci/                        # NEW: CI/CD configs
+├── .github/                       # NEW: GitHub workflows
+│   ├── workflows/                 # NEW: GitHub Actions
+│   └── ISSUE_TEMPLATE/            # NEW: Issue templates
+├── .opencode/                     # Existing: AI assistant config
+├── .gitignore
+├── .dockerignore
+├── ActivityPub.sln                # Consolidated solution file
+├── README.md                      # NEW: Comprehensive overview
+├── LICENSE                        # NEW: License file
+├── SECURITY.md                    # NEW: Security policy
+└── CODE_OF_CONDUCT.md             # NEW: Code of conduct
+```
 
 ---
 
-## Phase 6: Scale & Optimization (COMPLETE ✅)
+## Detailed Breakdown
 
-### Results
-- **Integration Tests:** 108 tests (93 existing + 15 new scale tests)
-- **Total Tests:** 382 passing, 0 failing
-- **Runtime:** ~20s with parallelization
-- **Status:** All Phase 6 tests passing
+### 1. Source Code Structure (`src/`)
 
-### Completed Scale Tests
-| Test File | Tests | Purpose |
-|-----------|-------|---------|
-| InboxScaleTests.cs | 5 | Inbox scale, pagination, filtering, concurrent writes |
-| ActivityProcessingScaleTests.cs | 5 | Activity processing scale, mixed types, nested objects |
-| OutboxScaleTests.cs | 5 | Outbox scale, pagination, date range, type filtering |
-| ActivityHistoryTests.cs | 5 | Activity storage/retrieval |
-| ActorScaleTests.cs | 5 | Actor CRUD at scale |
-| FederationScaleTests.cs | 5 | Federation operations |
-| DatabaseScaleTests.cs | 5 | Database bulk operations |
-| QueryScaleTests.cs | 5 | Complex queries, pagination |
-| CacheScaleTests.cs | 5 | Cache scale, memory usage, eviction policies |
+#### ActivityPub.Core
+```
+src/ActivityPub.Core/
+├── Core/                          # NEW: Core domain logic
+│   ├── Models/                    # ActivityPub models
+│   │   ├── activities/            # Activity types (Create, Follow, etc.)
+│   │   ├── actors/                # Actor types
+│   │   ├── collections/           # Collection types
+│   │   └── webfinger/             # WebFinger response models
+│   ├── Interfaces/                # Interfaces (reorganized)
+│   ├── Events/                    # Domain events
+│   └── Options/                   # Configuration options
+├── Infrastructure/                # NEW: Infrastructure concerns
+│   ├── Data/                      # Database, EF Core
+│   │   ├── Context/
+│   │   ├── Entities/
+│   │   ├── Repositories/
+│   │   └── Migrations/
+│   ├── Caching/                   # Cache implementations
+│   ├── Metrics/                   # Metrics collection
+│   ├── Telemetry/                 # OpenTelemetry setup
+│   ├── Logging/                   # Logging configuration
+│   └── Monitoring/                # Health checks
+├── Services/                      # Business logic services
+│   ├── ActivityProcessing/        # Activity processing
+│   ├── Federation/                # Federation logic
+│   ├── WebFinger/                 # WebFinger resolution
+│   ├── Security/                  # Signature verification
+│   └── Background/                # Background services
+├── API/                           # NEW: API layer
+│   ├── Controllers/
+│   │   ├── v1/                    # API versioning
+│   │   ├── v2/                    # Future versions
+│   │   └── Dashboard/             # Admin endpoints
+│   ├── Middleware/                # HTTP middleware
+│   └── Filters/                   # Action filters
+├── Plugins/                       # Plugin system
+├── Implementations/               # Interface implementations
+└── Program.cs
+```
+
+#### ActivityPub.Cli (NEW)
+```
+src/ActivityPub.Cli/
+├── Commands/                      # CLI commands
+│   ├── actor/                     # Actor management
+│   ├── activity/                  # Activity operations
+│   ├── federation/                # Federation management
+│   └── status/                    # Health checks
+├── Services/                      # CLI services
+├── Models/                        # CLI models
+└── Program.cs
+```
+
+#### ActivityPub.Admin (NEW)
+```
+src/ActivityPub.Admin/
+├── Pages/                         # Razor Pages
+│   ├── Index.cshtml
+│   ├── Actors/
+│   ├── Activities/
+│   ├── Federation/
+│   └── Metrics/
+├── wwwroot/                       # Static files
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── Services/                      # Admin services
+└── Program.cs
+```
+
+### 2. Tests Structure (`tests/`)
+
+```
+tests/ActivityPub.Tests/
+├── UnitTests/                     # Unit tests (organized by layer)
+│   ├── Core/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   └── Repositories/
+│   ├── Services/                  # Service unit tests
+│   ├── Infrastructure/            # Infrastructure mocks
+│   └── Integration/               # Integration mocks
+├── IntegrationTests/              # Integration tests (organized by feature)
+│   ├── ActivityExchange/
+│   ├── Federation/
+│   ├── WebFinger/
+│   ├── HttpSignature/
+│   ├── InboxProcessing/
+│   └── MultiInstance/
+├── ScaleTests/                    # Performance tests
+│   ├── Database/
+│   ├── Cache/
+│   ├── ActivityProcessing/
+│   └── Federation/
+├── fixtures/                      # Test fixtures and data
+├── helpers/                       # Test helper utilities
+└── AssemblyInfo.cs
+```
+
+### 3. Sample Projects (`samples/`)
+
+```
+samples/
+├── quickstart/                    # NEW: Minimal example
+│   ├── Program.cs
+│   ├── appsettings.json
+│   └── README.md
+├── advanced/                      # NEW: Complex examples
+│   ├── with-database/
+│   ├── with-federation/
+│   └── with-plugins/
+└── existing/                      # Migrated from SampleProjects/
+    ├── FederationApp/
+    ├── BotApp/
+    ├── DemoApp/
+    └── ConsoleClient/
+```
 
 ---
 
-## Implementation Schedule (Phase 3 - COMPLETE)
+## Migration Steps
 
-### Completed: Activity Exchange Tests
-- ✅ Created `IntegrationTests/ActivityExchange/` directory
-- ✅ Added ActivityDeliveryTests.cs (5 tests)
-- ✅ Added SignatureVerificationTests.cs (5 tests)
-- ✅ Added DuplicateDetectionTests.cs (5 tests)
-- **Result:** 15 activity exchange tests
+### Phase 1: Foundation (Week 1)
+1. Create new directory structure
+2. Move and reorganize core files
+3. Update all project references
+4. Run `dotnet build` - fix errors
+5. Run `dotnet test` - verify tests
 
-### Completed: Multi-Instance Federation Tests
-- ✅ Created `IntegrationTests/MultiInstance/` directory
-- ✅ Added MultiInstanceFederationTests.cs (8 tests)
-- **Result:** 8 multi-instance tests
+### Phase 2: Documentation (Week 2)
+1. Create new README.md
+2. Move and rename existing docs
+3. Create API reference
+4. Write contribution guide
+5. Add issue templates
 
-### Completed: Dependency Injection Tests
-- ✅ Added DependencyInjectionTests.cs (5 tests)
-- **Result:** 5 DI container tests
+### Phase 3: Tooling (Week 3)
+1. Create build scripts
+2. Set up CI/CD pipelines
+3. Configure code quality tools
+4. Update documentation
 
-### Completed: Security Tests
-- ✅ Added security vulnerability tests (43 tests)
-- **Result:** All security tests passing
-
----
-
-## Completion Criteria
-
-### Phase 3 (COMPLETE ✅)
-- ✅ **49 integration tests** implemented
-- ✅ **275 total tests** passing
-- ✅ **0 build errors**
-- ✅ Tests verify **multiple AP instances can successfully federate**
-
-### Phase 4 (COMPLETE ✅)
-- ✅ **82 integration tests** (target 75+)
-- ✅ **328 total tests passing** (target 300+)
-- ⏳ **<15s runtime** with parallelization
-- ⏳ **Load testing infrastructure** added
-
-### Phase 5 (COMPLETE ✅)
-- ✅ **93 integration tests** (50+ new performance/parallelization tests)
-- ✅ **353 total tests passing** (16 new tests added, including dedicated fixture for background service isolation)
-- ✅ **Test isolation fixes** (Guid-based unique identifiers, background service disabled fixture)
-- ✅ **~9s runtime** (target <15s)
-
-### Phase 6 (COMPLETE ✅)
-- ✅ **15 new scale test files** (Inbox, ActivityProcessing, Outbox, Cache, Database, Query, ActivityHistory, ActorScale, Federation)
-- ✅ **44 scale tests passing**
-- ✅ **382 total tests passing**
-- ✅ **Build errors fixed** (property names, type removals, namespace fixes)
-- ✅ **Documentation created**: TESTING_GUIDE.md, ARCHITECTURE_GUIDE.md
-- ✅ **Test isolation fixed**: unique GUID-based actor IDs, dedicated fixtures
+### Phase 4: Cleanup (Week 4)
+1. Remove old directories
+2. Delete redundant files
+3. Consolidate solution files
+4. Final testing
 
 ---
 
-## Phase 7: Performance Optimization (IN PROGRESS)
+## File Cleanup Actions
 
-### Targets
-- **500+ total tests** (118+ new tests needed)
-- **Runtime:** <15s with full parallelization
-- **Database optimization** for large datasets
-- **Caching strategy** for frequent queries
+### Remove/Deprecate
+- ❌ `ActivityPub.Core/Class1.cs` - Empty placeholder
+- ❌ `ActivityPub.Core/RejectActivityHandler.cs` - Empty file
+- ❌ `ActivityPub.slnx` - Solution filter (not needed)
+- ❌ Duplicate README.md files in SampleProjects
 
-### Next Steps
-- Performance optimization tests (BenchmarkDotNet)
-- Database indexing and query optimization
-- Cache performance testing
-- Memory usage optimization
+### Rename
+- `ARCHITECTURE_GUIDE.md` → `docs/architecture.md`
+- `TESTING_GUIDE.md` → `docs/testing.md`
+- `ACTIVITYPUB_STATE_REPORT.md` → `docs/state-report.md`
+- `IntegrationTests/Scale/` → `ScaleTests/`
 
+### Consolidate
+- Merge `SampleProjects/` → `samples/`
+- Consolidate all `.sln` files into single solution
+- Unify `UnitTests` and `IntegrationTests` folder structure
 
 ---
 
-## Notes
+## Benefits
 
-- Focus on **real server-to-server communication** (not mocked)
-- Use real HTTP requests, TLS, and cryptographic signing
-- Test scenarios where **multiple AP server instances** must coordinate
-- Verify federation works in **real-world conditions** (network latency, errors, etc.)
-- Each test should explicitly verify **inter-instance federation success**
+1. **Clear Separation of Concerns** - Each layer has dedicated folder
+2. **Scalable Structure** - Easy to add new features
+3. **Better Testing** - Organized by test type and feature
+4. **Improved Documentation** - Centralized docs folder
+5. **Maintainability** - Easier to find and modify code
+6. **Onboarding** - Clear structure for new contributors
+
+---
+
+## Next Steps
+
+1. Review and approve this plan
+2. Create backup of current branch
+3. Execute migration in phases
+4. Verify build and tests after each phase
+5. Update documentation
+6. Announce changes to team
