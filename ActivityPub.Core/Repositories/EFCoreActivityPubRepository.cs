@@ -112,14 +112,37 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
 
     public async Task<ICollection<string>> GetActorOutboxActivitiesAsync(string username, int skip, int limit)
     {
-        var activities = await _context.Activities
+        var actor = await GetUserActorAsync(username);
+        if (actor == null)
+        {
+            return new List<string>();
+        }
+
+        var actorId = actor.Id;
+        var allActivities = await _context.Activities
             .OrderBy(a => a.CreatedAt)
-            .Skip(skip)
-            .Take(limit)
-            .Select(a => a.ActivityId)
+            .Select(a => new { a.ActivityId, a.JsonData })
             .ToListAsync();
 
-        return activities;
+        var activityIds = new List<string>();
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            
+            if (root.TryGetProperty("actor", out var actorElement) && 
+                actorElement.ValueKind == JsonValueKind.String &&
+                actorElement.GetString() == actorId)
+            {
+                activityIds.Add(item.ActivityId);
+            }
+        }
+
+        return activityIds
+            .OrderBy(id => id)
+            .Skip(skip)
+            .Take(limit)
+            .ToList();
     }
 
     public async Task<ICollection<string>> GetFollowersAsync(string username, int skip, int limit)

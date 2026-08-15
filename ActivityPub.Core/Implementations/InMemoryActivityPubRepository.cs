@@ -58,7 +58,9 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     /// <inheritdoc />
     public Task<ICollection<string>> GetActorOutboxActivitiesAsync(string username, int skip, int limit)
     {
+        var actorId = $"https://localhost/users/{username}";
         var activityIds = _activities.Values
+            .Where(a => a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId))
             .OrderBy(a => a.Published ?? DateTime.MinValue)
             .Skip(skip)
             .Take(limit)
