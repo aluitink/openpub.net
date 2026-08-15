@@ -156,8 +156,9 @@ public class SharedInboxService : ISharedInboxService
     public async Task<bool> ProcessQueueAsync()
     {
         var deliveries = await _repository.GetPendingSharedInboxDeliveriesAsync(100);
+        var batch = deliveries.Take(50).ToList();
 
-        foreach (var delivery in deliveries)
+        foreach (var delivery in batch)
         {
             try
             {

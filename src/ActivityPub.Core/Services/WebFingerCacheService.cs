@@ -11,7 +11,7 @@ namespace ActivityPub.Core.Services;
 public class WebFingerCacheService
 {
     private readonly IMemoryCache _cache;
-    private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(10);
+    private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
 
     public WebFingerCacheService(IMemoryCache cache)
     {

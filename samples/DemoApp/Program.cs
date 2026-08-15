@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCaching;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,9 +59,11 @@ builder.Services.AddSingleton<IPFilterService>();
 builder.Services.AddSingleton<AuditLogger>();
 builder.Services.AddSingleton<IOAuth2Service, OAuth2Service>();
 builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching();
 
 var app = builder.Build();
 
+app.UseResponseCaching();
 app.UseRouting();
 app.UseStaticFiles();
 
@@ -142,7 +145,7 @@ public class QueueProcessorBackgroundService : BackgroundService
                 
                 var pendingItems = await dbContext.Actors
                     .OrderBy(a => a.Username)
-                    .Take(100)
+                    .Take(50)
                     .ToListAsync();
 
                 if (pendingItems.Any())
@@ -151,7 +154,7 @@ public class QueueProcessorBackgroundService : BackgroundService
                     _metrics.IncrementProcessedItems(pendingItems.Count);
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
             }
             catch (Exception ex)
             {
