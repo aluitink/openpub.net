@@ -40,11 +40,11 @@ public class SigningVerificationMiddleware
     private bool IsActivityPubEndpoint(string path)
     {
         // ActivityPub endpoints that require signing
-        var activityPubPaths = new[] 
-        { 
-            "/inbox", 
-            "/outbox", 
-            "/followers", 
+        var activityPubPaths = new[]
+        {
+            "/inbox",
+            "/outbox",
+            "/followers",
             "/following",
             "/shared-inbox",
             "/activity"

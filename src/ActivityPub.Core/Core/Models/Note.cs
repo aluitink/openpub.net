@@ -12,19 +12,19 @@ public class Note : Object
     /// </summary>
     [JsonPropertyName("inReplyTo")]
     public new string? InReplyTo { get; set; }
-    
+
     /// <summary>
     /// The parent object
     /// </summary>
     [JsonPropertyName("parent")]
     public new string? Parent { get; set; }
-    
+
     /// <summary>
     /// The replies collection
     /// </summary>
     [JsonPropertyName("replies")]
     public new OrderedCollection? Replies { get; set; }
-    
+
     /// <summary>
     /// Additional properties that are not explicitly defined
     /// </summary>

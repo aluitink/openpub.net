@@ -188,9 +188,9 @@ public class InboxScaleTests : IClassFixture<TestWebApplicationFactory>
         using var dbScope = _factory.Services.CreateScope();
         var context = dbScope.ServiceProvider.GetRequiredService<ActivityPubDbContext>();
 
-        var createCount = await context.Activities.CountAsync(a => 
+        var createCount = await context.Activities.CountAsync(a =>
             a.ActivityId.Contains(testRunId) && a.JsonData.Contains("\"type\":\"Create\""));
-        var likeCount = await context.Activities.CountAsync(a => 
+        var likeCount = await context.Activities.CountAsync(a =>
             a.ActivityId.Contains(testRunId) && a.JsonData.Contains("\"type\":\"Like\""));
 
         Assert.Equal(50, createCount);

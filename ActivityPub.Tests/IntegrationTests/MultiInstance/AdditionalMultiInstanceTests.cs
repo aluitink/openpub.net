@@ -61,7 +61,7 @@ public class AdditionalMultiInstanceTests : IClassFixture<TestWebApplicationFact
     public async Task MultiInstance_Three_Actors()
     {
         var client = _factory.CreateClient();
-        
+
         for (int i = 0; i < 3; i++)
         {
             var activity = $@"{{
@@ -85,23 +85,23 @@ public class AdditionalMultiInstanceTests : IClassFixture<TestWebApplicationFact
     public async Task MultiInstance_Four_Actors()
     {
         var client = _factory.CreateClient();
-        
+
         for (int i = 0; i < 4; i++)
         {
             var activity = $@"{{
-                ""id"": ""https://localhost/users/multitest{i+3}/activities/create-1"",
+                ""id"": ""https://localhost/users/multitest{i + 3}/activities/create-1"",
                 ""type"": ""Create"",
-                ""actor"": ""https://localhost/users/multitest{i+3}"",
+                ""actor"": ""https://localhost/users/multitest{i + 3}"",
                 ""object"": {{
-                    ""id"": ""https://localhost/users/multitest{i+3}/notes/post-1"",
+                    ""id"": ""https://localhost/users/multitest{i + 3}/notes/post-1"",
                     ""type"": ""Note"",
-                    ""content"": ""Actor {i+3}""
+                    ""content"": ""Actor {i + 3}""
                 }}
             }}";
 
             var content = new StringContent(activity, Encoding.UTF8, "application/activity+json");
-            var response = await client.PostAsync($"/users/multitest{i+3}/outbox", content);
-            Assert.True(response.IsSuccessStatusCode, $"Actor {i+3} should succeed");
+            var response = await client.PostAsync($"/users/multitest{i + 3}/outbox", content);
+            Assert.True(response.IsSuccessStatusCode, $"Actor {i + 3} should succeed");
         }
     }
 
@@ -109,23 +109,23 @@ public class AdditionalMultiInstanceTests : IClassFixture<TestWebApplicationFact
     public async Task MultiInstance_Five_Actors()
     {
         var client = _factory.CreateClient();
-        
+
         for (int i = 0; i < 5; i++)
         {
             var activity = $@"{{
-                ""id"": ""https://localhost/users/multitest{i+7}/activities/create-1"",
+                ""id"": ""https://localhost/users/multitest{i + 7}/activities/create-1"",
                 ""type"": ""Create"",
-                ""actor"": ""https://localhost/users/multitest{i+7}"",
+                ""actor"": ""https://localhost/users/multitest{i + 7}"",
                 ""object"": {{
-                    ""id"": ""https://localhost/users/multitest{i+7}/notes/post-1"",
+                    ""id"": ""https://localhost/users/multitest{i + 7}/notes/post-1"",
                     ""type"": ""Note"",
-                    ""content"": ""Actor {i+7}""
+                    ""content"": ""Actor {i + 7}""
                 }}
             }}";
 
             var content = new StringContent(activity, Encoding.UTF8, "application/activity+json");
-            var response = await client.PostAsync($"/users/multitest{i+7}/outbox", content);
-            Assert.True(response.IsSuccessStatusCode, $"Actor {i+7} should succeed");
+            var response = await client.PostAsync($"/users/multitest{i + 7}/outbox", content);
+            Assert.True(response.IsSuccessStatusCode, $"Actor {i + 7} should succeed");
         }
     }
 
@@ -133,23 +133,23 @@ public class AdditionalMultiInstanceTests : IClassFixture<TestWebApplicationFact
     public async Task MultiInstance_Ten_Actors()
     {
         var client = _factory.CreateClient();
-        
+
         for (int i = 0; i < 10; i++)
         {
             var activity = $@"{{
-                ""id"": ""https://localhost/users/multitest{i+12}/activities/create-1"",
+                ""id"": ""https://localhost/users/multitest{i + 12}/activities/create-1"",
                 ""type"": ""Create"",
-                ""actor"": ""https://localhost/users/multitest{i+12}"",
+                ""actor"": ""https://localhost/users/multitest{i + 12}"",
                 ""object"": {{
-                    ""id"": ""https://localhost/users/multitest{i+12}/notes/post-1"",
+                    ""id"": ""https://localhost/users/multitest{i + 12}/notes/post-1"",
                     ""type"": ""Note"",
-                    ""content"": ""Actor {i+12}""
+                    ""content"": ""Actor {i + 12}""
                 }}
             }}";
 
             var content = new StringContent(activity, Encoding.UTF8, "application/activity+json");
-            var response = await client.PostAsync($"/users/multitest{i+12}/outbox", content);
-            Assert.True(response.IsSuccessStatusCode, $"Actor {i+12} should succeed");
+            var response = await client.PostAsync($"/users/multitest{i + 12}/outbox", content);
+            Assert.True(response.IsSuccessStatusCode, $"Actor {i + 12} should succeed");
         }
     }
 }

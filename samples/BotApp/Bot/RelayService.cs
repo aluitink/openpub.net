@@ -70,7 +70,7 @@ public class RelayService : IHostedService
     private async Task RelayActivitiesAsync(CancellationToken cancellationToken)
     {
         var botActor = $"{_options.Domain}/users/bot";
-        
+
         var followers = await _repository.GetFollowersAsync("bot", 0, 100);
 
         if (!followers.Any())

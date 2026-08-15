@@ -139,7 +139,7 @@ public class QueueProcessorBackgroundService : BackgroundService
             {
                 using var scope = _scopeFactory.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<ActivityPubDbContext>();
-                
+
                 var pendingItems = await dbContext.Actors
                     .OrderBy(a => a.Username)
                     .Take(50)
@@ -243,7 +243,7 @@ public class MultiInstanceController : ControllerBase
     {
         var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
         var currentId = _cache.Get<string>("CurrentInstanceId");
-        
+
         return Ok(new
         {
             instances = instances.Select(i => new
@@ -280,7 +280,7 @@ public class MultiInstanceController : ControllerBase
     {
         var instances = _cache.Get<List<InstanceConfig>>("Instances") ?? new List<InstanceConfig>();
         var instance = instances.FirstOrDefault(i => i.Id == id);
-        
+
         if (instance == null)
             return NotFound(new { error = "Instance not found" });
 

@@ -970,10 +970,10 @@ public static class EndpointRegistry
             string actorId = data?.GetValueOrDefault("actorId") ?? "";
             bool success = !string.IsNullOrWhiteSpace(actorId);
 
-            auditLogger.Log("login_attempt", actorId, 
-                context.Connection.RemoteIpAddress?.ToString(), 
-                "/security/login", 
-                $"Login attempt: {actorId}", 
+            auditLogger.Log("login_attempt", actorId,
+                context.Connection.RemoteIpAddress?.ToString(),
+                "/security/login",
+                $"Login attempt: {actorId}",
                 success);
 
             return Results.Ok(new
@@ -989,7 +989,7 @@ public static class EndpointRegistry
         app.MapPost("/security/rate-limit/hit", async (HttpContext context, AuditLogger auditLogger) =>
         {
             string clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            auditLogger.Log("rate_limit", null, clientIp, context.Request.Path.ToString(), 
+            auditLogger.Log("rate_limit", null, clientIp, context.Request.Path.ToString(),
                 "Rate limit exceeded", false);
 
             return Results.Ok(new
@@ -1000,24 +1000,24 @@ public static class EndpointRegistry
             });
         })
         .WithTags("Security");
-        
+
         app.MapGet(OAuth2Constants.AuthorizationEndpoint, async (string? clientId, string? redirectUri, string? responseType, string? state, string? codeChallenge, string? codeChallengeMethod, HashSet<string>? scopes, HttpContext context, IOAuth2Service oauthService, IMemoryCache cache) =>
         {
             if (string.IsNullOrEmpty(clientId))
             {
                 return Results.BadRequest(new { error = "client_id is required" });
             }
-            
+
             if (string.IsNullOrEmpty(redirectUri))
             {
                 return Results.BadRequest(new { error = "redirect_uri is required" });
             }
-            
+
             if (string.IsNullOrEmpty(responseType) || responseType != "code")
             {
                 return Results.BadRequest(new { error = "response_type must be 'code'" });
             }
-            
+
             var request = new AuthorizationRequest
             {
                 ClientId = clientId,
@@ -1028,24 +1028,24 @@ public static class EndpointRegistry
                 CodeChallengeMethod = codeChallengeMethod,
                 Scopes = scopes
             };
-            
+
             var actorId = GetActorIdFromRequest(context, cache);
-            
+
             if (string.IsNullOrEmpty(actorId))
             {
                 return Results.Redirect($"/login?redirectUri={Uri.EscapeDataString(redirectUri)}&clientId={Uri.EscapeDataString(clientId)}");
             }
-            
+
             try
             {
                 var response = await oauthService.CreateAuthorizationCodeAsync(request, actorId);
-                
+
                 var redirectUrl = $"{redirectUri}?code={response.Code}";
                 if (!string.IsNullOrEmpty(response.State))
                 {
                     redirectUrl += $"&state={response.State}";
                 }
-                
+
                 return Results.Redirect(redirectUrl);
             }
             catch (InvalidOperationException ex)
@@ -1054,14 +1054,14 @@ public static class EndpointRegistry
             }
         })
         .WithTags("OAuth2");
-        
+
         app.MapPost(OAuth2Constants.TokenEndpoint, async (TokenRequest request, HttpContext context, IOAuth2Service oauthService) =>
         {
             if (string.IsNullOrEmpty(request.GrantType))
             {
                 return Results.BadRequest(new { error = "grant_type is required" });
             }
-            
+
             try
             {
                 var response = await oauthService.CreateTokenAsync(request);
@@ -1073,31 +1073,31 @@ public static class EndpointRegistry
             }
         })
         .WithTags("OAuth2");
-        
+
         app.MapGet(OAuth2Constants.UserInfoEndpoint, async (HttpContext context, IOAuth2Service oauthService) =>
         {
             var authHeader = context.Request.Headers["Authorization"].ToString();
             string accessToken = null;
-            
+
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 accessToken = authHeader.Substring(7);
             }
-            
+
             if (string.IsNullOrEmpty(accessToken))
             {
                 return Results.StatusCode(401);
             }
-            
+
             try
             {
                 var userInfo = await oauthService.GetUserInfoAsync(accessToken);
-                
+
                 if (userInfo == null)
                 {
                     return Results.StatusCode(401);
                 }
-                
+
                 return Results.Ok(userInfo);
             }
             catch (Exception ex)
@@ -1106,44 +1106,44 @@ public static class EndpointRegistry
             }
         })
         .WithTags("OAuth2");
-        
+
         app.MapPost(OAuth2Constants.RevokeEndpoint, async (RevokeRequest request, string? clientId, HttpContext context, IOAuth2Service oauthService) =>
         {
             if (string.IsNullOrEmpty(request.Token))
             {
                 return Results.BadRequest(new { error = "token is required" });
             }
-            
+
             var success = await oauthService.RevokeTokenAsync(request.Token, clientId);
-            
+
             return Results.Ok(new { success });
         })
         .WithTags("OAuth2");
-        
+
         app.MapPost(OAuth2Constants.IntrospectEndpoint, async (IntrospectRequest request, IOAuth2Service oauthService) =>
         {
             if (string.IsNullOrEmpty(request.Token))
             {
                 return Results.BadRequest(new { error = "token is required" });
             }
-            
+
             var result = await oauthService.IntrospectTokenAsync(request.Token, request.ClientId, request.ClientSecret);
             return Results.Ok(result);
         })
         .WithTags("OAuth2");
-        
+
         app.MapPost("/oauth2/pkce/challenge", async (string codeVerifier) =>
         {
             if (string.IsNullOrEmpty(codeVerifier))
             {
                 return Results.BadRequest(new { error = "code_verifier is required" });
             }
-            
+
             using var sha256 = SHA256.Create();
             var bytes = Encoding.UTF8.GetBytes(codeVerifier);
             var hash = sha256.ComputeHash(bytes);
             var codeChallenge = Convert.ToBase64String(hash).Replace("/", "_").Replace("+", "-").TrimEnd('=');
-            
+
             return Results.Ok(new
             {
                 code_challenge = codeChallenge,
@@ -1151,7 +1151,7 @@ public static class EndpointRegistry
             });
         })
         .WithTags("OAuth2");
-        
+
         app.MapGet("/oauth2/scope/descriptions", () =>
         {
             return Results.Ok(OAuth2Scopes.ScopeDescriptions);
@@ -1311,7 +1311,7 @@ public static class EndpointRegistry
         })
         .WithTags("Webhooks");
     }
-    
+
     private static string GetActorIdFromRequest(HttpContext context, IMemoryCache cache)
     {
         var sessionId = context.Request.Cookies["session_id"];

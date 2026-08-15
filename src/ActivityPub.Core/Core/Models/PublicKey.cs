@@ -12,13 +12,13 @@ public class PublicKey
     /// </summary>
     [JsonPropertyName("id")]
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// The owner of the public key
     /// </summary>
     [JsonPropertyName("owner")]
     public string? Owner { get; set; }
-    
+
     /// <summary>
     /// The public key in PEM format
     /// </summary>

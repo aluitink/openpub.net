@@ -28,7 +28,7 @@ public class InboxProcessorService : IDisposable
         _logger = logger;
         _inboxChannel = Channel.CreateBounded<ActivityPub.Core.Models.Activity>(new BoundedChannelOptions(1000));
         _cancellationTokenSource = new CancellationTokenSource();
-        
+
         Task.Run(ProcessInboxItemsAsync);
     }
 
@@ -45,7 +45,7 @@ public class InboxProcessorService : IDisposable
             try
             {
                 _logger.LogInformation("Processing inbox activity: {ActivityId}", activity.Id);
-                
+
                 var actorId = GetActorId(activity.Actor);
                 if (!string.IsNullOrEmpty(actorId))
                 {
@@ -63,10 +63,10 @@ public class InboxProcessorService : IDisposable
                         Updated = DateTime.UtcNow
                     });
                 }
-                
+
                 var eventObj = new ActivityReceivedEvent(activity);
                 await _eventDispatcher.DispatchAsync(eventObj);
-                
+
                 _logger.LogInformation("Successfully processed inbox activity: {ActivityId}", activity.Id);
             }
             catch (Exception ex)

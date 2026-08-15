@@ -10,28 +10,28 @@ namespace ActivityPub.Core;
 public class AcceptActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Accept";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Accept activity: {ActivityId}", activity.Id);
-        
+
         var actorId = activity.ActorId;
         var objectId = activity.ObjectId;
-        
+
         if (string.IsNullOrEmpty(actorId) || string.IsNullOrEmpty(objectId))
         {
             logger.LogWarning("Accept activity missing actor or object ID");
             return;
         }
-        
+
         logger.LogInformation("Accept activity from {Actor} for {Object}", actorId, objectId);
-        
+
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Accept activity: {ActivityId}", activity.Id);
     }
 }
@@ -42,28 +42,28 @@ public class AcceptActivityHandler : ActivityTypeHandlerBase
 public class RejectActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Reject";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Reject activity: {ActivityId}", activity.Id);
-        
+
         var actorId = activity.ActorId;
         var objectId = activity.ObjectId;
-        
+
         if (string.IsNullOrEmpty(actorId) || string.IsNullOrEmpty(objectId))
         {
             logger.LogWarning("Reject activity missing actor or object ID");
             return;
         }
-        
+
         logger.LogInformation("Reject activity from {Actor} for {Object}", actorId, objectId);
-        
+
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Reject activity: {ActivityId}", activity.Id);
     }
 }

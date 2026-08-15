@@ -13,7 +13,7 @@ public class Accept : Activity
     /// </summary>
     [JsonPropertyName("origin")]
     public object? Origin { get; set; }
-    
+
     /// <summary>
     /// The result or target of the accept activity
     /// </summary>

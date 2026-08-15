@@ -54,7 +54,7 @@ public class SharedInboxBackgroundService : BackgroundService
         {
             using var scope = _serviceProvider.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<ISharedInboxService>();
-            
+
             _logger.LogInformation("Processing shared inbox queue");
             await service.ProcessQueueAsync();
             _logger.LogInformation("Shared inbox queue processing completed");

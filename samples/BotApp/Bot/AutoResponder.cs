@@ -132,7 +132,7 @@ public class AutoResponder
     private bool ShouldReplyToContent(string content)
     {
         var lowerContent = content.ToLowerInvariant();
-        return lowerContent.Contains($"@bot@{_options.Domain}") || 
+        return lowerContent.Contains($"@bot@{_options.Domain}") ||
                lowerContent.Contains($"@bot@{_options.Domain}/") ||
                lowerContent.Contains($"@bot");
     }
@@ -148,7 +148,7 @@ public class AutoResponder
             "Thanks for the mention!",
             "Interesting perspective!"
         };
-        
+
         return replies[random.Next(replies.Length)];
     }
 

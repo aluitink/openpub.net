@@ -1,0 +1,14 @@
+# Core library
+src/ActivityPub.Core/ @anomalyco/team
+
+# Tests
+ActivityPub.Tests/ @anomalyco/team
+
+# Samples
+samples/ @anomalyco/team
+
+# CI/CD
+.github/ @anomalyco/team
+
+# Documentation
+docs/ @anomalyco/docs

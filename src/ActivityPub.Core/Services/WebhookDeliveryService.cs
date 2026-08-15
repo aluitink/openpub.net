@@ -27,14 +27,14 @@ public class WebhookDeliveryService : IWebhookDeliveryService
         };
     }
 
-    public async Task<bool> ConfigureWebhookAsync(string actorId, string eventType, string endpointUrl, 
-        string httpMethod, bool enabled, string? secretKey = null, int maxRetries = 3, 
+    public async Task<bool> ConfigureWebhookAsync(string actorId, string eventType, string endpointUrl,
+        string httpMethod, bool enabled, string? secretKey = null, int maxRetries = 3,
         int retryDelaySeconds = 60, bool useExponentialBackoff = true)
     {
         var existingConfigs = await _repository.GetWebhookConfigsAsync(actorId, eventType);
-        
+
         WebhookConfigEntity config;
-        
+
         if (existingConfigs.Any())
         {
             config = existingConfigs.First();
@@ -85,17 +85,17 @@ public class WebhookDeliveryService : IWebhookDeliveryService
     public async Task DeliverActivityToWebhooksAsync(Activity activity)
     {
         var actorId = activity.ActorId ?? (activity.AdditionalProperties?.TryGetValue("attributedTo", out var attributedTo) == true ? attributedTo.ToString() : null) ?? string.Empty;
-        
+
         if (string.IsNullOrEmpty(actorId))
         {
             return;
         }
 
         var configs = await _repository.GetWebhookConfigsAsync(actorId);
-        
+
         foreach (var config in configs.Where(c => c.Enabled))
         {
-            var shouldDeliver = config.EventType == "All" || 
+            var shouldDeliver = config.EventType == "All" ||
                                config.EventType == activity.Type ||
                                config.EventType == "Create" && activity.Type == "Create";
 
@@ -156,9 +156,9 @@ public class WebhookDeliveryService : IWebhookDeliveryService
     private async Task<bool> DeliverToWebhookAsync(WebhookConfigEntity config, WebhookDeliveryEntity delivery)
     {
         var activityJson = delivery.ActivityJson;
-        
+
         var content = new StringContent(activityJson, Encoding.UTF8, "application/json");
-        
+
         var request = new HttpRequestMessage(new HttpMethod(config.HttpMethod), config.EndpointUrl)
         {
             Content = content

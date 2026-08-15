@@ -12,7 +12,7 @@ namespace ActivityPub.Core.Controllers.Versioned;
 /// Versioned WebFinger controller to demonstrate API versioning
 /// </summary>
 [ApiController]
-    [Route("api/v{version:apiVersion}/webfinger")]
+[Route("api/v{version:apiVersion}/webfinger")]
 public class WebFingerVersionedController : ControllerBase
 {
     private readonly WebFingerCacheService _cacheService;

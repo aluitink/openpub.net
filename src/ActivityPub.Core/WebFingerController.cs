@@ -53,23 +53,23 @@ public class WebFingerController : ControllerBase
 
         // Generate cache key based on resource and rel parameters
         var cacheKey = $"{resource}:{rel}";
-        
+
         // Try to get from cache
         var stopwatch = Stopwatch.StartNew();
         var cachedResponse = _cacheService.GetCachedResponse(cacheKey);
-        
+
         if (cachedResponse != null)
         {
             stopwatch.Stop();
-            
+
             // Return cached response with proper JSON serialization
             var json = JsonSerializer.Serialize(cachedResponse, _jsonOptions);
             return Content(json, "application/jrd+json");
         }
-        
+
         // Handle the resource according to WebFinger specification
         var subject = resource;
-        
+
         // Only return 404 for malformed resources
         if (subject.StartsWith("acct:"))
         {
@@ -87,9 +87,9 @@ public class WebFingerController : ControllerBase
                 return errorResult;
             }
         }
-        
+
         var links = new List<WebFingerLink>();
-        
+
         // Add self link to the ActivityPub endpoint
         var activityPubEndpoint = GetActivityPubEndpoint(resource);
         links.Add(new WebFingerLink
@@ -98,20 +98,20 @@ public class WebFingerController : ControllerBase
             Type = "application/activity+json",
             Href = activityPubEndpoint
         });
-        
+
         // Add additional links if rel parameter is provided
         if (!string.IsNullOrEmpty(rel))
         {
             // This is a simplified implementation
         }
-        
+
         // Create JRD response
         var jrd = new WebFingerJrd
         {
             Subject = subject,
             Links = links.ToList()
         };
-        
+
         // Cache the response - ensure type compatibility
         var cachedLinks = new List<WebFingerLink>();
         foreach (var link in jrd.Links)
@@ -123,16 +123,16 @@ public class WebFingerController : ControllerBase
                 Href = link.Href
             });
         }
-        
+
         _cacheService.SetCachedResponse(cacheKey, new WebFingerResponse
         {
             Subject = jrd.Subject,
             Links = cachedLinks.ToArray(),
             CachedAt = DateTime.UtcNow
         });
-        
+
         stopwatch.Stop();
-        
+
         // Return serialized JRD with proper content type
         var jsonResponse = JsonSerializer.Serialize(jrd, _jsonOptions);
         return Content(jsonResponse, "application/jrd+json");
@@ -150,9 +150,9 @@ public class WebFingerController : ControllerBase
                 return $"{_options.Domain}{_options.UserPath}/{username}";
             }
         }
-        
+
         return resource;
     }
-    
+
 
 }

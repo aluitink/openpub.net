@@ -192,13 +192,13 @@ public class CacheScaleTests : IClassFixture<TestWebApplicationFactory>
                 Inbox = $"https://localhost/users/cache-inval-{testRunId}-{i}/inbox",
                 Outbox = $"https://localhost/users/cache-inval-{testRunId}-{i}/outbox"
             };
-            cache.SetActorAsync(actor.Id, actor).Wait();
+            await cache.SetActorAsync(actor.Id, actor);
         }
 
         var initialCount = cache.Count;
         Assert.True(initialCount >= DomainActorCount, $"Expected count >= {DomainActorCount}, got {initialCount}");
 
-        cache.InvalidateActorsByDomainAsync("localhost").Wait();
+        await cache.InvalidateActorsByDomainAsync("localhost");
 
         var finalCount = cache.Count;
         Assert.True(finalCount < initialCount, $"Expected final count < {initialCount}, got {finalCount}");

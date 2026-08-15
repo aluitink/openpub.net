@@ -42,7 +42,7 @@ public class InboxProcessingTests : IClassFixture<TestWebApplicationFactory>
     public async Task Inbox_Handles_Undo_Activity_Correctly()
     {
         var client = _factory.CreateClient();
-        
+
         var createActivity = @"{
             ""id"": ""https://localhost/users/testuser/activities/like-1"",
             ""type"": ""Like"",

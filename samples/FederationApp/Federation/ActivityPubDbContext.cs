@@ -18,11 +18,11 @@ public class ActivityPubDbContext : DbContext
     {
         modelBuilder.Entity<Instance>()
             .HasKey(i => i.Id);
-        
+
         modelBuilder.Entity<Instance>()
             .Property(i => i.Domain)
             .IsRequired();
-        
+
         modelBuilder.Entity<Instance>()
             .HasIndex(i => i.Domain)
             .IsUnique();

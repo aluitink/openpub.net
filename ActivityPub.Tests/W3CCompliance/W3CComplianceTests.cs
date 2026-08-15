@@ -82,7 +82,7 @@ public class W3CComplianceTests
 
         var json = JsonSerializer.Serialize(activity, _jsonOptions);
         Assert.NotNull(json);
-        
+
         var deserialized = JsonSerializer.Deserialize<Activity>(json, _jsonOptions);
         Assert.NotNull(deserialized);
         Assert.Equal(activity.Id, deserialized.Id);
@@ -131,7 +131,7 @@ public class W3CComplianceTests
         Assert.NotNull(json);
         Assert.Contains("\"subject\":\"acct:alice@example.com\"", json);
         Assert.Contains("\"rel\":\"self\"", json);
-        
+
         var deserialized = JsonSerializer.Deserialize<WebFingerResponse>(json, _jsonOptions);
         Assert.NotNull(deserialized);
         Assert.Equal(response.Subject, deserialized?.Subject);

@@ -12,7 +12,7 @@ public class Article : Object
     /// </summary>
     [JsonPropertyName("content")]
     public new required string Content { get; set; }
-    
+
     /// <summary>
     /// The media type of the content
     /// </summary>

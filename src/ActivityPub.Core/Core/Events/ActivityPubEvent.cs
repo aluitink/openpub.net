@@ -18,7 +18,7 @@ public abstract class ActivityPubEvent : IActivityPubEvent
 public class ActivityReceivedEvent : ActivityPubEvent, IActivityReceivedEvent
 {
     public Activity Activity { get; init; }
-    
+
     public ActivityReceivedEvent(Activity activity)
     {
         Activity = activity;
@@ -32,7 +32,7 @@ public class ActivityReceivedEvent : ActivityPubEvent, IActivityReceivedEvent
 public class ActivityPublishedEvent : ActivityPubEvent, IActivityPublishedEvent
 {
     public Activity Activity { get; init; }
-    
+
     public ActivityPublishedEvent(Activity activity)
     {
         Activity = activity;
@@ -46,7 +46,7 @@ public class ActivityPublishedEvent : ActivityPubEvent, IActivityPublishedEvent
 public class FollowReceivedEvent : ActivityPubEvent, IFollowReceivedEvent
 {
     public Activity Activity { get; init; }
-    
+
     public FollowReceivedEvent(Activity activity)
     {
         Activity = activity;
@@ -60,7 +60,7 @@ public class FollowReceivedEvent : ActivityPubEvent, IFollowReceivedEvent
 public class PostCreatedEvent : ActivityPubEvent, IPostCreatedEvent
 {
     public Note Note { get; init; }
-    
+
     public PostCreatedEvent(Note note)
     {
         Note = note;

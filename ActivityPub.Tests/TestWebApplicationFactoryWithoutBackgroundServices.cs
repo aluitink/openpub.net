@@ -10,13 +10,13 @@ public class TestWebApplicationFactoryWithoutBackgroundServices : TestWebApplica
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment(Environments.Production);
-        
+
         // Disable background services BEFORE creating the host
         builder.ConfigureServices(services =>
         {
             services.RemoveAll(typeof(IHostedService));
         });
-        
+
         return base.CreateHost(builder);
     }
 }

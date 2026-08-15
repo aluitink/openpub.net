@@ -19,11 +19,11 @@ public interface IActivityTypeHandler
 public abstract class ActivityTypeHandlerBase : IActivityTypeHandler
 {
     public abstract string ActivityType { get; }
-    
+
     public abstract Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default);
 }
 
@@ -33,15 +33,15 @@ public abstract class ActivityTypeHandlerBase : IActivityTypeHandler
 public class CreateActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Create";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Create activity: {ActivityId}", activity.Id);
-        
+
         // Parse the object as a Note
         var note = activity.Object as Note;
         if (note == null)
@@ -49,10 +49,10 @@ public class CreateActivityHandler : ActivityTypeHandlerBase
             logger.LogWarning("Create activity object is not a Note");
             return;
         }
-        
+
         // Save the note/activity
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Create activity: {ActivityId}", activity.Id);
     }
 }
@@ -63,30 +63,30 @@ public class CreateActivityHandler : ActivityTypeHandlerBase
 public class FollowActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Follow";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Follow activity: {ActivityId}", activity.Id);
-        
+
         // Extract actor and object
         var actorId = activity.ActorId;
         var objectId = activity.ObjectId;
-        
+
         if (string.IsNullOrEmpty(actorId) || string.IsNullOrEmpty(objectId))
         {
             logger.LogWarning("Follow activity missing actor or object ID");
             return;
         }
-        
+
         // TODO: Implement follow logic (add to following/followers collections)
         logger.LogInformation("Follow activity from {Actor} to {Object}", actorId, objectId);
-        
+
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Follow activity: {ActivityId}", activity.Id);
     }
 }
@@ -97,18 +97,18 @@ public class FollowActivityHandler : ActivityTypeHandlerBase
 public class LikeActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Like";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Like activity: {ActivityId}", activity.Id);
-        
+
         // TODO: Implement like logic
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Like activity: {ActivityId}", activity.Id);
     }
 }
@@ -119,18 +119,18 @@ public class LikeActivityHandler : ActivityTypeHandlerBase
 public class AnnounceActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Announce";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Announce activity: {ActivityId}", activity.Id);
-        
+
         // TODO: Implement announce logic
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Announce activity: {ActivityId}", activity.Id);
     }
 }
@@ -141,18 +141,18 @@ public class AnnounceActivityHandler : ActivityTypeHandlerBase
 public class UndoActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Undo";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Undo activity: {ActivityId}", activity.Id);
-        
+
         // TODO: Implement undo logic (cancel previous activity)
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Undo activity: {ActivityId}", activity.Id);
     }
 }
@@ -163,18 +163,18 @@ public class UndoActivityHandler : ActivityTypeHandlerBase
 public class DeleteActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Delete";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Delete activity: {ActivityId}", activity.Id);
-        
+
         // TODO: Implement delete logic (mark as deleted/tombstone)
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Delete activity: {ActivityId}", activity.Id);
     }
 }
@@ -185,18 +185,18 @@ public class DeleteActivityHandler : ActivityTypeHandlerBase
 public class UpdateActivityHandler : ActivityTypeHandlerBase
 {
     public override string ActivityType => "Update";
-    
+
     public override async Task HandleAsync(
-        Activity activity, 
-        IActivityPubRepository repository, 
-        ILogger logger, 
+        Activity activity,
+        IActivityPubRepository repository,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Processing Update activity: {ActivityId}", activity.Id);
-        
+
         // TODO: Implement update logic
         await repository.SaveActivityAsync(activity);
-        
+
         logger.LogInformation("Successfully processed Update activity: {ActivityId}", activity.Id);
     }
 }
@@ -207,7 +207,7 @@ public class UpdateActivityHandler : ActivityTypeHandlerBase
 public class ActivityHandlerFactory
 {
     private readonly Dictionary<string, IActivityTypeHandler> _handlers;
-    
+
     public ActivityHandlerFactory()
     {
         _handlers = new Dictionary<string, IActivityTypeHandler>
@@ -223,7 +223,7 @@ public class ActivityHandlerFactory
             { "Reject", new RejectActivityHandler() }
         };
     }
-    
+
     public IActivityTypeHandler? GetHandler(string activityType)
     {
         return _handlers.TryGetValue(activityType, out var handler) ? handler : null;

@@ -11,12 +11,12 @@ public record ActivityStreamTypes
     /// The primary type for all Activity Streams objects
     /// </summary>
     public const string ObjectType = "Object";
-    
+
     /// <summary>
     /// The primary type for all Activity Streams activities
     /// </summary>
     public const string ActivityType = "Activity";
-    
+
     /// <summary>
     /// The primary type for all Activity Streams actors
     /// </summary>

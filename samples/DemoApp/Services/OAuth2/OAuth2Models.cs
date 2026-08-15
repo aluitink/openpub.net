@@ -16,7 +16,7 @@ public class AuthorizationCode
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
     public bool IsUsed { get; set; }
-    
+
     [JsonIgnore]
     public DateTime? UsedAt { get; set; }
 }
@@ -52,10 +52,10 @@ public static class OAuth2Constants
     public const string UserInfoEndpoint = "/oauth2/userinfo";
     public const string RevokeEndpoint = "/oauth2/revoke";
     public const string IntrospectEndpoint = "/oauth2/introspect";
-    
+
     public const string CodeChallengeMethodS256 = "S256";
     public const string CodeChallengeMethodPlain = "plain";
-    
+
     public const int DefaultCodeExpiryMinutes = 10;
     public const int DefaultAccessTokenExpiryHours = 1;
     public const int DefaultRefreshTokenExpiryDays = 30;
@@ -67,12 +67,12 @@ public static class OAuth2Scopes
     public const string Write = "write";
     public const string Follow = "follow";
     public const string Manage = "manage";
-    
+
     public static readonly HashSet<string> AllScopes = new()
     {
         Read, Write, Follow, Manage
     };
-    
+
     public static readonly Dictionary<string, string> ScopeDescriptions = new()
     {
         { Read, "Read access to your activities and profile" },

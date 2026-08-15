@@ -24,7 +24,7 @@ public class WebFingerResolutionTests : IClassFixture<TestWebApplicationFactory>
         var response = await client.GetAsync("/.well-known/webfinger?resource=acct:testuser@localhost");
 
         Assert.True(response.IsSuccessStatusCode, "WebFinger should return user info");
-        
+
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("Subject", content);
         Assert.Contains("acct:testuser@localhost", content);
@@ -36,7 +36,7 @@ public class WebFingerResolutionTests : IClassFixture<TestWebApplicationFactory>
         var client = _factory.CreateClient();
         var request = new HttpRequestMessage(HttpMethod.Get, "/.well-known/webfinger?resource=acct:testuser@localhost");
         request.Headers.Accept.ParseAdd("application/jrd+json");
-        
+
         var response = await client.SendAsync(request);
 
         Assert.True(response.IsSuccessStatusCode, "WebFinger should respect accept header");
@@ -48,7 +48,7 @@ public class WebFingerResolutionTests : IClassFixture<TestWebApplicationFactory>
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/.well-known/webfinger?resource=https://localhost");
-        
+
         Assert.True(response.IsSuccessStatusCode, "WebFinger should handle host document request");
     }
 
@@ -58,7 +58,7 @@ public class WebFingerResolutionTests : IClassFixture<TestWebApplicationFactory>
         var client = _factory.CreateClient();
         var request = new HttpRequestMessage(HttpMethod.Get, "/.well-known/webfinger?resource=acct:testuser@localhost");
         request.Headers.Accept.ParseAdd("application/xrd+json");
-        
+
         var response = await client.SendAsync(request);
 
         Assert.True(response.IsSuccessStatusCode, "WebFinger should support XRD format");

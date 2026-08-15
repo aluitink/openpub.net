@@ -12,19 +12,19 @@ public record Image
     /// </summary>
     [JsonPropertyName("url")]
     public required string Url { get; set; }
-    
+
     /// <summary>
     /// The media type of the image
     /// </summary>
     [JsonPropertyName("mediaType")]
     public string? MediaType { get; set; }
-    
+
     /// <summary>
     /// The width of the image
     /// </summary>
     [JsonPropertyName("width")]
     public int? Width { get; set; }
-    
+
     /// <summary>
     /// The height of the image
     /// </summary>

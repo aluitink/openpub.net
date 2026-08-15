@@ -16,7 +16,7 @@ public class OAuth2AuthorizationCodeEntity
     public DateTime ExpiresAt { get; set; }
     public bool IsUsed { get; set; }
     public DateTime? UsedAt { get; set; }
-    
+
     [JsonIgnore]
     public ActorEntity Actor { get; set; } = null!;
 }
@@ -33,7 +33,7 @@ public class OAuth2AccessTokenEntity
     public string? RefreshToken { get; set; }
     public string? UserAgent { get; set; }
     public string? IpAddress { get; set; }
-    
+
     [JsonIgnore]
     public ActorEntity Actor { get; set; } = null!;
 }
@@ -47,7 +47,7 @@ public class OAuth2RefreshTokenEntity
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
     public bool IsActive { get; set; } = true;
-    
+
     [JsonIgnore]
     public ActorEntity Actor { get; set; } = null!;
 }

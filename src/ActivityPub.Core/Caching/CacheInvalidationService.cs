@@ -35,11 +35,11 @@ public class CacheInvalidationService
             return;
 
         var domain = ExtractDomain(actor.Id);
-        
+
         _logger.LogInformation("Invalidating actor cache for domain: {Domain}", domain);
-        
+
         await _cache.InvalidateActorsByDomainAsync(domain);
-        
+
         if (!string.IsNullOrEmpty(actor.PreferredUsername))
         {
             await _cache.RemoveActorAsync($"actor:{actor.PreferredUsername}");
@@ -57,9 +57,9 @@ public class CacheInvalidationService
             return;
 
         _logger.LogInformation("Invalidating activity cache for activity: {ActivityId}", activity.Id);
-        
+
         await _cache.RemoveActivityAsync(activity.Id);
-        
+
         var actorId = ExtractActorId(activity.Actor);
         if (!string.IsNullOrEmpty(actorId))
         {
@@ -78,9 +78,9 @@ public class CacheInvalidationService
             return;
 
         var domain = ExtractDomain(actor.Id);
-        
+
         _logger.LogInformation("Invalidating WebFinger cache for domain: {Domain}", domain);
-        
+
         await _cache.InvalidateWebFingerByDomainAsync(domain);
     }
 
@@ -95,7 +95,7 @@ public class CacheInvalidationService
             return;
 
         _logger.LogInformation("Invalidating inbox cache for actor: {ActorId}", actorId);
-        
+
         await _cache.InvalidateInboxResponsesByActorAsync(actorId);
     }
 
@@ -110,7 +110,7 @@ public class CacheInvalidationService
             return;
 
         _logger.LogInformation("Invalidating all caches for domain: {Domain}", domain);
-        
+
         await _cache.InvalidateActorsByDomainAsync(domain);
         await _cache.InvalidateWebFingerByDomainAsync(domain);
     }
@@ -126,9 +126,9 @@ public class CacheInvalidationService
             return;
 
         _logger.LogInformation("Invalidating all caches for actor: {ActorId}", actorId);
-        
+
         var domain = ExtractDomain(actorId);
-        
+
         await _cache.InvalidateActorsByDomainAsync(domain);
         await _cache.InvalidateActivitiesByActorAsync(actorId);
         await _cache.InvalidateInboxResponsesByActorAsync(actorId);

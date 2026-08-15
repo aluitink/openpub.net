@@ -12,19 +12,19 @@ public class Event : Object
     /// </summary>
     [JsonPropertyName("startTime")]
     public DateTime? StartTime { get; set; }
-    
+
     /// <summary>
     /// The event's end time
     /// </summary>
     [JsonPropertyName("endTime")]
     public DateTime? EndTime { get; set; }
-    
+
     /// <summary>
     /// The event's location
     /// </summary>
     [JsonPropertyName("location")]
     public string? Location { get; set; }
-    
+
     /// <summary>
     /// The event's attendees
     /// </summary>

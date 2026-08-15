@@ -120,7 +120,7 @@ public class SignatureVerificationTests : IClassFixture<TestWebApplicationFactor
         }";
 
         var content = new StringContent(activityJson, Encoding.UTF8, "application/activity+json");
-        
+
         // Add signature header with proper format
         content.Headers.Add("Signature", "keyId=\"https://localhost/users/sender\",algorithm=\"rsa-sha256\",headers=\"(request-target)\",signature=\"dGVzdA==\"");
 

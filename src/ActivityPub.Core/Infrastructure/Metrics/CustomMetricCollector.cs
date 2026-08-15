@@ -30,7 +30,7 @@ public class CustomMetricCollector : IMetricCollector, IDisposable
             counter = _meter.CreateCounter<double>(name);
             _counters[name] = counter;
         }
-        
+
         counter.Add(1, tags);
     }
 
@@ -41,7 +41,7 @@ public class CustomMetricCollector : IMetricCollector, IDisposable
             histogram = _meter.CreateHistogram<double>(name);
             _histograms[name] = histogram;
         }
-        
+
         histogram.Record(value, tags);
     }
 

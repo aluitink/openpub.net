@@ -29,7 +29,7 @@ public class WebhookDeliveryBackgroundService : BackgroundService
             {
                 using var scope = _scopeFactory.CreateScope();
                 var deliveryService = scope.ServiceProvider.GetRequiredService<IWebhookDeliveryService>();
-                
+
                 await deliveryService.ProcessPendingDeliveriesAsync();
 
                 await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);

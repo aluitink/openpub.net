@@ -143,7 +143,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
         });
 
         var results = await Task.WhenAll(tasks);
-        
+
         foreach (var result in results)
         {
             Assert.Equal(20, result.Count);
@@ -209,7 +209,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
         var activities = await repository.GetActorOutboxActivitiesAsync(username, 0, 100);
-        
+
         var result = new List<Activity>();
         foreach (var activityId in activities)
         {

@@ -9,7 +9,7 @@ namespace ActivityPub.Core.Plugins;
 public class PluginRegistry
 {
     private readonly Dictionary<string, IActivityPubPlugin> _plugins = new();
-    
+
     /// <summary>
     /// Registers a plugin with the registry
     /// </summary>
@@ -17,10 +17,10 @@ public class PluginRegistry
     {
         if (plugin == null)
             throw new ArgumentNullException(nameof(plugin));
-            
+
         _plugins[plugin.Name] = plugin;
     }
-    
+
     /// <summary>
     /// Gets all registered plugins
     /// </summary>
@@ -28,7 +28,7 @@ public class PluginRegistry
     {
         return _plugins.Values;
     }
-    
+
     /// <summary>
     /// Gets a specific plugin by name
     /// </summary>
@@ -36,7 +36,7 @@ public class PluginRegistry
     {
         return _plugins.TryGetValue(name, out var plugin) ? plugin : null;
     }
-    
+
     /// <summary>
     /// Unregisters a plugin from the registry
     /// </summary>

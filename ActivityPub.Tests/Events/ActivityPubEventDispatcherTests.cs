@@ -17,7 +17,7 @@ public class ActivityPubEventDispatcherTests
     public async Task Subscribe_AddsHandlerForEventType()
     {
         var handlerInvoked = false;
-        Func<IActivityPubEvent, Task> handler = _ => 
+        Func<IActivityPubEvent, Task> handler = _ =>
         {
             handlerInvoked = true;
             return Task.CompletedTask;
@@ -35,7 +35,7 @@ public class ActivityPubEventDispatcherTests
     public async Task Unsubscribe_RemovesHandler()
     {
         var handlerInvoked = false;
-        Func<IActivityPubEvent, Task> handler = _ => 
+        Func<IActivityPubEvent, Task> handler = _ =>
         {
             handlerInvoked = true;
             return Task.CompletedTask;
@@ -56,13 +56,13 @@ public class ActivityPubEventDispatcherTests
         var handler1Invoked = false;
         var handler2Invoked = false;
 
-        Func<IActivityPubEvent, Task> handler1 = _ => 
+        Func<IActivityPubEvent, Task> handler1 = _ =>
         {
             handler1Invoked = true;
             return Task.CompletedTask;
         };
 
-        Func<IActivityPubEvent, Task> handler2 = _ => 
+        Func<IActivityPubEvent, Task> handler2 = _ =>
         {
             handler2Invoked = true;
             return Task.CompletedTask;
@@ -84,13 +84,13 @@ public class ActivityPubEventDispatcherTests
         var event1HandlerInvoked = false;
         var event2HandlerInvoked = false;
 
-        Func<IActivityPubEvent, Task> event1Handler = _ => 
+        Func<IActivityPubEvent, Task> event1Handler = _ =>
         {
             event1HandlerInvoked = true;
             return Task.CompletedTask;
         };
 
-        Func<IActivityPubEvent, Task> event2Handler = _ => 
+        Func<IActivityPubEvent, Task> event2Handler = _ =>
         {
             event2HandlerInvoked = true;
             return Task.CompletedTask;

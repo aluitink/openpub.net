@@ -13,7 +13,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment(Environments.Production);
-        
+
         if (DisableBackgroundServices)
         {
             builder.ConfigureServices(services =>
@@ -21,7 +21,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 services.RemoveAll(typeof(IHostedService));
             });
         }
-        
+
         return base.CreateHost(builder);
     }
 }

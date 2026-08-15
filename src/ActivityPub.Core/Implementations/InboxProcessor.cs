@@ -52,7 +52,7 @@ public class InboxProcessor : IActivityPubEventHandler
 
     private async Task ProcessActivityAsync(Activity activity)
     {
-        _logger.LogInformation("Processing activity {ActivityId} of type {ActivityType}", 
+        _logger.LogInformation("Processing activity {ActivityId} of type {ActivityType}",
             activity.Id, activity.Type);
 
         if (string.IsNullOrEmpty(activity.Id))
@@ -68,7 +68,7 @@ public class InboxProcessor : IActivityPubEventHandler
         await ValidateActivityAsync(activity);
 
         var activityType = activity.Type.ToLowerInvariant();
-        
+
         switch (activityType)
         {
             case "create":

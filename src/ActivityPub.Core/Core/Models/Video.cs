@@ -12,13 +12,13 @@ public class Video : Object
     /// </summary>
     [JsonPropertyName("duration")]
     public string? Duration { get; set; }
-    
+
     /// <summary>
     /// The video's width
     /// </summary>
     [JsonPropertyName("width")]
     public int? Width { get; set; }
-    
+
     /// <summary>
     /// The video's height
     /// </summary>

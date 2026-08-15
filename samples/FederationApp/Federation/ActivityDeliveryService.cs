@@ -28,11 +28,11 @@ public class ActivityDeliveryService : BackgroundService
                 var federationService = scope.ServiceProvider.GetRequiredService<FederationService>();
 
                 var instances = await instanceManager.GetConnectedInstancesAsync();
-                
+
                 foreach (var instance in instances)
                 {
                     await federationService.SendActivityToInstanceAsync(
-                        CreateTestActivityJson(instance.ActorId), 
+                        CreateTestActivityJson(instance.ActorId),
                         instance.Domain);
                 }
             }

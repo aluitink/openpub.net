@@ -15,7 +15,7 @@ public class Program
         // Add services to the container
         builder.Services.AddActivityPub();
         builder.Services.AddControllers();
-        
+
         // Configure API versioning
         ApiVersioningConfig.ConfigureApiVersioning(builder.Services);
 

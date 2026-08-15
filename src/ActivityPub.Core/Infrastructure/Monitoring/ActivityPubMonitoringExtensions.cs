@@ -26,10 +26,10 @@ public static class ActivityPubMonitoringExtensions
     {
         // Add monitoring services
         services.AddSingleton<ActivityPubTelemetry>();
-        
+
         // Register metrics for observability
         services.AddSingleton(_meter);
-        
+
         return services;
     }
 }

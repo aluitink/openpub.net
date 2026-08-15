@@ -12,19 +12,19 @@ public record Endpoints
     /// </summary>
     [JsonPropertyName("proxyUrl")]
     public string? ProxyUrl { get; set; }
-    
+
     /// <summary>
     /// The OAuth authorization endpoint
     /// </summary>
     [JsonPropertyName("oauthAuthorizationEndpoint")]
     public string? OAuthAuthorizationEndpoint { get; set; }
-    
+
     /// <summary>
     /// The OAuth token endpoint
     /// </summary>
     [JsonPropertyName("oauthTokenEndpoint")]
     public string? OAuthTokenEndpoint { get; set; }
-    
+
     /// <summary>
     /// The shared inbox endpoint
     /// </summary>

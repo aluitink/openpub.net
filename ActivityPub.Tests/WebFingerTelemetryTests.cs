@@ -18,20 +18,20 @@ public class WebFingerTelemetryTests
         // Arrange
         var factory = new WebApplicationFactory<Program>();
         var client = factory.CreateClient();
-        
+
         // Act
         var response = await client.GetAsync("/.well-known/webfinger?resource=acct:telemetry@localhost");
-        
+
         // Assert
         Assert.True(response.IsSuccessStatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        
+
         // Parse the JSON to validate the strongly-typed JRD structure
         var jrd = JsonSerializer.Deserialize<WebFingerJrd>(content, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
-        
+
         Assert.NotNull(jrd);
         Assert.Equal("acct:telemetry@localhost", jrd.Subject);
         Assert.NotEmpty(jrd.Links);

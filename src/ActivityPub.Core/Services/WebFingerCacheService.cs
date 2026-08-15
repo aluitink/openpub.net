@@ -27,7 +27,7 @@ public class WebFingerCacheService
         {
             return cachedResponse;
         }
-        
+
         return null;
     }
 

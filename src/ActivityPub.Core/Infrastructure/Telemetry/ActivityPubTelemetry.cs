@@ -70,12 +70,12 @@ public class ActivityPubTelemetry
     /// <param name="durationMs">Duration in milliseconds</param>
     public void RecordHttpRequestProcessed(string method, string path, int statusCode, double durationMs)
     {
-        _requestDuration.Record(durationMs, 
+        _requestDuration.Record(durationMs,
             new KeyValuePair<string, object?>("http.method", method),
             new KeyValuePair<string, object?>("http.path", path),
             new KeyValuePair<string, object?>("http.status", statusCode)
         );
-        
+
         _logger.LogDebug("HTTP request processed: {Method} {Path} - Status: {StatusCode}, Duration: {Duration}ms", method, path, statusCode, durationMs);
     }
 
@@ -88,12 +88,12 @@ public class ActivityPubTelemetry
     /// <param name="exception">The exception that occurred</param>
     public void RecordHttpRequestError(string method, string path, int statusCode, Exception exception)
     {
-        _errors.Add(1, 
+        _errors.Add(1,
             new KeyValuePair<string, object?>("http.method", method),
             new KeyValuePair<string, object?>("http.path", path),
             new KeyValuePair<string, object?>("http.status", statusCode)
         );
-        
+
         _logger.LogError(exception, "HTTP request error: {Method} {Path} - Status: {StatusCode}", method, path, statusCode);
     }
 
@@ -107,43 +107,43 @@ public class ActivityPubTelemetry
         _logger.LogDebug("Event dispatched: {EventType}", eventType);
     }
 
-/// <summary>
-/// Records a WebFinger request
-/// </summary>
-public void RecordWebFingerRequest()
-{
-    _webFingerRequests?.Add(1);
-    _logger.LogDebug("WebFinger request recorded");
-}
+    /// <summary>
+    /// Records a WebFinger request
+    /// </summary>
+    public void RecordWebFingerRequest()
+    {
+        _webFingerRequests?.Add(1);
+        _logger.LogDebug("WebFinger request recorded");
+    }
 
-/// <summary>
-/// Records a WebFinger cache hit
-/// </summary>
-public void RecordWebFingerCacheHit()
-{
-    _webFingerCacheHits?.Add(1);
-    _logger.LogDebug("WebFinger cache hit recorded");
-}
+    /// <summary>
+    /// Records a WebFinger cache hit
+    /// </summary>
+    public void RecordWebFingerCacheHit()
+    {
+        _webFingerCacheHits?.Add(1);
+        _logger.LogDebug("WebFinger cache hit recorded");
+    }
 
-/// <summary>
-/// Records WebFinger processing time
-/// </summary>
-/// <param name="durationMs">Processing time in milliseconds</param>
-public void RecordWebFingerProcessingTime(double durationMs)
-{
-    _webFingerProcessingTime?.Record(durationMs, 
-        new KeyValuePair<string, object?>("operation", "WebFinger"));
-    _logger.LogDebug("WebFinger processing time recorded: {Duration}ms", durationMs);
-}
+    /// <summary>
+    /// Records WebFinger processing time
+    /// </summary>
+    /// <param name="durationMs">Processing time in milliseconds</param>
+    public void RecordWebFingerProcessingTime(double durationMs)
+    {
+        _webFingerProcessingTime?.Record(durationMs,
+            new KeyValuePair<string, object?>("operation", "WebFinger"));
+        _logger.LogDebug("WebFinger processing time recorded: {Duration}ms", durationMs);
+    }
 
-/// <summary>
-/// Records a WebFinger cache miss
-/// </summary>
-public void RecordWebFingerCacheMiss()
-{
-    _webFingerCacheMisses?.Add(1);
-    _logger.LogDebug("WebFinger cache miss recorded");
-}
+    /// <summary>
+    /// Records a WebFinger cache miss
+    /// </summary>
+    public void RecordWebFingerCacheMiss()
+    {
+        _webFingerCacheMisses?.Add(1);
+        _logger.LogDebug("WebFinger cache miss recorded");
+    }
 
     /// <summary>
     /// Updates cache size gauge

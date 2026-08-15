@@ -39,7 +39,7 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddHttpClient();
         services.AddMemoryCache();
         services.AddLogging();
-        services.AddDbContext<ActivityPubDbContext>(options => 
+        services.AddDbContext<ActivityPubDbContext>(options =>
             options.UseInMemoryDatabase("ActivityPubDb"));
         services.AddScoped<IActivityPubRepository, EFCoreActivityPubRepository>();
         services.AddScoped<ActivityPubEventDispatcher>();

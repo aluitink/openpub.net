@@ -36,8 +36,8 @@ public class OutboundSigningService : IOutboundSigningService
         try
         {
             // Get the request body if available
-            var body = request.Content != null 
-                ? request.Content.ReadAsStringAsync().Result 
+            var body = request.Content != null
+                ? request.Content.ReadAsStringAsync().Result
                 : string.Empty;
 
             // Define headers to sign (per ActivityPub spec)
@@ -121,7 +121,7 @@ public class OutboundSigningService : IOutboundSigningService
 
         var dataBytes = Encoding.UTF8.GetBytes(data);
         var signature = rsa.SignData(dataBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        
+
         return Convert.ToBase64String(signature);
     }
 

@@ -115,7 +115,7 @@ public class OutboundActivityService : IOutboundActivityService
     {
         // Try common inbox paths
         var paths = new[] { $"/users/{domain}/inbox", $"/inbox", $"/users/{domain}/outbox" };
-        
+
         foreach (var path in paths)
         {
             var url = $"{endpoint}{path}";

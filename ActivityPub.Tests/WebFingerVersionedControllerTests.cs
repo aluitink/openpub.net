@@ -16,12 +16,12 @@ public class WebFingerVersionedControllerTests
         // Arrange
         var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
-        
+
         // Act - Test with version header
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/webfinger?resource=acct:test@localhost");
         request.Headers.Add("api-version", "1.0");
         var response = await client.SendAsync(request);
-        
+
         // Assert
         Assert.True(response.IsSuccessStatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -34,10 +34,10 @@ public class WebFingerVersionedControllerTests
         // Arrange
         var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
-        
+
         // Act - Test with version in URL
         var response = await client.GetAsync("/api/v1/webfinger?resource=acct:test@localhost");
-        
+
         // Assert
         Assert.True(response.IsSuccessStatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -52,10 +52,10 @@ public class WebFingerVersionedControllerTests
         // Arrange
         var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
-        
+
         // Act - Test with missing resource parameter
         var response = await client.GetAsync("/api/v1/webfinger");
-        
+
         // Assert
         Assert.False(response.IsSuccessStatusCode);
         Assert.Equal(400, (int)response.StatusCode);

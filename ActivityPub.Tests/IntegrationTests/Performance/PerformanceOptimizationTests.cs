@@ -22,7 +22,7 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
     {
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        
+
         var username = $"perfuser{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         var actor = new ActivityPub.Core.Models.Actor
         {
@@ -32,13 +32,13 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
             Inbox = $"https://localhost/users/perfuser/inbox",
             Outbox = $"https://localhost/users/perfuser/outbox"
         };
-        
+
         await repository.SaveUserActorAsync(actor);
-        
+
         var sw = Stopwatch.StartNew();
         var retrieved = await repository.GetUserActorAsync(username);
         sw.Stop();
-        
+
         Assert.NotNull(retrieved);
         Assert.True(sw.ElapsedMilliseconds < 100, $"Query took {sw.ElapsedMilliseconds}ms, expected < 100ms");
     }
@@ -48,7 +48,7 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
     {
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        
+
         var username = $"actuser{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         var actor = new ActivityPub.Core.Models.Actor
         {
@@ -58,9 +58,9 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
             Inbox = $"https://localhost/users/actuser/inbox",
             Outbox = $"https://localhost/users/actuser/outbox"
         };
-        
+
         await repository.SaveUserActorAsync(actor);
-        
+
         var activity = new ActivityPub.Core.Models.Activity
         {
             Id = $"https://localhost/users/actuser/activities/{Guid.NewGuid()}",
@@ -73,11 +73,11 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
                 Content = "Performance test"
             }
         };
-        
+
         var sw = Stopwatch.StartNew();
         await repository.SaveActivityAsync(activity);
         sw.Stop();
-        
+
         Assert.True(sw.ElapsedMilliseconds < 50, $"Save took {sw.ElapsedMilliseconds}ms, expected < 50ms");
     }
 
@@ -86,7 +86,7 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
     {
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        
+
         var username = $"queryuser{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         var actor = new ActivityPub.Core.Models.Actor
         {
@@ -96,9 +96,9 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
             Inbox = $"https://localhost/users/queryuser/inbox",
             Outbox = $"https://localhost/users/queryuser/outbox"
         };
-        
+
         await repository.SaveUserActorAsync(actor);
-        
+
         var activityId = $"https://localhost/users/queryuser/activities/{Guid.NewGuid()}";
         var activity = new ActivityPub.Core.Models.Activity
         {
@@ -112,13 +112,13 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
                 Content = "Query performance test"
             }
         };
-        
+
         await repository.SaveActivityAsync(activity);
-        
+
         var sw = Stopwatch.StartNew();
         var results = await repository.GetActorOutboxActivitiesAsync(username, 0, 10);
         sw.Stop();
-        
+
         Assert.True(results.Any());
         Assert.True(sw.ElapsedMilliseconds < 100, $"Query took {sw.ElapsedMilliseconds}ms, expected < 100ms");
     }
@@ -128,7 +128,7 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
     {
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        
+
         var username = $"bulkuser{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         var actor = new ActivityPub.Core.Models.Actor
         {
@@ -138,9 +138,9 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
             Inbox = $"https://localhost/users/bulkuser/inbox",
             Outbox = $"https://localhost/users/bulkuser/outbox"
         };
-        
+
         await repository.SaveUserActorAsync(actor);
-        
+
         var activities = new List<ActivityPub.Core.Models.Activity>();
         for (int i = 0; i < 100; i++)
         {
@@ -157,14 +157,14 @@ public class PerformanceOptimizationTests : IClassFixture<TestWebApplicationFact
                 }
             });
         }
-        
+
         var sw = Stopwatch.StartNew();
         foreach (var activity in activities)
         {
             await repository.SaveActivityAsync(activity);
         }
         sw.Stop();
-        
+
         Assert.True(sw.ElapsedMilliseconds < 1000, $"100 activities took {sw.ElapsedMilliseconds}ms, expected < 1000ms");
     }
 }

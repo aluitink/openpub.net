@@ -198,73 +198,73 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<OAuth2AuthorizationCodeEntity>()
             .HasKey(a => a.Id);
-        
+
         modelBuilder.Entity<OAuth2AuthorizationCodeEntity>()
             .Property(a => a.Code)
             .IsRequired()
             .HasMaxLength(255);
-        
+
         modelBuilder.Entity<OAuth2AuthorizationCodeEntity>()
             .HasIndex(a => a.Code)
             .IsUnique();
-        
+
         modelBuilder.Entity<OAuth2AuthorizationCodeEntity>()
             .Property(a => a.ClientId)
             .IsRequired()
             .HasMaxLength(255);
-        
+
         modelBuilder.Entity<OAuth2AuthorizationCodeEntity>()
             .Property(a => a.Scopes)
             .IsRequired();
-        
+
         modelBuilder.Entity<OAuth2AuthorizationCodeEntity>()
             .HasOne(a => a.Actor)
             .WithMany()
             .HasForeignKey(a => a.ActorId);
-        
+
         modelBuilder.Entity<OAuth2AccessTokenEntity>()
             .HasKey(a => a.Id);
-        
+
         modelBuilder.Entity<OAuth2AccessTokenEntity>()
             .Property(a => a.Token)
             .IsRequired()
             .HasMaxLength(255);
-        
+
         modelBuilder.Entity<OAuth2AccessTokenEntity>()
             .HasIndex(a => a.Token)
             .IsUnique();
-        
+
         modelBuilder.Entity<OAuth2AccessTokenEntity>()
             .Property(a => a.ClientId)
             .IsRequired()
             .HasMaxLength(255);
-        
+
         modelBuilder.Entity<OAuth2AccessTokenEntity>()
             .Property(a => a.Scopes)
             .IsRequired();
-        
+
         modelBuilder.Entity<OAuth2AccessTokenEntity>()
             .HasOne(a => a.Actor)
             .WithMany()
             .HasForeignKey(a => a.ActorId);
-        
+
         modelBuilder.Entity<OAuth2RefreshTokenEntity>()
             .HasKey(r => r.Id);
-        
+
         modelBuilder.Entity<OAuth2RefreshTokenEntity>()
             .Property(r => r.Token)
             .IsRequired()
             .HasMaxLength(255);
-        
+
         modelBuilder.Entity<OAuth2RefreshTokenEntity>()
             .HasIndex(r => r.Token)
             .IsUnique();
-        
+
         modelBuilder.Entity<OAuth2RefreshTokenEntity>()
             .Property(r => r.ClientId)
             .IsRequired()
             .HasMaxLength(255);
-        
+
         modelBuilder.Entity<OAuth2RefreshTokenEntity>()
             .HasOne(r => r.Actor)
             .WithMany()

@@ -11,12 +11,12 @@ public interface IMetricCollector
     /// Records a metric with the given name and value
     /// </summary>
     void RecordMetric(string name, double value, params KeyValuePair<string, object?>[] tags);
-    
+
     /// <summary>
     /// Records a counter increment
     /// </summary>
     void IncrementCounter(string name, params KeyValuePair<string, object?>[] tags);
-    
+
     /// <summary>
     /// Records a histogram measurement
     /// </summary>

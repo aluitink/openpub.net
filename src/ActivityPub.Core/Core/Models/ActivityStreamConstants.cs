@@ -29,7 +29,7 @@ public static class ActivityStreamConstants
         public const string Watch = "Watch";
         public const string Share = "Share";
     }
-    
+
     /// <summary>
     /// Standard Object Types
     /// </summary>
@@ -48,7 +48,7 @@ public static class ActivityStreamConstants
         public const string Collection = "Collection";
         public const string OrderedCollection = "OrderedCollection";
     }
-    
+
     /// <summary>
     /// Standard Actor Types
     /// </summary>
@@ -60,7 +60,7 @@ public static class ActivityStreamConstants
         public const string Application = "Application";
         public const string Group = "Group";
     }
-    
+
     /// <summary>
     /// Standard Properties
     /// </summary>

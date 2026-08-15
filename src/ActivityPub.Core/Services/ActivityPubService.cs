@@ -39,23 +39,23 @@ public class ActivityPubService
     {
         var stopwatch = Stopwatch.StartNew();
         _logger.LogInformation("GetActorWithEventAsync called for username: {Username}", username);
-        
+
         try
         {
             foreach (var interceptor in _interceptors)
             {
             }
-            
+
             var actor = await _repository.GetUserActorAsync(username);
-            
+
             if (actor != null)
             {
                 await _cache.SetActorAsync(actor.Id, actor);
                 _logger.LogInformation("Actor cached for username: {Username}", username);
             }
-            
+
             _logger.LogInformation("GetActorWithEventAsync successful for username: {Username}", username);
-            
+
             return actor;
         }
         catch (Exception ex)
@@ -69,12 +69,12 @@ public class ActivityPubService
             _logger.LogDebug("GetActorWithEventAsync completed for username: {Username} in {ElapsedMilliseconds} ms", username, stopwatch.ElapsedMilliseconds);
         }
     }
-    
+
     public async Task<bool> ProcessIncomingActivityAsync(ActivityPub.Core.Models.Activity activity)
     {
         var stopwatch = Stopwatch.StartNew();
         _logger.LogInformation("ProcessIncomingActivityAsync called for activity: {ActivityId}", activity.Id);
-        
+
         try
         {
             foreach (var interceptor in _interceptors)
@@ -86,18 +86,18 @@ public class ActivityPubService
                     return false;
                 }
             }
-            
+
             var eventObj = new ActivityReceivedEvent(activity);
             await _eventDispatcher.DispatchAsync(eventObj);
-            
+
             if (activity.Id != null)
             {
                 await _cache.SetActivityAsync(activity.Id, activity);
                 _logger.LogInformation("Activity cached for ID: {ActivityId}", activity.Id);
             }
-            
+
             _logger.LogInformation("ProcessIncomingActivityAsync successful for activity: {ActivityId}", activity.Id);
-            
+
             return true;
         }
         catch (Exception ex)
@@ -111,13 +111,13 @@ public class ActivityPubService
             _logger.LogDebug("ProcessIncomingActivityAsync completed for activity: {ActivityId} in {ElapsedMilliseconds} ms", activity.Id, stopwatch.ElapsedMilliseconds);
         }
     }
-    
+
     public async Task<bool> InvalidateActorCacheAsync(string actorId)
     {
         _logger.LogInformation("Invalidating cache for actor: {ActorId}", actorId);
-        
+
         await _invalidationService.InvalidateAllForActorAsync(actorId);
-        
+
         return true;
     }
 }

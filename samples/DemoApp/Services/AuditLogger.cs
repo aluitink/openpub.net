@@ -28,7 +28,7 @@ public class AuditLogger
         _entries = new List<AuditLogEntry>();
     }
 
-    public void Log(string eventType, string? actorId = null, string? clientIP = null, 
+    public void Log(string eventType, string? actorId = null, string? clientIP = null,
                    string? endpoint = null, string? details = null, bool? success = null)
     {
         var entry = new AuditLogEntry
@@ -54,7 +54,7 @@ public class AuditLogger
         }
     }
 
-    public List<AuditLogEntry> GetEntries(string? eventType = null, DateTime? startDate = null, 
+    public List<AuditLogEntry> GetEntries(string? eventType = null, DateTime? startDate = null,
                                           DateTime? endDate = null, int limit = 100)
     {
         lock (_lock)

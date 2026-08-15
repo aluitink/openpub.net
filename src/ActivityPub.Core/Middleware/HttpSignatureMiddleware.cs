@@ -38,16 +38,16 @@ public class HttpSignatureMiddleware
             {
                 if (IsInboxPath(context.Request.Path))
                 {
-                if (!await VerifyHttpSignatureAsync(context))
-                {
-                    if (context.Response.StatusCode < 400)
+                    if (!await VerifyHttpSignatureAsync(context))
                     {
-                        context.Response.StatusCode = 401;
+                        if (context.Response.StatusCode < 400)
+                        {
+                            context.Response.StatusCode = 401;
+                        }
+                        _logger.LogWarning("HTTP signature verification failed for request to {Path}", context.Request.Path);
+                        await WriteResponseAsync(context, "Unauthorized: Invalid HTTP signature");
+                        return;
                     }
-                    _logger.LogWarning("HTTP signature verification failed for request to {Path}", context.Request.Path);
-                    await WriteResponseAsync(context, "Unauthorized: Invalid HTTP signature");
-                    return;
-                }
                 }
             }
             catch (Exception ex)
@@ -150,13 +150,13 @@ public class HttpSignatureMiddleware
         }
 
         // If not in signature params, check HTTP headers ((created), (expires))
-        if (!hasCreated && context.Request.Headers.TryGetValue("(created)", out StringValues createdHeader) && 
+        if (!hasCreated && context.Request.Headers.TryGetValue("(created)", out StringValues createdHeader) &&
             long.TryParse(createdHeader.FirstOrDefault(), out created))
         {
             hasCreated = true;
         }
 
-        if (!hasExpires && context.Request.Headers.TryGetValue("(expires)", out StringValues expiresHeader) && 
+        if (!hasExpires && context.Request.Headers.TryGetValue("(expires)", out StringValues expiresHeader) &&
             long.TryParse(expiresHeader.FirstOrDefault(), out expires))
         {
             hasExpires = true;

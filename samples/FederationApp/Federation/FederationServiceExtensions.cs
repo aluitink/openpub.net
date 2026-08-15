@@ -12,12 +12,12 @@ public static class FederationServiceExtensions
     {
         var instances = await GetInstancesAsync(service);
         var instance = instances.FirstOrDefault(i => i.Domain == domain);
-        
+
         if (instance == null || !instance.IsConnected)
             return;
 
         var inboxUrl = $"https://{domain}/inbox";
-        
+
         try
         {
             var activity = new Activity

@@ -25,7 +25,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         {
             return Task.FromResult<Actor?>(actor);
         }
-        
+
         return Task.FromResult<Actor?>(null);
     }
 
@@ -51,7 +51,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         {
             return Task.FromResult<Activity?>(activity);
         }
-        
+
         return Task.FromResult<Activity?>(null);
     }
 
@@ -66,7 +66,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .Take(limit)
             .Select(a => a.Id)
             .ToList();
-        
+
         return Task.FromResult<ICollection<string>>(activityIds);
     }
 
@@ -128,7 +128,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     public Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100)
     {
         var pending = _sharedInboxDeliveries
-            .Where(d => d.Status == DeliveryStatus.Queued || 
+            .Where(d => d.Status == DeliveryStatus.Queued ||
                        d.Status == DeliveryStatus.Failed)
             .Take(maxCount)
             .ToList();
@@ -194,12 +194,12 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         var configs = _webhookConfigs
             .Where(c => c.ActorId == actorId)
             .ToList();
-        
+
         if (!string.IsNullOrEmpty(eventType))
         {
             configs = configs.Where(c => c.EventType == eventType).ToList();
         }
-        
+
         return Task.FromResult<ICollection<WebhookConfigEntity>>(configs);
     }
 
@@ -238,7 +238,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     public Task<ICollection<WebhookDeliveryEntity>> GetPendingWebhookDeliveriesAsync(int maxCount = 100)
     {
         var pending = _webhookDeliveries
-            .Where(d => d.Status == WebhookDeliveryStatus.Queued || 
+            .Where(d => d.Status == WebhookDeliveryStatus.Queued ||
                        d.Status == WebhookDeliveryStatus.Failed)
             .Take(maxCount)
             .ToList();

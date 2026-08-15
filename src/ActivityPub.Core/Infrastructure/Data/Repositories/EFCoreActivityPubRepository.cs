@@ -69,7 +69,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
     public async Task<bool> SaveActivityAsync(Activity activity)
     {
         var jsonData = JsonSerializer.Serialize(activity, _jsonOptions);
-        
+
         var existing = await _context.Activities
             .Where(a => a.ActivityId == activity.Id)
             .FirstOrDefaultAsync();
@@ -129,8 +129,8 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         {
             using var doc = JsonDocument.Parse(item.JsonData);
             var root = doc.RootElement;
-            
-            if (root.TryGetProperty("actor", out var actorElement) && 
+
+            if (root.TryGetProperty("actor", out var actorElement) &&
                 actorElement.ValueKind == JsonValueKind.String &&
                 actorElement.GetString() == actorId)
             {
@@ -318,7 +318,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
     public async Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100)
     {
         var deliveries = await _context.SharedInboxDeliveries
-            .Where(d => d.Status == DeliveryStatus.Queued || d.Status == DeliveryStatus.Processing || 
+            .Where(d => d.Status == DeliveryStatus.Queued || d.Status == DeliveryStatus.Processing ||
                        (d.Status == DeliveryStatus.Failed && d.RetryCount < 3))
             .OrderBy(d => d.CreatedAt)
             .Take(maxCount)
@@ -429,7 +429,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
     public async Task<ICollection<WebhookDeliveryEntity>> GetPendingWebhookDeliveriesAsync(int maxCount = 100)
     {
         var deliveries = await _context.WebhookDeliveries
-            .Where(d => d.Status == WebhookDeliveryStatus.Queued || d.Status == WebhookDeliveryStatus.Processing || 
+            .Where(d => d.Status == WebhookDeliveryStatus.Queued || d.Status == WebhookDeliveryStatus.Processing ||
                        (d.Status == WebhookDeliveryStatus.Failed && d.RetryCount < 3))
             .OrderBy(d => d.CreatedAt)
             .Take(maxCount)

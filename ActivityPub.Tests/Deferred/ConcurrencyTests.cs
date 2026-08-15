@@ -36,7 +36,7 @@ public class ConcurrencyTests
                         var key = $"concurrent:{threadId}:{j}";
                         _cache.Set(key, $"value:{threadId}-{j}");
                         var result = _cache.Get<string>(key);
-                        
+
                         if (result != null)
                         {
                             lock (lockObj)
@@ -54,7 +54,7 @@ public class ConcurrencyTests
         }
 
         await Task.WhenAll(tasks);
-        
+
         Assert.Empty(errors);
         Assert.Equal(1000, successCount);
     }
@@ -90,7 +90,7 @@ public class ConcurrencyTests
         }
 
         await Task.WhenAll(tasks);
-        
+
         Assert.Empty(errors);
     }
 }

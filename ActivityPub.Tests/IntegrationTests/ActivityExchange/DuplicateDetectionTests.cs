@@ -38,10 +38,10 @@ public class DuplicateDetectionTests : IClassFixture<TestWebApplicationFactory>
         }";
 
         var content = new StringContent(activityJson, Encoding.UTF8, "application/activity+json");
-        
+
         // Post the same activity twice
         var response1 = await client.PostAsync("/users/sender/outbox", content);
-        
+
         // Reset content for second post
         content = new StringContent(activityJson, Encoding.UTF8, "application/activity+json");
         var response2 = await client.PostAsync("/users/sender/outbox", content);

@@ -12,7 +12,7 @@ public interface IActivityPubEvent
     /// Gets the event timestamp
     /// </summary>
     DateTime Timestamp { get; }
-    
+
     /// <summary>
     /// Gets the event type
     /// </summary>

@@ -37,7 +37,7 @@ public class ActorController : ControllerBase
     {
         var stopwatch = Stopwatch.StartNew();
         _logger.LogInformation("Actor request received for username: {Username}", username);
-        
+
         try
         {
             if (string.IsNullOrEmpty(username))
@@ -56,7 +56,7 @@ public class ActorController : ControllerBase
             _logger.LogInformation("Actor request successful for username: {Username}", username);
             stopwatch.Stop();
             _logger.LogDebug("Actor request completed in {ElapsedMilliseconds} ms", stopwatch.ElapsedMilliseconds);
-            
+
             var json = JsonSerializer.Serialize(actor, _jsonOptions);
             return Content(json, "application/activity+json");
         }
@@ -72,7 +72,7 @@ public class ActorController : ControllerBase
         [FromRoute] string username)
     {
         _logger.LogInformation("Outbox request received for username: {Username}", username);
-        
+
         try
         {
             if (string.IsNullOrEmpty(username))
@@ -89,7 +89,7 @@ public class ActorController : ControllerBase
             }
 
             var activities = await _repository.GetActorOutboxActivitiesAsync(username, 0, 20);
-            
+
             var orderedCollection = new OrderedCollection
             {
                 Id = $"{actor.Id}/outbox",
@@ -99,7 +99,7 @@ public class ActorController : ControllerBase
             };
 
             _logger.LogInformation("Outbox request successful for username: {Username}", username);
-            
+
             var json = JsonSerializer.Serialize(orderedCollection, _jsonOptions);
             return Content(json, "application/activity+json");
         }
@@ -116,7 +116,7 @@ public class ActorController : ControllerBase
         [FromBody] global::ActivityPub.Core.Models.Activity activity)
     {
         _logger.LogInformation("Outbox post request received for username: {Username}", username);
-        
+
         try
         {
             if (string.IsNullOrEmpty(username))
@@ -132,8 +132,8 @@ public class ActorController : ControllerBase
             }
 
             await _repository.SaveActivityAsync(activity);
-            
-            _logger.LogInformation("Outbox post successful for username: {Username}, activity: {ActivityType}", 
+
+            _logger.LogInformation("Outbox post successful for username: {Username}, activity: {ActivityType}",
                 username, activity.Type);
 
             var resultJson = JsonSerializer.Serialize(new { success = true, activityId = activity.Id }, _jsonOptions);
@@ -151,7 +151,7 @@ public class ActorController : ControllerBase
         [FromRoute] string username)
     {
         _logger.LogInformation("Followers request received for username: {Username}", username);
-        
+
         try
         {
             if (string.IsNullOrEmpty(username))
@@ -168,7 +168,7 @@ public class ActorController : ControllerBase
             }
 
             var followers = await _repository.GetFollowersAsync(username, 0, 20);
-            
+
             var collection = new Collection
             {
                 Id = $"{actor.Id}/followers",
@@ -178,7 +178,7 @@ public class ActorController : ControllerBase
             };
 
             _logger.LogInformation("Followers request successful for username: {Username}", username);
-            
+
             var json = JsonSerializer.Serialize(collection, _jsonOptions);
             return Content(json, "application/activity+json");
         }
@@ -194,7 +194,7 @@ public class ActorController : ControllerBase
         [FromRoute] string username)
     {
         _logger.LogInformation("Following request received for username: {Username}", username);
-        
+
         try
         {
             if (string.IsNullOrEmpty(username))
@@ -211,7 +211,7 @@ public class ActorController : ControllerBase
             }
 
             var following = await _repository.GetFollowingAsync(username, 0, 20);
-            
+
             var collection = new Collection
             {
                 Id = $"{actor.Id}/following",
@@ -221,7 +221,7 @@ public class ActorController : ControllerBase
             };
 
             _logger.LogInformation("Following request successful for username: {Username}", username);
-            
+
             var json = JsonSerializer.Serialize(collection, _jsonOptions);
             return Content(json, "application/activity+json");
         }
@@ -238,7 +238,7 @@ public class ActorController : ControllerBase
         [FromBody] global::ActivityPub.Core.Models.Activity activity)
     {
         _logger.LogInformation("Inbox post request received for username: {Username}", username);
-        
+
         try
         {
             if (string.IsNullOrEmpty(username))
@@ -255,12 +255,12 @@ public class ActorController : ControllerBase
 
             using var scope = HttpContext.RequestServices.CreateScope();
             var sharedInboxService = scope.ServiceProvider.GetRequiredService<ISharedInboxService>();
-            
+
             var success = await sharedInboxService.ProcessAndDistributeActivityAsync(username, activity);
-            
+
             if (success)
             {
-                _logger.LogInformation("Inbox post successful for username: {Username}, activity: {ActivityType}", 
+                _logger.LogInformation("Inbox post successful for username: {Username}, activity: {ActivityType}",
                     username, activity.Type);
                 return Content("{\"success\":true}", "application/json");
             }

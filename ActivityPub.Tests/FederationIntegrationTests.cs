@@ -67,7 +67,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        
+
         await repository.SaveUserActorAsync(actor1);
         await repository.SaveUserActorAsync(actor2);
 
@@ -88,7 +88,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         // Act - Send activity to actor2's inbox
         var activityJson = JsonSerializer.Serialize(activity);
         var content = new StringContent(activityJson, Encoding.UTF8, "application/activity+json");
-        
+
         // Sign the request
         var keyPair = RSA.Create(2048);
         var keyId = $"{actor1.Id}#main-key";
@@ -475,7 +475,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
         context.Request.Path = "/users/test/inbox";
-        context.Request.Headers.Add("Host", "localhost");
+        context.Request.Headers["Host"] = "localhost";
 
         var logger = Mock.Of<ILogger<HttpSignatureMiddleware>>();
         var middleware = new HttpSignatureMiddleware(
@@ -562,7 +562,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
 
         // Assert
         Assert.True(response.IsSuccessStatusCode);
-        
+
         // Verify activity was stored
         var storedActivity = await repository.GetActivityAsync(activity.Id);
         Assert.NotNull(storedActivity);
@@ -701,7 +701,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         // Act - Save activity twice
         await repository.SaveActivityAsync(activity);
         var firstSeen = await repository.HasSeenActivityAsync(activity.Id);
-        
+
         await repository.SaveActivityAsync(activity);
         var secondSeen = await repository.HasSeenActivityAsync(activity.Id);
 
@@ -886,7 +886,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var headersToSign = "(request-target) host digest";
         var stringToSign = $"(request-target): post /users/test/inbox\nhost: {hostname}\ndigest: SHA-256={Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(body)))}";
-        
+
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(stringToSign));
         var signatureBytes = keyPair.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         var signature = Convert.ToBase64String(signatureBytes);
@@ -970,7 +970,7 @@ public class SharedInboxTests : IClassFixture<TestWebApplicationFactoryWithoutBa
         var delivery = await context.SharedInboxDeliveries
             .Where(d => d.ActivityId == activityId && d.TargetActorId == actorId)
             .FirstOrDefaultAsync(CancellationToken.None);
-        
+
         Assert.NotNull(delivery);
         Assert.Equal(activityId, delivery.ActivityId);
         Assert.Equal(actorId, delivery.TargetActorId);

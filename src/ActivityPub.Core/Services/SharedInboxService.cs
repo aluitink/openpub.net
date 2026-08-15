@@ -214,7 +214,7 @@ public class SharedInboxService : ISharedInboxService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing delivery for activity {ActivityId} to {TargetActorId}", delivery.ActivityId, delivery.TargetActorId);
-                
+
                 delivery.RetryCount++;
                 if (delivery.RetryCount >= 3)
                 {
@@ -226,7 +226,7 @@ public class SharedInboxService : ISharedInboxService
                     delivery.Status = DeliveryStatus.Failed;
                     delivery.FailureReason = ex.Message;
                 }
-                
+
                 await _repository.UpdateSharedInboxDeliveryAsync(delivery);
             }
         }
@@ -244,12 +244,12 @@ public class SharedInboxService : ISharedInboxService
     public async Task<string?> TryGetFromCacheAsync(string key)
     {
         var memoryResult = _cache.Get<string>(key);
-        
+
         if (memoryResult == null)
         {
             memoryResult = await _federationCache.GetInboxResponseAsync(key);
         }
-        
+
         return memoryResult;
     }
 

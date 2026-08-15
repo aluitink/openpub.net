@@ -57,15 +57,15 @@ public class CustomLogger : ILogger
 
         var message = formatter(state, exception);
         var timestamp = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        
+
         // Enhanced structured logging format
         var logEntry = $"[{timestamp}] [{level}] [{_categoryName}] {message}";
-        
+
         if (exception != null)
         {
             logEntry += $"\nException: {exception}";
         }
-        
+
         // Write to console (in production, this could be sent to a logging service)
         Console.WriteLine(logEntry);
     }
