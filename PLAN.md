@@ -5,12 +5,7 @@ This document identifies tests with low value and provides a plan to improve tes
 
 ## Tests with Little to No Value
 
-### 1. Empty/Dummy Tests
-**File:** `WebFingerEnhancedTelemetryTests.cs` (1 line)
-**Status:** TO BE REMOVED - truly empty file
-**Action:** DELETE
-
-### 2. Redundant Model Property Tests
+### 1. Redundant Model Property Tests
 **File:** `Models/ModelTests.cs`
 **Issue:** Multiple tests that merely verify auto-properties can be set (e.g., `Object_Has_Nullable_Properties`, `Actor_Has_Nullable_Properties`)
 - **Impact:** High maintenance, low value (tests C# compiler behavior, not application logic)
@@ -32,16 +27,10 @@ This document identifies tests with low value and provides a plan to improve tes
 - **Impact:** Flaky tests, CI failures unrelated to code changes, long test runs
 - **Action:** Convert to integration tests without performance assertions, or move to dedicated performance test project
 
-### 5. Empty/Placeholder Test Classes
-**File:** `LoadTesting/LoadTestBase.cs`
-**Issue:** Base class with utility methods but no actual tests (tests are in LoadTestDemo.cs which isn't a test class)
-**Impact:** Confusing structure, dead code
-**Action:** Delete LoadTestBase if not used, or convert LoadTestDemo to actual test class with proper attributes
-
-**File:** `LoadTesting/LoadTestDemo.cs`
-**Issue:** Demo code, not actual tests - no assertions, just console output
-**Impact:** Not a real test, runs but provides no validation
-**Action:** Move to examples folder or delete
+### 5. Empty/Placeholder Test Classes - ALL COMPLETE
+**File:** `LoadTesting/LoadTestBase.cs` - KEEP (utility methods still needed by other tests)
+**File:** `LoadTesting/LoadTestDemo.cs` - DELETED (demo code, not tests)
+**File:** `LoadTesting/LoadTestProgram.cs` - DELETED (demo entry point)
 
 ### 6. W3C Compliance Tests (Low Value)
 **File:** `W3CCompliance/ActivityJsonValidationTests.cs`
@@ -93,10 +82,11 @@ This document identifies tests with low value and provides a plan to improve tes
 
 ## Priority Actions
 
-### High Priority (Quick Wins)
+### High Priority (Quick Wins) - ALL COMPLETE
 1. **DELETE:** `WebFingerEnhancedTelemetryTests.cs` (empty file) - COMPLETED
 2. **DELETE:** `LoadTesting/LoadTestDemo.cs` (demo code, not tests) - COMPLETED
-3. **Consolidate:** `Models/ModelTests.cs` - reduce redundant property tests to 1-2 tests per model - TODO
+3. **DELETE:** `LoadTesting/LoadTestProgram.cs` (demo entry point) - COMPLETED
+4. **Consolidate:** `Models/ModelTests.cs` - reduce redundant property tests to 1-2 tests per model - TODO
 
 ### Medium Priority (Reduce Maintenance)
 6. **Consolidate:** `Models/ModelSerializationTests.cs` - reduce from 869 to ~100 lines
