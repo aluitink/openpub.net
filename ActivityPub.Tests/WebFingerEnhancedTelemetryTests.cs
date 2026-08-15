@@ -1,1 +1,0 @@
-namespace ActivityPub.Core.Tests;
