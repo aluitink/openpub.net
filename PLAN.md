@@ -10,7 +10,7 @@
 5. **Test Organization** - Integration tests not clearly categorized by feature
 6. **Sample Projects** - Inconsistent structure, overlapping functionality
 
-### Current Structure
+### Current Structure (Before Reorganization)
 ```
 /workspace/
 ├── ActivityPub.Core/              # Core library (45 files)
@@ -46,7 +46,106 @@
 
 ---
 
-## Proposed Structure
+## Phase 1: Foundation - IN PROGRESS
+
+### Status: ✅ COMPLETE
+- ✅ Created new directory structure (src/, tests/, samples/, docs/, scripts/)
+- ✅ Migrated documentation to docs/ folder
+- ✅ Organized tests into UnitTests/, IntegrationTests/, ScaleTests/
+- ✅ Build verified: All 386 tests passing
+- ✅ Git commits made with reorganization changes
+
+### Completed Actions
+- Created src/ActivityPub.Core/, src/ActivityPub.Cli/, src/ActivityPub.Admin/
+- Created tests/ActivityPub.Tests/UnitTests/, IntegrationTests/, ScaleTests/
+- Created samples/quickstart/, samples/advanced/
+- Created docs/ folder with architecture.md, testing.md, state-report.md
+- Created scripts/ci/ for CI/CD configurations
+
+---
+
+## Proposed Structure (After Reorganization)
+```
+/workspace/
+├── ActivityPub.Core/              # Core library (45 files)
+│   ├── Services/                  # 14 service files
+│   ├── Models/                    # 27 model files
+│   ├── Controllers/               # 5 controller files
+│   ├── Repositories/              # 8 entity files
+│   ├── Infrastructure/            # 6 subdirectories (Dashboard, Logging, Metrics, etc.)
+│   ├── Implementations/           # 4 implementation files
+│   ├── Interfaces/                # 3 interface files
+│   ├── BackgroundServices/        # 1 file
+│   ├── Caching/                   # 3 files
+│   ├── Events/                    # 4 files
+│   ├── Metrics/                   # 1 file
+│   ├── Middleware/                # 3 files
+│   ├── Options/                   # 1 file
+│   ├── Plugins/                   # 3 files
+│   ├── Class1.cs                  # Empty placeholder
+│   ├── RejectActivityHandler.cs   # Empty file
+│   └── obj/                       # Build artifacts
+├── ActivityPub.Tests/             # Tests (95 files)
+│   ├── IntegrationTests/          # 15 test files in subdirectories
+│   ├── UnitTests/                 # Missing (tests directly in root)
+│   ├── LoadTesting/               # 1 file
+│   ├── Deferred/                  # 1 file
+│   └── TestResults/               # Test output
+└── SampleProjects/                # 4 sample apps
+    ├── FederationApp/
+    ├── BotApp/
+    ├── DemoApp/
+    └── ConsoleClient/
+```
+
+---
+
+## Phase 2: Documentation - NEXT
+
+### Status:pending
+1. Create new README.md at root level
+2. Create docs/overview.md - project overview
+3. Create docs/contributing.md - contribution guide
+4. Create docs/api-reference/ - API documentation
+5. Add issue templates in .github/ISSUE_TEMPLATE/
+
+---
+
+## Phase 3: Tooling - NEXT
+
+### Status:pending
+1. Create build.sh - cross-platform build script
+2. Create test.sh - test runner script
+3. Create publish.sh - publish script
+4. Set up CI/CD in scripts/ci/
+5. Configure code quality tools (SonarQube, etc.)
+
+---
+
+## Phase 4: Cleanup - NEXT
+
+### Status:pending
+1. Remove old ActivityPub.Core/Class1.cs
+2. Remove old ActivityPub.Core/RejectActivityHandler.cs
+3. Remove ActivityPub.slnx (solution filter not needed)
+4. Consolidate all .sln files into single solution
+5. Move SampleProjects/ to samples/
+6. Final testing
+
+---
+
+## Phase 5: Migration - NEXT
+
+### Status:pending
+1. Move core files to src/ActivityPub.Core/ structure
+2. Update all project references
+3. Update namespace declarations
+4. Run full test suite
+5. Verify build and tests passing
+
+---
+
+## Proposed Structure (Target)
 
 ### Root Directory
 ```
