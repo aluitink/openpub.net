@@ -2,6 +2,11 @@
 bin/
 obj/
 
+# Scratch / debug output
+test_full.txt
+test_output.txt
+ActivityPub.Tests/WebUI/ComposeDumpTests.cs
+
 # Build artifacts (specific paths)
 **/bin/
 **/obj/
