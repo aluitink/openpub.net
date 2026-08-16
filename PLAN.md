@@ -166,7 +166,7 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
     - ✅ Live markdown/link preview before posting (links, hashtags, mentions, bold/italic via compose.js)
    - ⬜ Reply context banner (replying to @user: snippet)
     - ✅ Visible image upload preview + remove (FileReader preview, remove button)
-   - ⬜ Poll preview (choices, duration, multi-select)
+    - ✅ Poll preview (choices with bars, duration label, multi-select indicator) in Poll/New
 2. Timeline:
    - ✅ Relative timestamps (2m, 3h, 2d) with full date on hover (`title` attr + JS)
    - ✅ Like/Boost with optimistic UI update (instant count change, revert on error)
@@ -185,7 +185,7 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
    - ✅ Tabs: Top / Notes / People / Hashtags
 6. General:
    - ⬜ Consistent page header pattern (title + primary action button)
-   - ⬜ Loading skeletons or spinner for async fetches
+    - ✅ Loading skeletons (shimmer skeleton on "Load more" click in timeline)
    - ✅ 404/500 pages with useful links back to timeline
    - ✅ Keyboard: `/` focuses search, `n` opens compose (when logged in)
 
