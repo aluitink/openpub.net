@@ -54,6 +54,7 @@ public class TimelineController : Controller
                         ActivityId = activity.Id!,
                         AuthorName = authorActor?.PreferredUsername ?? activity.ActorId?.Split('/').Last() ?? "unknown",
                         AuthorDisplayName = authorActor?.Name ?? "",
+                        AuthorAvatarUrl = authorActor?.Icon?.ToString(),
                         Content = note.Content ?? "",
                         Published = note.Published ?? DateTime.UtcNow,
                         ActivityType = activity.Type ?? "Create",
@@ -300,6 +301,7 @@ public class TimelineActivityItem
     public string ActivityId { get; set; } = string.Empty;
     public string AuthorName { get; set; } = string.Empty;
     public string AuthorDisplayName { get; set; } = string.Empty;
+    public string? AuthorAvatarUrl { get; set; }
     public string Content { get; set; } = string.Empty;
     public DateTime Published { get; set; }
     public string ActivityType { get; set; } = string.Empty;

@@ -18,8 +18,18 @@
     }
 
     <div class="note-header">
+        <div class="note-avatar">
+            @if (!string.IsNullOrEmpty(Model.AuthorAvatarUrl))
+            {
+                <img src="@Model.AuthorAvatarUrl" alt="@Model.AuthorName" loading="lazy" />
+            }
+            else
+            {
+                <div class="avatar-placeholder avatar-sm">@((Model.AuthorDisplayName ?? Model.AuthorName).FirstOrDefault() != default ? (Model.AuthorDisplayName ?? Model.AuthorName).ToString()!.Substring(0, 1) : "?")</div>
+            }
+        </div>
         <div class="note-author">
-            <span class="note-display-name">@Html.Raw(Model.AuthorDisplayName)</span>
+            <a class="note-display-name" href="/actors/@Model.AuthorName">@Html.Raw(Model.AuthorDisplayName)</a>
             <span class="note-username">@Model.AuthorName</span>
         </div>
         <span class="note-timestamp" title="@Model.Published.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss") + " UTC" data-published="@Model.Published.ToUniversalTime().ToString("o")">@TimeAgo(Model.Published)</span>
