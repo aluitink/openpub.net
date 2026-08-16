@@ -120,13 +120,13 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 **Goal:** User profiles and federation-compatible actor endpoints.
 
 **Tasks:**
-1. Profile page: display name, bio, avatar, banner, stats (posts, followers, following)
-2. Edit profile: update display name, summary, icon, image
-3. Actor endpoint `/users/{username}` → ActivityPub Person JSON
-4. Outbox endpoint `/users/{username}/outbox` → OrderedCollection
-5. Followers/Following collection endpoints with pagination
-6. Liked collection endpoint
-7. Add integration tests for all actor endpoints
+1. ✅ Profile page: display name, bio, avatar, banner, stats (posts, followers, following)
+2. ✅ Edit profile: update display name, summary, icon, image
+3. ✅ Actor endpoint `/users/{username}` → ActivityPub Person JSON
+4. ✅ Outbox endpoint `/users/{username}/outbox` → OrderedCollection
+5. ✅ Followers/Following collection endpoints with pagination
+6. ✅ Liked collection endpoint
+7. ✅ Add integration tests for all actor endpoints (17 tests)
 
 ### Phase 30: Polish & Production
 

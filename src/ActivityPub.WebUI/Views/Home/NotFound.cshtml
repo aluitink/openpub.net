@@ -1,20 +1,14 @@
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Not Found";
 }
 @model ErrorViewModel
 
 <div class="error-page">
-    <div class="error-icon">@(Model.StatusCode == 500 ? "&#9888;" : "&#128269;")</div>
+    <div class="error-icon">&#128507;</div>
     <h1>@Model.Title</h1>
     <p class="error-message">@Model.Message</p>
     <p class="error-status">Error @(Model.StatusCode)</p>
-    @if (Model.IsDevelopment)
-    {
-        <div class="error-details">
-            <p>Development mode - see logs for details.</p>
-        </div>
-    }
     <div class="error-actions">
         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Go Home</a>
         <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>

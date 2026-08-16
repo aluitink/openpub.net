@@ -1,0 +1,97 @@
+@{
+    ViewData["Title"] = "Search";
+}
+@model SearchViewModel
+
+<div class="search-container">
+    <form method="get" class="search-form">
+        <input type="text" name="q" value="@Html.Encode(Model.Query)" placeholder="Search notes and users..." class="search-input" autofocus />
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Query))
+    {
+        <div class="search-tabs">
+            <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=all" class="search-tab @(Model.Tab == "all" ? "active" : "")">All</a>
+            <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=notes" class="search-tab @(Model.Tab == "notes" ? "active" : "")">Notes (@Model.Notes.Count)</a>
+            <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=users" class="search-tab @(Model.Tab == "users" ? "active" : "")">Users (@Model.Users.Count)</a>
+        </div>
+
+        @if ((Model.Tab == "all" || Model.Tab == "notes") && Model.Notes.Any())
+        {
+            <div class="search-results">
+                @foreach (var note in Model.Notes)
+                {
+                    <div class="search-note-card">
+                        <div class="search-note-author">
+                            <a asp-controller="Profile" asp-action="Index" asp-route-username="@note.AuthorUsername">@note.AuthorName</a>
+                            <span class="search-note-username">@note.AuthorUsername</span>
+                        </div>
+                        <p class="search-note-content">@note.Content</p>
+                        <span class="search-note-time">@TimeAgo(note.Published)</span>
+                    </div>
+                }
+            </div>
+        }
+        else if (Model.Tab == "notes" && !Model.Notes.Any())
+        {
+            <div class="search-empty">
+                <p>No notes found matching "@Model.Query"</p>
+            </div>
+        }
+
+        @if ((Model.Tab == "all" || Model.Tab == "users") && Model.Users.Any())
+        {
+            <div class="search-results">
+                @foreach (var user in Model.Users)
+                {
+                    <div class="search-user-card">
+                        <div class="search-user-avatar">
+                            @if (!string.IsNullOrEmpty(user.AvatarUrl))
+                            {
+                                <img src="@user.AvatarUrl" alt="@user.DisplayName" />
+                            }
+                            else
+                            {
+                                <div class="avatar-placeholder">@user.DisplayName.Substring(0, 1).ToUpper()</div>
+                            }
+                        </div>
+                        <div class="search-user-info">
+                            <a asp-controller="Profile" asp-action="Index" asp-route-username="@user.Username">
+                                <strong>@user.DisplayName</strong>
+                                <span class="search-user-username">@user.Username</span>
+                            </a>
+                            @if (!string.IsNullOrEmpty(user.Bio))
+                            {
+                                <p class="search-user-bio">@Truncate(user.Bio, 100)</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (Model.Tab == "users" && !Model.Users.Any())
+        {
+            <div class="search-empty">
+                <p>No users found matching "@Model.Query"</p>
+            </div>
+        }
+    }
+</div>
+
+@functions {
+    string TimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+
+    string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        return text.Length <= maxLength ? text : text.Substring(0, maxLength) + "...";
+    }
+}

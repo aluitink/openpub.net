@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+@model EditProfileModel
+
+@if (TempData["ProfileUpdated"] != null)
+{
+    <div class="alert-success">Profile updated successfully!</div>
+}
+
+<div class="profile-edit-container">
+    <h2>Edit Profile</h2>
+
+    <form asp-action="Edit" method="post" class="profile-edit-form">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label asp-for="DisplayName">Display Name</label>
+            <input asp-for="DisplayName" class="form-control" maxlength="100" />
+            <span class="field-error">@Html.ValidationMessage("DisplayName")</span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Bio">Bio</label>
+            <textarea asp-for="Bio" class="form-control" rows="4" maxlength="500"></textarea>
+            <span class="field-error">@Html.ValidationMessage("Bio")</span>
+            <small class="form-help">Short bio about yourself (max 500 chars)</small>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="IconUrl">Avatar URL</label>
+            <input asp-for="IconUrl" class="form-control" placeholder="https://example.com/avatar.png" />
+            <small class="form-help">URL to your avatar image (leave empty to remove)</small>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="BannerUrl">Banner URL</label>
+            <input asp-for="BannerUrl" class="form-control" placeholder="https://example.com/banner.png" />
+            <small class="form-help">URL to your banner image (leave empty to remove)</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

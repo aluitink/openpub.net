@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  fediblog:
+    build:
+      context: ../..
+      dockerfile: src/ActivityPub.WebUI/Dockerfile
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Data Source=/data/app.db
+      - ConnectionStrings__ActivityPubConnection=Data Source=/data/ap.db
+    volumes:
+      - fediblog-data:/data
+    restart: unless-stopped
+
+volumes:
+  fediblog-data:

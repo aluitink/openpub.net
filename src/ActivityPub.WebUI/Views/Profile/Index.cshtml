@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = Model.DisplayName;
+}
+@model ProfileViewModel
+
+<div class="profile-page">
+    @if (!string.IsNullOrEmpty(Model.BannerUrl))
+    {
+        <div class="profile-banner" style="background-image: url('@Model.BannerUrl')"></div>
+    }
+    else
+    {
+        <div class="profile-banner profile-banner-default"></div>
+    }
+
+    <div class="profile-info">
+        <div class="profile-avatar">
+            @if (!string.IsNullOrEmpty(Model.IconUrl))
+            {
+                <img src="@Model.IconUrl" alt="@Model.DisplayName" />
+            }
+            else
+            {
+                <div class="avatar-placeholder">@(Model.DisplayName.FirstOrDefault() != default ? Model.DisplayName.ToString().Substring(0, 1) : "?")</div>
+            }
+        </div>
+
+        <div class="profile-details">
+            <h1>@Html.Raw(Model.DisplayName)</h1>
+            <span class="profile-username">@Model.Username</span>
+
+            @if (!string.IsNullOrEmpty(Model.Bio))
+            {
+                <p class="profile-bio">@Html.Raw(Model.Bio)</p>
+            }
+
+            <div class="profile-stats">
+                <span class="stat"><strong>@Model.FollowerCount</strong> Followers</span>
+                <span class="stat"><strong>@Model.FollowingCount</strong> Following</span>
+                <span class="stat">Joined @Model.JoinedDate</span>
+            </div>
+        </div>
+
+        @if (Model.IsOwnProfile)
+        {
+            <a asp-action="Edit" class="btn btn-secondary">Edit Profile</a>
+        }
+    </div>
+</div>

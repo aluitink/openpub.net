@@ -190,6 +190,7 @@ public class WebUIFactory : WebApplicationFactory<ActivityPub.WebUI.Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Development");
         builder.ConfigureServices(services =>
         {
             var toRemove = services

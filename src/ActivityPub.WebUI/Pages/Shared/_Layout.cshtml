@@ -19,6 +19,9 @@
                         <a asp-controller="Follow" asp-action="Index" class="nav-link">Follow</a>
                         <a asp-controller="Follow" asp-action="Following" class="nav-link">Following</a>
                         <a asp-controller="Follow" asp-action="Followers" class="nav-link">Followers</a>
+                        <a asp-controller="Profile" asp-action="Index" class="nav-link">Profile</a>
+                        <a asp-controller="Notifications" asp-action="Index" class="nav-link">Notifications</a>
+                        <a asp-controller="Search" asp-action="Index" class="nav-link">Search</a>
                         <span class="user-greeting">Hello, @User.Identity.Name</span>
                         <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
                             <button type="submit" class="btn btn-secondary">Logout</button>

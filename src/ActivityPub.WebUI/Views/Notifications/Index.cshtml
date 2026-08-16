@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "Notifications";
+}
+@model NotificationsViewModel
+
+<div class="notifications-container">
+    <h2 class="notifications-header">Notifications</h2>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty-notifications">
+            <p>No notifications yet. When people interact with your notes, you'll see them here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notifications-list">
+            @foreach (var item in Model.Items)
+            {
+                <div class="notification-item @(item.NotificationType)">
+                    <div class="notification-icon">
+                        @{
+                            var icon = item.NotificationType switch
+                            {
+                                "follow" => "&#10133;",
+                                "follow_accept" => "&#10003;",
+                                "like" => "&#10084;",
+                                "boost" => "&#128264;",
+                                "reply" => "&#10148;",
+                                _ => "&#9889;"
+                            };
+                        }
+                        <span>@icon</span>
+                    </div>
+                    <div class="notification-content">
+                        <p class="notification-title">
+                            <a asp-controller="Profile" asp-action="Index" asp-route-username="@item.ActorName">@item.ActorDisplayName</a>
+                            @item.Title.Replace(item.ActorDisplayName, "")
+                        </p>
+                        @if (!string.IsNullOrEmpty(item.TargetNote))
+                        {
+                            <p class="notification-note">@item.TargetNote</p>
+                        }
+                    </div>
+                    <div class="notification-time">
+                        <span>@TimeAgo(item.Published)</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.HasMore)
+        {
+            <div class="notifications-pagination">
+                <a asp-controller="Notifications" asp-action="Index" asp-route-page="@(Model.Page + 1)" class="btn btn-secondary">Load More</a>
+            </div>
+        }
+    }
+</div>
+
+@functions {
+    string TimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+}

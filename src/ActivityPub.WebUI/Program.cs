@@ -58,6 +58,12 @@ public class Program
             app.UseExceptionHandler("/Home/Error");
             app.UseHsts();
         }
+        else
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseStatusCodePagesWithReExecute("/Home/NotFound", "?id={0}");
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
