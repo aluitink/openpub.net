@@ -165,13 +165,13 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
    - ✅ Character counter (500 limit) with color states (ok / near / over)
     - ✅ Live markdown/link preview before posting (links, hashtags, mentions, bold/italic via compose.js)
    - ⬜ Reply context banner (replying to @user: snippet)
-   - ⬜ Visible image upload progress + preview + remove
+    - ✅ Visible image upload preview + remove (FileReader preview, remove button)
    - ⬜ Poll preview (choices, duration, multi-select)
 2. Timeline:
    - ✅ Relative timestamps (2m, 3h, 2d) with full date on hover (`title` attr + JS)
    - ✅ Like/Boost with optimistic UI update (instant count change, revert on error)
    - ✅ "Load more" pagination button (keep existing paging, add button UX)
-   - ⬜ Content warning / sensitive-media blur toggle
+    - ✅ Content warning / sensitive-media blur toggle (CW banner + Show/Hide, blurred content/image)
     - ✅ Note actions menu (copy link, report, mute author) — "more" dropdown in _NoteCard
 3. Interactions:
    - ✅ Inline reply box under a note (expand in place), not just navigation to compose
