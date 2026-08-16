@@ -1,6 +1,7 @@
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Repositories;
 using ActivityPub.WebUI.Models;
+using ActivityPub.WebUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,19 +18,25 @@ public class AdminController : Controller
     private readonly ActivityPubDbContext _activityPubDb;
     private readonly IActivityPubRepository _repository;
     private readonly ILogger<AdminController> _logger;
+    private readonly IAuditLogService _auditLog;
+    private readonly IUserReportService _reportService;
 
     public AdminController(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext identityDb,
         ActivityPubDbContext activityPubDb,
         IActivityPubRepository repository,
-        ILogger<AdminController> logger)
+        ILogger<AdminController> logger,
+        IAuditLogService auditLog,
+        IUserReportService reportService)
     {
         _userManager = userManager;
         _identityDb = identityDb;
         _activityPubDb = activityPubDb;
         _repository = repository;
         _logger = logger;
+        _auditLog = auditLog;
+        _reportService = reportService;
     }
 
     public bool IsAdmin
@@ -126,6 +133,7 @@ public class AdminController : Controller
         await _identityDb.SaveChangesAsync();
 
         _logger.LogInformation("Admin {AdminUser} set {TargetUser} admin={IsAdmin}", adminUsername, userId, isAdmin);
+        await _auditLog.LogActionAsync(adminUsername!, "SetAdmin", userId, $"Set admin={isAdmin}");
         return RedirectToAction("Users");
     }
 
@@ -150,6 +158,7 @@ public class AdminController : Controller
         await _identityDb.SaveChangesAsync();
 
         _logger.LogInformation("Admin {AdminUser} toggled block on {TargetUser} (now blocked={Blocked})", adminUsername, userId, target.IsBlocked);
+        await _auditLog.LogActionAsync(adminUsername!, "ToggleBlock", userId, $"Blocked={target.IsBlocked}");
         return RedirectToAction("Users");
     }
 
@@ -205,7 +214,56 @@ public class AdminController : Controller
 
         await _repository.DeleteActivityAsync(activityId);
         _logger.LogInformation("Admin {AdminUser} deleted activity {ActivityId}", adminUsername, activityId);
+        await _auditLog.LogActionAsync(adminUsername!, "DeleteActivity", activityId, "Activity deleted by admin");
         return RedirectToAction("Moderation");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Reports()
+    {
+        var username = User.Identity?.Name;
+        var currentUser = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == username);
+        if (currentUser == null || !currentUser.IsAdmin) return Forbid();
+
+        var reports = await _reportService.GetPendingReportsAsync();
+        return View(reports);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DismissReport(int reportId)
+    {
+        var adminUsername = User.Identity?.Name;
+        var adminUser = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == adminUsername);
+        if (adminUser == null || !adminUser.IsAdmin) return Forbid();
+
+        await _reportService.DismissReportAsync(reportId, adminUsername!, "Dismissed by admin");
+        await _auditLog.LogActionAsync(adminUsername!, "DismissReport", reportId.ToString(), "Report dismissed");
+        return RedirectToAction("Reports");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TakeActionReport(int reportId)
+    {
+        var adminUsername = User.Identity?.Name;
+        var adminUser = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == adminUsername);
+        if (adminUser == null || !adminUser.IsAdmin) return Forbid();
+
+        await _reportService.DeleteReportTargetAsync(reportId, adminUsername!);
+        await _auditLog.LogActionAsync(adminUsername!, "TakeActionReport", reportId.ToString(), "Action taken on report");
+        return RedirectToAction("Reports");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AuditLog()
+    {
+        var username = User.Identity?.Name;
+        var currentUser = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == username);
+        if (currentUser == null || !currentUser.IsAdmin) return Forbid();
+
+        var entries = await _auditLog.GetRecentEntriesAsync(100);
+        return View(entries);
     }
 
     static string ExtractTypeFromJson(string json)

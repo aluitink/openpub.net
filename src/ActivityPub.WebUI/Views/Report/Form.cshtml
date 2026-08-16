@@ -1,0 +1,29 @@
+@{
+    ViewData["Title"] = "Report";
+}
+
+<h2>Report User</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form asp-action="Submit" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="activityId" value="@ViewData["ActivityId"]" />
+    <div class="mb-3">
+        <label class="form-label">Report User</label>
+        <input type="text" name="targetUsername" class="form-control" value="@ViewData["TargetUsername"]" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Reason</label>
+        <textarea name="reason" class="form-control" rows="3" maxlength="1000" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-danger">Submit Report</button>
+    <a asp-controller="Timeline" asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

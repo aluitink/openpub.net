@@ -56,6 +56,32 @@ public class ComposeController : Controller
         var noteId = $"https://localhost/users/{username}/notes/{Guid.NewGuid()}";
         var activityId = $"https://localhost/users/{username}/activities/{Guid.NewGuid()}";
 
+        List<Dictionary<string, object>>? attachments = null;
+        if (model.Image != null && model.Image.Length > 0 && model.Image.Length <= 10 * 1024 * 1024)
+        {
+            var extension = Path.GetExtension(model.Image.FileName);
+            var filename = $"{Guid.NewGuid():N}{extension}";
+            var uploadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadPath);
+            var filepath = Path.Combine(uploadPath, filename);
+            using (var stream = new FileStream(filepath, FileMode.Create))
+            {
+                await model.Image.CopyToAsync(stream);
+            }
+            var url = $"/uploads/{filename}";
+            attachments = new List<Dictionary<string, object>>
+            {
+                new()
+                {
+                    { "type", "Image" },
+                    { "mediaType", model.Image.ContentType },
+                    { "url", url },
+                    { "name", model.Image.FileName }
+                }
+            };
+            _logger.LogInformation("Uploaded image {Filename} for user {Username}", filename, username);
+        }
+
         var note = new Note
         {
             Id = noteId,
@@ -65,6 +91,13 @@ public class ComposeController : Controller
             Published = now,
             To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
         };
+
+        if (attachments != null)
+        {
+            if (note.AdditionalProperties == null)
+                note.AdditionalProperties = new Dictionary<string, object?>();
+            note.AdditionalProperties["attachment"] = attachments;
+        }
 
         var activity = new Activity
         {
@@ -267,6 +300,7 @@ public class ComposeController : Controller
 public class ComposeModel
 {
     public string? Content { get; set; }
+    public IFormFile? Image { get; set; }
 }
 
 public class ArticleComposeModel

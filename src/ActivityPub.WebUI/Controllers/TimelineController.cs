@@ -62,7 +62,8 @@ public class TimelineController : Controller
                         BoostCount = boostCount,
                         ReplyCount = replyCount,
                         IsLiked = isLiked,
-                        IsBoosted = isBoosted
+                        IsBoosted = isBoosted,
+                        ImageUrl = ExtractImageUrl(note)
                     });
                 }
             }
@@ -100,6 +101,20 @@ public class TimelineController : Controller
         return null;
     }
 
+    static string? ExtractImageUrl(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        {
+            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            {
+                var first = elem[0];
+                if (first.TryGetProperty("url", out var urlProp))
+                    return urlProp.GetString();
+            }
+        }
+        return null;
+    }
+
     async Task<Actor?> GetAuthorActor(Activity activity)
     {
         var actorId = activity.ActorId;
@@ -125,4 +140,5 @@ public class TimelineActivityItem
     public int ReplyCount { get; set; }
     public bool IsLiked { get; set; }
     public bool IsBoosted { get; set; }
+    public string? ImageUrl { get; set; }
 }

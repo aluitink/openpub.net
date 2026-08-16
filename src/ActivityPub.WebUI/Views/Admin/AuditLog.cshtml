@@ -1,0 +1,36 @@
+@model ICollection<ActivityPub.WebUI.Services.AuditLogEntry>
+
+<h2>Audit Log</h2>
+
+@if (!Model.Any())
+{
+    <p>No audit log entries.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Admin</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.OrderByDescending(e => e.Timestamp))
+            {
+                <tr>
+                    <td>@entry.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@entry.AdminUsername</td>
+                    <td>@entry.Action</td>
+                    <td>@entry.TargetId</td>
+                    <td>@entry.Details</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>

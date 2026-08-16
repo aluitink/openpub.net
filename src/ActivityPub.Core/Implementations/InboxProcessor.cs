@@ -95,6 +95,12 @@ public class InboxProcessor : IActivityPubEventHandler
             case "move":
                 await ProcessMoveAsync(activity);
                 break;
+            case "block":
+                await ProcessBlockAsync(activity);
+                break;
+            case "reject":
+                await ProcessRejectAsync(activity);
+                break;
             default:
                 _logger.LogWarning("Unknown activity type: {ActivityType}", activity.Type);
                 throw new InvalidDataException($"Unknown activity type: {activity.Type}");
@@ -122,7 +128,11 @@ public class InboxProcessor : IActivityPubEventHandler
 
         if (activity.Object == null && string.IsNullOrEmpty(activity.ObjectId))
         {
-            throw new InvalidDataException("Activity must have an object or object ID");
+            var activityType = (activity.Type ?? "").ToLowerInvariant();
+            if (activityType != "block" && activityType != "reject")
+            {
+                throw new InvalidDataException("Activity must have an object or object ID");
+            }
         }
     }
 
@@ -261,6 +271,26 @@ public class InboxProcessor : IActivityPubEventHandler
                 _logger.LogInformation("Tombstone for moved object {ObjectId}", objectId);
             }
         }
+    }
+
+    private async Task ProcessBlockAsync(Activity activity)
+    {
+        _logger.LogInformation("Processing Block activity");
+
+        var actorId = activity.ActorId ?? GetActorIdFromObject(activity.Actor);
+        var targetId = activity.Target ?? activity.ObjectId ?? GetActorIdFromObject(activity.Object);
+
+        _logger.LogInformation("Actor {ActorId} blocked {TargetId}", actorId, targetId ?? "unknown");
+    }
+
+    private async Task ProcessRejectAsync(Activity activity)
+    {
+        _logger.LogInformation("Processing Reject activity");
+
+        var actorId = activity.ActorId ?? GetActorIdFromObject(activity.Actor);
+        var objectId = activity.ObjectId ?? GetActorIdFromObject(activity.Object);
+
+        _logger.LogInformation("Actor {ActorId} rejected {ObjectId}", actorId, objectId ?? "unknown");
     }
 
     private string? GetActorIdFromObject(object? actorObject)
