@@ -58,6 +58,20 @@
         <div class="load-more-container">
             <a href="?page=@(page + 1)" class="btn btn-secondary load-more-btn">Load more</a>
         </div>
+        <div id="load-more-skeleton" class="timeline-loading">
+            <div class="skeleton-note-card">
+                <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div>
+                        <div class="skeleton skeleton-line short"></div>
+                        <div class="skeleton skeleton-line medium" style="height:10px"></div>
+                    </div>
+                </div>
+                <div class="skeleton skeleton-line long"></div>
+                <div class="skeleton skeleton-line medium"></div>
+                <div class="skeleton skeleton-image"></div>
+            </div>
+        </div>
     }
 }
 else
@@ -89,6 +103,14 @@ else
         });
     }
     setInterval(updateTimestamps, 60000);
+
+    var loadMoreBtn = document.querySelector('.load-more-btn');
+    var loadSkeleton = document.getElementById('load-more-skeleton');
+    if (loadMoreBtn && loadSkeleton) {
+        loadMoreBtn.addEventListener('click', function() {
+            loadSkeleton.classList.add('active');
+        });
+    }
 
     document.querySelectorAll('.btn-like, .btn-boost').forEach(function(btn) {
         var form = btn.closest('form');

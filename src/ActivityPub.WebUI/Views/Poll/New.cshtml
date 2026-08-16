@@ -9,8 +9,8 @@
     @Html.AntiForgeryToken()
 
     <div class="mb-3">
-        <label class="form-label">Question</label>
-        <textarea name="Content" class="form-control" rows="2" maxlength="500">@Model.Content</textarea>
+        <label class="form-label" for="poll-question">Question</label>
+        <textarea id="poll-question" name="Content" class="form-control" rows="2" maxlength="500">@Model.Content</textarea>
         <small class="text-muted">1-500 characters</small>
     </div>
 
@@ -18,17 +18,93 @@
         <label class="form-label">Options</label>
         @for (int i = 0; i < 4; i++)
         {
-            <input type="text" name="Options" class="form-control mb-2" placeholder="Option @(i+1)" value="@Model.Options?[i]" maxlength="50" />
+            <input type="text" name="Options" id="poll-option-@i" class="form-control mb-2 poll-option-input" placeholder="Option @(i+1)" value="@Model.Options?[i]" maxlength="50" />
         }
         <small class="text-muted">2-4 options, max 50 characters each</small>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Duration (minutes)</label>
-        <input type="number" name="DurationMinutes" class="form-control" value="@Model.DurationMinutes" min="5" max="10080" />
-        <small class="text-muted">5 minutes to 1 week</small>
+        <label class="form-label" for="poll-duration">Duration</label>
+        <select id="poll-duration" name="DurationMinutes" class="form-control">
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="360">6 hours</option>
+            <option value="1440" selected>1 day</option>
+            <option value="4320">3 days</option>
+            <option value="10080">1 week</option>
+        </select>
+        <small class="text-muted">How long the poll stays open</small>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" id="poll-multiselect" class="form-check-input" />
+        <label class="form-check-label" for="poll-multiselect">Allow multiple choices</label>
+    </div>
+
+    <div id="poll-preview" class="poll-preview" style="display:none">
+        <div class="poll-preview-question" id="preview-question"></div>
+        <div id="preview-options"></div>
+        <div class="poll-preview-meta">
+            <span id="preview-duration"></span>
+            <span id="preview-multiselect" class="preview-multiselect" style="display:none"></span>
+        </div>
     </div>
 
     <button type="submit" class="btn btn-primary">Post Poll</button>
     <a asp-controller="Timeline" asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+<script>
+(function() {
+    var question = document.getElementById('poll-question');
+    var duration = document.getElementById('poll-duration');
+    var multiselect = document.getElementById('poll-multiselect');
+    var preview = document.getElementById('poll-preview');
+    var previewQuestion = document.getElementById('preview-question');
+    var previewOptions = document.getElementById('preview-options');
+    var previewDuration = document.getElementById('preview-duration');
+    var previewMultiselect = document.getElementById('preview-multiselect');
+    var optionInputs = document.querySelectorAll('.poll-option-input');
+    if (!question || !preview) return;
+
+    function durationLabel(mins) {
+        if (mins < 60) return mins + ' minutes';
+        var hrs = mins / 60;
+        if (hrs < 24) return hrs + ' hour' + (hrs > 1 ? 's' : '');
+        var days = Math.round(hrs / 24);
+        return days + ' day' + (days > 1 ? 's' : '');
+    }
+
+    function updatePreview() {
+        var q = question.value.trim();
+        var opts = [];
+        optionInputs.forEach(function(inp) {
+            if (inp.value.trim()) opts.push(inp.value.trim());
+        });
+
+        if (q && opts.length >= 2) {
+            previewQuestion.textContent = q;
+            previewOptions.innerHTML = '';
+            opts.forEach(function(o) {
+                var div = document.createElement('div');
+                div.className = 'poll-preview-option';
+                div.innerHTML = '<div class="poll-option-bar"><div class="poll-option-fill"></div></div><span class="poll-option-label"></span>';
+                div.querySelector('.poll-option-label').textContent = o;
+                previewOptions.appendChild(div);
+            });
+            previewDuration.textContent = '⏱ ' + durationLabel(parseInt(duration.value, 10));
+            previewMultiselect.style.display = multiselect.checked ? 'inline' : 'none';
+            if (multiselect.checked) previewMultiselect.textContent = ' · Multiple choices allowed';
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    question.addEventListener('input', updatePreview);
+    duration.addEventListener('change', updatePreview);
+    multiselect.addEventListener('change', updatePreview);
+    optionInputs.forEach(function(inp) { inp.addEventListener('input', updatePreview); });
+    updatePreview();
+})();
+</script>

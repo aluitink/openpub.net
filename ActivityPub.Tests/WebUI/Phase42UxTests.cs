@@ -248,4 +248,28 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         Assert.Contains("cw-toggle-btn", body);
         Assert.Contains("cw-hidden", body);
     }
+
+    [Fact]
+    public async Task PollNewPage_HasLivePreview()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/poll/new");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("poll-preview", body);
+        Assert.Contains("poll-option-input", body);
+        Assert.Contains("poll-multiselect", body);
+        Assert.Contains("updatePreview", body);
+    }
+
+    [Fact]
+    public async Task TimelinePage_HasLoadingSkeleton()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/timeline");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("skeleton", body);
+        Assert.Contains("load-more-skeleton", body);
+    }
 }
