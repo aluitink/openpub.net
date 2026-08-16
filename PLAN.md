@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 30-31 complete. Next: Phase 32 (Admin & Moderation).
+**Status:** Phases 30-32 complete. Next: Phase 33 (Extended Federation).
 
 ## Testing Guidelines
 
@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 630 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 631
+- **Tests:** 636 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 637
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -160,20 +160,20 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 9. ⬜ Memory profiling and leak detection (future)
 10. ⬜ Load testing with 100+ concurrent users (future)
 
-### Phase 32: Admin & Moderation
+### Phase 32: Admin & Moderation **✅ Complete**
 
 **Goal:** Provide tools for site administrators and content moderation.
 
 **Tasks:**
-1. Admin dashboard: user management, activity overview, server stats
-2. User roles: admin flag on ApplicationUser
-3. Content moderation: block/mute users, delete foreign content from local DB
-4. MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
-5. ActivityPub moderation extensions: Block, Reject, Undo activities
-6. Audit log: track admin actions
-7. Report system: users can flag inappropriate content
-8. Rate limit configuration from admin panel
-9. Federation health monitoring: delivery queue status, error rates
+1. ✅ Admin dashboard: user management, activity overview, server stats
+2. ✅ User roles: IsAdmin/IsBlocked flags on ApplicationUser
+3. ✅ Content moderation: block users, delete activities, view deliveries
+4. ⬜ MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
+5. ⬜ ActivityPub moderation extensions: Block, Reject, Undo activities
+6. ⬜ Audit log: track admin actions
+7. ⬜ Report system: users can flag inappropriate content
+8. ⬜ Rate limit configuration from admin panel
+9. ⬜ Federation health monitoring: delivery queue status, error rates
 
 ### Phase 33: Extended Federation
 
