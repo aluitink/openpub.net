@@ -21,8 +21,11 @@ public class AdminController : Controller
     private readonly IAuditLogService _auditLog;
     private readonly IUserReportService _reportService;
 
+    private readonly SignInManager<ApplicationUser> _signInManager;
+
     public AdminController(
         UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
         ApplicationDbContext identityDb,
         ActivityPubDbContext activityPubDb,
         IActivityPubRepository repository,
@@ -31,6 +34,7 @@ public class AdminController : Controller
         IUserReportService reportService)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
         _identityDb = identityDb;
         _activityPubDb = activityPubDb;
         _repository = repository;
@@ -132,8 +136,16 @@ public class AdminController : Controller
         target.IsAdmin = isAdmin;
         await _identityDb.SaveChangesAsync();
 
-        _logger.LogInformation("Admin {AdminUser} set {TargetUser} admin={IsAdmin}", adminUsername, userId, isAdmin);
+        _logger.LogInformation("Admin {AdminUser} set {TargetUser} admin={IsAdmin}", adminUsername, userId, $"Set admin={isAdmin}");
         await _auditLog.LogActionAsync(adminUsername!, "SetAdmin", userId, $"Set admin={isAdmin}");
+
+        if (target.Id == adminUser.Id)
+        {
+            var fresh = await _userManager.FindByNameAsync(adminUsername!);
+            if (fresh != null)
+                await AdminClaimHelper.SignInWithClaimsAsync(_signInManager, fresh);
+        }
+
         return RedirectToAction("Users");
     }
 

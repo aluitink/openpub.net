@@ -1,3 +1,11 @@
+@{
+    var controller = (ViewData["Controller"] as string) ?? "";
+    var action = (ViewData["Action"] as string) ?? "";
+
+    bool NavActive(string ctrl, params string[] actions)
+        => controller.Equals(ctrl, StringComparison.OrdinalIgnoreCase)
+           && (actions.Length == 0 || actions.Any(a => a.Equals(action, StringComparison.OrdinalIgnoreCase)));
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,38 +16,75 @@
 </head>
 <body>
     <header>
-        <nav class="navbar">
+        <nav class="navbar" aria-label="Main">
             <div class="nav-container">
-                <a asp-controller="Home" asp-action="Index" class="brand">Fediblog</a>
-                <div class="nav-links">
+                <div class="nav-left">
+                    <button type="button" class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-controls="nav-menu" aria-expanded="false">
+                        <span class="hamburger-bar"></span>
+                        <span class="hamburger-bar"></span>
+                        <span class="hamburger-bar"></span>
+                    </button>
+                    <a asp-controller="Home" asp-action="Index" class="brand">Fediblog</a>
+                </div>
+                <ul class="nav-menu" id="nav-menu">
                     @if (User.Identity?.IsAuthenticated ?? false)
                     {
-                        <a asp-controller="Timeline" asp-action="Index" class="nav-link">Timeline</a>
-                        <a asp-controller="Compose" asp-action="Index" class="nav-link">Compose</a>
-                        <a asp-controller="Follow" asp-action="Index" class="nav-link">Follow</a>
-                        <a asp-controller="Follow" asp-action="Following" class="nav-link">Following</a>
-                        <a asp-controller="Follow" asp-action="Followers" class="nav-link">Followers</a>
-                        <a asp-controller="Profile" asp-action="Index" class="nav-link">Profile</a>
-                        <a asp-controller="Notifications" asp-action="Index" class="nav-link">
-                            Notifications <span id="notification-badge" class="notification-badge" style="display:none">0</span>
-                        </a>
-                        <a asp-controller="Search" asp-action="Index" class="nav-link">Search</a>
-                        <a asp-controller="Trends" asp-action="Index" class="nav-link">Trends</a>
-                        <a asp-controller="Suggestions" asp-action="Index" class="nav-link">Discover</a>
-                        <a asp-controller="Communities" asp-action="Index" class="nav-link">Communities</a>
-                        <a asp-controller="Poll" asp-action="New" class="nav-link">New Poll</a>
-                        <a asp-controller="Admin" asp-action="Dashboard" class="nav-link">Admin</a>
-                        <span class="user-greeting">Hello, @User.Identity.Name</span>
-                        <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
-                            <button type="submit" class="btn btn-secondary">Logout</button>
-                        </form>
+                        <li class="nav-item">
+                            <a asp-controller="Timeline" asp-action="Index" class="nav-link@(NavActive("Timeline") ? " active" : "")">Timeline</a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Compose" asp-action="Index" class="nav-link@(NavActive("Compose") ? " active" : "")">Compose</a>
+                        </li>
+                        <li class="nav-group">
+                            <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+                                Notifications
+                                <span id="notification-badge" class="notification-badge" style="display:none">0</span>
+                                <span class="caret" aria-hidden="true">&#9662;</span>
+                            </button>
+                            <ul class="nav-dropdown" role="menu">
+                                <li><a asp-controller="Notifications" asp-action="Index" class="nav-dropdown-link@(NavActive("Notifications") ? " active" : "")" role="menuitem">Inbox</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Search" asp-action="Index" class="nav-link@(NavActive("Search") ? " active" : "")">Search</a>
+                        </li>
+                        <li class="nav-group">
+                            <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+                                Discover <span class="caret" aria-hidden="true">&#9662;</span>
+                            </button>
+                            <ul class="nav-dropdown" role="menu">
+                                <li><a asp-controller="Trends" asp-action="Index" class="nav-dropdown-link@(NavActive("Trends", "Trending") ? " active" : "")" role="menuitem">Trends</a></li>
+                                <li><a asp-controller="Suggestions" asp-action="Index" class="nav-dropdown-link@(NavActive("Suggestions", "Discover") ? " active" : "")" role="menuitem">Suggestions</a></li>
+                                <li><a asp-controller="Communities" asp-action="Index" class="nav-dropdown-link@(NavActive("Communities") ? " active" : "")" role="menuitem">Communities</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-group">
+                            <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+                                Account <span class="caret" aria-hidden="true">&#9662;</span>
+                            </button>
+                            <ul class="nav-dropdown" role="menu">
+                                <li><a asp-controller="Profile" asp-action="Index" class="nav-dropdown-link@(NavActive("Profile", "Index") ? " active" : "")" role="menuitem">Profile</a></li>
+                                <li><a asp-controller="Profile" asp-action="Edit" class="nav-dropdown-link@(NavActive("Profile", "Edit") ? " active" : "")" role="menuitem">Edit Profile</a></li>
+                                <li><a asp-controller="Follow" asp-action="Index" class="nav-dropdown-link@(NavActive("Follow", "Index") ? " active" : "")" role="menuitem">Follow</a></li>
+                                <li><a asp-controller="Follow" asp-action="Following" class="nav-dropdown-link@(NavActive("Follow", "Following") ? " active" : "")" role="menuitem">Following</a></li>
+                                <li><a asp-controller="Follow" asp-action="Followers" class="nav-dropdown-link@(NavActive("Follow", "Followers") ? " active" : "")" role="menuitem">Followers</a></li>
+                                <li><a asp-controller="Poll" asp-action="New" class="nav-dropdown-link@(NavActive("Poll") ? " active" : "")" role="menuitem">New Poll</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item nav-item-user">
+                            <span class="user-greeting">Hello, @User.Identity.Name</span>
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
+                                <button type="submit" class="btn btn-secondary">Logout</button>
+                            </form>
+                        </li>
+                        @await Component.InvokeAsync("AdminSection")
                     }
                     else
                     {
-                        <a asp-controller="Auth" asp-action="Login" class="btn btn-secondary">Login</a>
-                        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Register</a>
+                        <li class="nav-item"><a asp-controller="Auth" asp-action="Login" class="btn btn-secondary">Login</a></li>
+                        <li class="nav-item"><a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Register</a></li>
                     }
-                </div>
+                </ul>
             </div>
         </nav>
     </header>
@@ -53,6 +98,7 @@
             <p>Fediblog - A federated microblogging platform powered by ActivityPub.NET</p>
         </div>
     </footer>
+    <script src="~/js/menu.js" asp-append-version="true"></script>
     @if (User.Identity?.IsAuthenticated ?? false)
     {
         <script src="https://cdn.jsdelivr.net/npm/%40microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>

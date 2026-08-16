@@ -1,0 +1,19 @@
+@using ActivityPub.WebUI.Services
+@if (AdminClaimHelper.IsAdmin(User))
+{
+    <li class="nav-group nav-group-admin">
+        <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+            Admin <span class="caret" aria-hidden="true">&#9662;</span>
+        </button>
+        <ul class="nav-dropdown" role="menu">
+            <li><a asp-controller="Admin" asp-action="Dashboard" class="nav-dropdown-link" role="menuitem">Dashboard</a></li>
+            <li><a asp-controller="Admin" asp-action="Users" class="nav-dropdown-link" role="menuitem">Users</a></li>
+            <li><a asp-controller="Admin" asp-action="Moderation" class="nav-dropdown-link" role="menuitem">Moderation</a></li>
+            <li><a asp-controller="Admin" asp-action="Reports" class="nav-dropdown-link" role="menuitem">Reports</a></li>
+            <li><a asp-controller="Admin" asp-action="AuditLog" class="nav-dropdown-link" role="menuitem">Audit Log</a></li>
+            <li><a asp-controller="MRF" asp-action="Index" class="nav-dropdown-link" role="menuitem">MRF</a></li>
+            <li><a asp-controller="RateLimitSettings" asp-action="Index" class="nav-dropdown-link" role="menuitem">Rate Limits</a></li>
+            <li><a asp-controller="FederationHealth" asp-action="Index" class="nav-dropdown-link" role="menuitem">Federation Health</a></li>
+        </ul>
+    </li>
+}

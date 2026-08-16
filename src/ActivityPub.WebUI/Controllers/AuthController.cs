@@ -2,6 +2,7 @@ using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Services;
 using ActivityPub.WebUI.Models;
+using ActivityPub.WebUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -141,7 +142,7 @@ public class AuthController : Controller
             return View(model);
         }
 
-        await _signInManager.SignInAsync(user, isPersistent: false);
+        await AdminClaimHelper.SignInWithClaimsAsync(_signInManager, user);
         _logger.LogInformation("User {Username} registered and signed in.", model.Username);
         return RedirectToAction("Index", "Home");
     }
@@ -166,6 +167,13 @@ public class AuthController : Controller
 
         if (result.Succeeded)
         {
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user != null && AdminClaimHelper.IsAdmin(User))
+            {
+                // Admin state changed since the ticket was issued; re-issue with the admin claim.
+                await AdminClaimHelper.SignInWithClaimsAsync(_signInManager, user, model.RememberMe);
+            }
+
             _logger.LogInformation("User {Username} logged in.", model.Username);
             return LocalRedirect(returnUrl);
         }
