@@ -4,7 +4,9 @@
 @model ComposeModel
 
 <div class="compose-container">
-    <h2>Compose New Post</h2>
+    <div class="page-header">
+        <h2>Compose New Post</h2>
+    </div>
 
     <form asp-action="Post" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()

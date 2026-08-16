@@ -4,8 +4,8 @@
 @model NotificationsViewModel
 
 <div class="notifications-container">
-    <div class="notifications-header-row">
-        <h2 class="notifications-header">Notifications</h2>
+    <div class="page-header">
+        <h2>Notifications</h2>
         @if (Model.Items.Count > 0)
         {
             <form asp-controller="Notifications" asp-action="MarkAllRead" method="post" class="inline-form">

@@ -1854,9 +1854,11 @@ footer {
     flex-wrap: wrap;
 }
 
-.page-header h1 {
+.page-header h1,
+.page-header h2 {
     color: #1a1a2e;
     margin: 0;
+    font-size: 1.5rem;
 }
 
 .card-grid {
@@ -2420,4 +2422,42 @@ footer {
 
 .timeline-loading.active {
     display: block;
+}
+
+.reply-context-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.reply-context-icon {
+    color: #6c63ff;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.reply-context-text {
+    color: #3730a3;
+    white-space: nowrap;
+}
+
+.reply-context-snippet {
+    color: #6b7280;
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 300px;
+}
+
+@media (max-width: 480px) {
+    .reply-context-snippet {
+        display: none;
+    }
 }

@@ -272,4 +272,34 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         Assert.Contains("skeleton", body);
         Assert.Contains("load-more-skeleton", body);
     }
+
+    [Fact]
+    public async Task TimelinePage_HasReplyContextBanner()
+    {
+        var client = await GetAuthenticatedClient();
+        var postResponse = await client.PostAsync("/compose/post", Form(new Dictionary<string, string>
+        {
+            { "Content", "Original post for reply banner" }
+        }));
+        Assert.True(postResponse.Headers.Location != null || postResponse.IsSuccessStatusCode,
+            $"Post failed: {(int)postResponse.StatusCode}");
+        var response = await client.GetAsync("/timeline");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("reply-context-banner", body);
+        Assert.Contains("reply-context-text", body);
+    }
+
+    [Fact]
+    public async Task MainPages_UseConsistentPageHeader()
+    {
+        var client = await GetAuthenticatedClient();
+        foreach (var path in new[] { "/timeline", "/compose", "/search", "/notifications" })
+        {
+            var response = await client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.Contains("page-header", body);
+        }
+    }
 }

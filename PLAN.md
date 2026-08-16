@@ -15,7 +15,7 @@ When making changes to `src/ActivityPub.WebUI/`, run QA via delegated subagents 
 1. **Launch:** Start the WebUI with `docker compose` from `src/ActivityPub.WebUI/`:
    - `docker compose -f src/ActivityPub.WebUI/docker-compose.yml up -d --build`
    - Wait for the service to be healthy (HTTP 200 on the base URL).
-2. **Test with Playwright:** Navigate to `http://localhost:8080` and exercise the changed flows (auth, compose, timeline, interactions, profiles, admin, etc.). Use Playwright navigation, snapshot, click, fill, and screenshot tools. Verify expected elements, text, and behavior.
+2. **Test with Playwright:** Navigate to `http://localhost:8080` and exercise the changed flows (auth, compose, timeline, interactions, profiles, admin, etc.). Use Playwright navigation, snapshot, click, fill, and screenshot tools. Verify expected elements, text, and behavior. Evaluate screenshots.
 3. **Report:** Return a pass/fail summary with screenshots for failures and any console errors observed.
 
 **Localhost constraints & mocking:**
@@ -261,3 +261,49 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 3. ⬜ PostgreSQL migration path from SQLite
 4. ⬜ Memory profiling and leak detection
 5. ⬜ Load testing with 100+ concurrent users
+
+---
+
+## Phase 44: WebUI Look & Feel Review (screenshot audit)
+
+**Method:** `docker compose` rebuild + fresh image, logged in as a real user, Playwright full-page screenshots at 1440×900 (desktop) and 390×844 (mobile). Pages swept: Home, Timeline (empty + populated), Compose, Profile, Discover, Search, mobile drawer, desktop dropdowns. Every finding below was confirmed against the live DOM/CSS or source, not just the screenshot.
+
+**Overall:** The visual system is clean and consistent (dark `#1a1a2e` nav, `#6c63ff` accent, white cards on `#f0f2f5`). The Phase 40 nav is a big improvement — dropdowns work on desktop, the hamburger drawer + focus trap + Escape work on mobile, no horizontal overflow at 360/390/768/1280/1440. But the audit surfaced **two P0 bugs that only appear in the built/Production container** (they are invisible when running `dotnet run`, which is why they slipped through) plus a cluster of polish items.
+
+### P0 — Fix before anything else (correctness, production-only)
+
+1. **Static-asset cache-busting is broken in the built container.**
+   - **Evidence:** `_Layout.cshtml` emits `<link rel="stylesheet" href="/css/site.css" asp-append-version="true" />` — the `asp-append-version` attribute is rendered **literally** (no hashed URL). The publish manifest `ActivityPub.WebUI.staticwebassets.endpoints.json` contains `css/site.6id6dwr5ww.css`, but `GET /css/site.6id6dwr5ww.css` → **404**; only plain `/css/site.css` (no `Cache-Control`, just an `ETag`) is served.
+   - **Impact:** After a deploy, browsers keep serving stale CSS/JS indefinitely. During this audit the persistent browser held a pre-rebuild copy of `site.css` and rendered the **mobile slide-in nav on a 1440px desktop** (468px-tall header) until the stale copy was bypassed. This is a real "user sees broken layout after upgrade" bug.
+   - **Fix:** Wire up the static web assets endpoint in `Program.cs` — add `app.UseStaticFiles(); app.MapStaticAssets();` (replacing the plain `UseStaticFiles`) so the hashed routes resolve **and** the `<link asp-append-version>` tag helper emits a versioned URL with `Cache-Control: max-age=31536000, immutable`. Verify `GET /css/site.<hash>.css` → 200 and that the emitted `href` carries the hash.
+
+2. **`.btn-block` is doubly-defined and leaks a red destructive color onto primary buttons.**
+   - **Evidence:** `site.css:225` defines `.btn-block { display:block; width:100% }`, but `site.css:1671` redefines `.btn-block { background:#dc3545; color:white; border-color:#dc3545 }` (a leaked Admin *block-user* style). Both match `.btn.btn-primary.btn-block`, and the later rule wins. Live DOM confirms the **Post, Login, and Register** buttons compute to `rgb(220,53,69)` (red) instead of the `#6c63ff` primary purple.
+   - **Impact:** Every full-width primary submit (the app's most important CTAs) renders red — reads as "delete/danger" and breaks the color language (primary = purple, danger = red).
+   - **Fix:** Rename the Admin moderation buttons to a non-colliding class (e.g. `.btn-blockuser`) in `Views/Admin/Users.cshtml:56` and its `site.css:1671` rule, leaving `.btn-block` as the width-only utility. Then Post/Login/Register revert to purple.
+
+### P1 — Usability
+
+3. **Mobile nav drawer has no scrim/backdrop.**
+   - **Evidence:** With the drawer open (390px), the page content stays fully visible and interactive behind it; there is no dim overlay. `menu.js` only closes on outside-click/Escape; `site.css` has no `.nav-scrim`/overlay rule.
+   - **Fix:** Add a translucent fixed backdrop (`.nav-scrim`, `z-index` below the drawer, click-to-close) shown while `body.nav-open`, so the drawer reads as a modal layer.
+
+4. **No favicon → `GET /favicon.ico` returns 404 on every page load** (visible as a console error on all pages). Add `wwwroot/favicon.ico` (or an SVG) + `<link rel="icon">` in `_Layout.cshtml`.
+
+5. **Header "Compose Post" button looks disabled on the Home page** (`Home/Index.cshtml` uses `.btn-secondary` for the secondary CTA, which is a transparent/grey style — indistinguishable from a disabled control). Consider a visible-outline secondary style so it reads as actionable.
+
+### P2 — Polish / consistency (feeds Phase 43)
+
+6. **Action-bar color noise.** The note action row mixes 5 hues in one row (red ♥, green ↻, blue 💬, purple Edit, red Delete, orange Report). Mute the counts to a neutral grey and reserve saturated color for the primary verb; move Edit/Delete/Report into the existing `⋯` overflow menu to reduce clutter.
+7. **Reply box is open by default** under every own-post card (`Timeline/_NoteCard.cshtml`). Collapsed-until-click (with the `↩ Replying to …` context banner) is cleaner; the always-open state adds vertical bulk to a busy timeline.
+8. **Empty states are sparse.** Search (no query), Discover, and a fresh Timeline show a heading and little else — add a short hint + primary CTA (e.g. "Try a hashtag or @username", "Follow people to populate suggestions") consistent with the Phase 41 empty-state pattern.
+9. **No avatars / initial-avatar** in the timeline and profile header (Phase 43 task 2) — the note header shows only name + `@handle`. Add the circular initial-avatar for a more social-media look.
+10. **Design tokens.** `site.css` (2463 lines) uses ad-hoc hex values throughout with no `:root` custom properties. Introduce a small token set (colors, radii, spacing, elevation) to make the Phase 43 design pass + dark-mode toggle (Phase 43 task 7) tractable.
+11. **Profile banner is a flat gradient** with no cover-image support; stats row shows only Followers/Following/Joined (no Notes count). (Phase 43 task 3.)
+
+### Acceptance criteria
+- P0-1: After a rebuild, a fresh browser and a cached browser both load the new assets; `href` carries a content hash and the hashed route returns 200.
+- P0-2: Post / Login / Register / primary CTAs are purple (`#6c63ff`); red is used only for genuinely destructive actions.
+- P1-3: Opening the mobile drawer dims and blocks the page behind it; clicking the scrim closes it.
+- No console errors on any page (favicon 404 resolved).
+- QA: delegated Playwright subagent re-sweeps the pages above in a **fresh browser context** (to avoid the stale-cache artifact) and confirms each fix with a before/after screenshot.

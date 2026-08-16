@@ -135,6 +135,11 @@
     </div>
 
     <div id="reply-@Model.ActivityId" class="reply-form-container">
+        <div class="reply-context-banner">
+            <span class="reply-context-icon">&#8617;</span>
+            <span class="reply-context-text">Replying to <strong>@Model.AuthorDisplayName</strong> (@Model.AuthorName)</span>
+            <span class="reply-context-snippet">"@(Model.Content.Length > 80 ? Model.Content.Substring(0, 80) + "…" : Model.Content)"</span>
+        </div>
         <form asp-controller="Interaction" asp-action="Reply" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
