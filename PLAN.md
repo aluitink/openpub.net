@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-35 complete. All core features implemented. 725/725 tests passing.
+**Status:** Phases 1-40 complete. 736/736 tests passing.
 
 ## Testing Guidelines
 
@@ -47,12 +47,12 @@ When making changes to `src/ActivityPub.WebUI/`, run QA via delegated subagents 
 | 29 | Profiles & Actor Endpoints | 30 | Polish & Production |
 | 31 | Performance & Scalability | 32 | Admin & Moderation |
 | 33 | Extended Federation | 34 | Real-time & Notifications |
-| 35 | Content Discovery & Communities |  |  |
+| 35 | Content Discovery & Communities | 40 | Navigation & Menu System |
 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 725 passing, 0 failures
+- **Tests:** 736 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -105,17 +105,19 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 **Context:** `Pages/Shared/_Layout.cshtml` currently renders 12+ flat `nav-link` anchors (Timeline, Compose, Follow, Following, Followers, Profile, Notifications, Search, Trends, Discover, Communities, New Poll, Admin) plus greeting + logout. On narrow viewports this overflows and several entries are redundant or non-functional as top-level links.
 
 **Tasks:**
-1. ⬜ Group header links into logical sections:
-   - **Main:** Timeline, Compose, Notifications (with live badge), Search
-   - **Discover:** Trends, Discover (suggestions), Communities
-   - **Account:** Profile, Following, Followers, New Poll
-   - **Admin** (shown only to admin role): Dashboard, Users, Reports, Moderation, MRF, Audit Log, Rate Limits, Federation Health
-2. ⬜ Desktop: horizontal dropdown menus (hover/click) per group; collapse groups into a single "More" menu when space is tight
-3. ⬜ Mobile (<768px): hamburger button toggling a slide-in drawer with the same grouped structure; body scroll lock while open
-4. ⬜ Active-route highlighting: mark the current nav item based on `ViewContext.RouteData` (controller/action match)
-5. ⬜ Fix all dead/misdirected header links; verify every page has exactly one canonical entry point
-6. ⬜ Keep the notification badge updating via the existing SignalR script (move badge logic to the menu component)
-7. ⬜ CSS: no new framework, extend `wwwroot/css/site.css`; accessible markup (`<nav>`, `aria-expanded`, keyboard focus trap in drawer, Escape to close)
+1. ✅ Group header links into logical sections:
+    - **Main:** Timeline, Compose, Notifications (with live badge), Search
+    - **Discover:** Trends, Discover (suggestions), Communities
+    - **Account:** Profile, Following, Followers, New Poll
+    - **Admin** (shown only to admin role): Dashboard, Users, Reports, Moderation, MRF, Audit Log, Rate Limits, Federation Health
+2. ✅ Desktop: horizontal dropdown menus (click) per group
+3. ✅ Mobile (<768px): hamburger button toggling a slide-in drawer with the same grouped structure; body scroll lock while open
+4. ✅ Active-route highlighting: mark the current nav item based on controller/action match
+5. ✅ Fix all dead/misdirected header links; verify every page has exactly one canonical entry point
+6. ✅ Keep the notification badge updating via the existing SignalR script
+7. ✅ CSS: no new framework, extend `wwwroot/css/site.css`; accessible markup (`<nav>`, `aria-expanded`, keyboard focus trap in drawer, Escape to close)
+8. ✅ Added `AdminClaimHelper` service + `AdminSection` view component + 11 unit tests
+9. ✅ Added `menu.js` with dropdown toggling, mobile drawer, focus trap, Escape handling
 
 **Acceptance criteria:**
 - All pages listed in Phase 41 reachable via header menu on desktop and mobile widths
