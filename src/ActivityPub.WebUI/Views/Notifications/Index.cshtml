@@ -5,13 +5,15 @@
 
 <div class="notifications-container">
     <div class="page-header">
-        <h2>Notifications</h2>
+        <h1>Notifications</h1>
         @if (Model.Items.Count > 0)
         {
-            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post" class="inline-form">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
-            </form>
+            <div class="page-header-actions">
+                <form asp-controller="Notifications" asp-action="MarkAllRead" method="post" class="inline-form">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
+                </form>
+            </div>
         }
     </div>
 

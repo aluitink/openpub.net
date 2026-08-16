@@ -24,9 +24,11 @@
 }
 
 <div class="page-header">
-    <h2>Home Timeline</h2>
-    <a asp-controller="Compose" asp-action="Index" class="btn btn-primary">Compose</a>
-    <a asp-controller="Compose" asp-action="NewArticle" class="btn btn-secondary">New Article</a>
+    <h1>Home Timeline</h1>
+    <div class="page-header-actions">
+        <a asp-controller="Compose" asp-action="Index" class="btn btn-primary">Compose</a>
+        <a asp-controller="Compose" asp-action="NewArticle" class="btn btn-secondary">New Article</a>
+    </div>
 </div>
 
 @if (Model != null && Model.Any())

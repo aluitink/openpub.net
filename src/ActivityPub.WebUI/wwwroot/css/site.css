@@ -2051,11 +2051,22 @@ footer {
     flex-wrap: wrap;
 }
 
-.page-header h1,
-.page-header h2 {
+.page-header > h1,
+.page-header > h2 {
+    flex: 1 1 auto;
+    min-width: 0;
     color: var(--color-text);
     margin: 0;
     font-size: var(--font-lg);
+    line-height: 1.2;
+}
+
+.page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-left: auto;
 }
 
 .card-grid {

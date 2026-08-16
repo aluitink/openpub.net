@@ -5,10 +5,12 @@
 
 <div class="hashtag-container">
     <div class="page-header">
-        <h2 class="hashtag-header">
+        <h1 class="hashtag-header">
             <a href="/hashtag/@Uri.EscapeDataString(Model.Tag.TrimStart('#'))" class="hashtag-link">@Model.Tag</a>
-        </h2>
-        <a asp-controller="Timeline" asp-action="Index" class="btn btn-secondary">Back to Timeline</a>
+        </h1>
+        <div class="page-header-actions">
+            <a asp-controller="Timeline" asp-action="Index" class="btn btn-secondary">Back to Timeline</a>
+        </div>
     </div>
 
     @if (!Model.Notes.Any())

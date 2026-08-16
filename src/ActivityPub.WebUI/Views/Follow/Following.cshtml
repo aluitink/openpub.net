@@ -5,8 +5,10 @@
 
 <div class="following-container">
     <div class="page-header">
-        <h2>Following</h2>
-        <a asp-controller="Follow" asp-action="Index" class="btn btn-primary">Follow Someone</a>
+        <h1>Following</h1>
+        <div class="page-header-actions">
+            <a asp-controller="Follow" asp-action="Index" class="btn btn-primary">Follow Someone</a>
+        </div>
     </div>
 
     @if (TempData["UnfollowSuccess"] != null)

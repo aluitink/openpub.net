@@ -8,10 +8,12 @@
 
 <div class="compose-container">
     <div class="page-header">
-        <h2>@(isReply ? "Reply" : "Compose New Post")</h2>
+        <h1>@(isReply ? "Reply" : "Compose New Post")</h1>
         @if (Model.ReplyTarget != null)
         {
-            <a asp-action="Index" class="btn btn-secondary btn-sm reply-cancel-link">Cancel reply</a>
+            <div class="page-header-actions">
+                <a asp-action="Index" class="btn btn-secondary btn-sm reply-cancel-link">Cancel reply</a>
+            </div>
         }
     </div>
 
