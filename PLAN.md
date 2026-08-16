@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 30-33 complete. Next: Phase 34 (Real-time & Notifications).
+**Status:** Phases 30-34 complete. Next: Phase 35 (Extended Federation features).
 
 ## Testing Guidelines
 
@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 647 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 648
+- **Tests:** 654 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 655
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -190,16 +190,20 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 8. ⬜ Block/Undo block: ActivityPub Block activity support
 9. ⬜ Server-to-server federation testing with remote ActivityPub servers
 
-### Phase 34: Real-time & Notifications
+### Phase 34: Real-time & Notifications **✅ Complete**
 
 **Goal:** Add real-time updates and push notification support.
 
 **Tasks:**
-1. WebSocket support for live timeline updates
-2. Server-Sent Events (SSE) fallback for notifications
-3. Push notification service for mobile/desktop
-4. Real-time activity counter badges
-5. Notification sound and desktop alerts
-6. Polling interval configuration
-7. WebSocket scaling: sticky sessions, Redis backplane
-8. Rate limiting for real-time connections
+1. ✅ SignalR hub at `/notifications/ws` for live timeline updates (join/leave user groups, auto-reconnect)
+2. ✅ SSE fallback at `/sse/stream` for notification streaming (heartbeat, type extraction)
+3. ✅ INotificationService with SignalRNotificationService (broadcast to all, broadcast to user group)
+4. ✅ Real-time notification badge on navbar (red counter, SignalR-driven)
+5. ✅ SignalR script in layout (CDN, DOMContentLoaded connection)
+6. ✅ ComposeController integration: broadcasts on note post and article post
+7. ✅ 7 integration tests: SSE auth, SSE stream, SignalR hub registered, notification service registered, compose broadcast, badge in layout, signalr script in layout
+8. ⬜ Push notification service for mobile/desktop
+9. ⬜ Notification sound and desktop alerts
+10. ⬜ Polling interval configuration
+11. ⬜ WebSocket scaling: sticky sessions, Redis backplane
+12. ⬜ Rate limiting for real-time connections

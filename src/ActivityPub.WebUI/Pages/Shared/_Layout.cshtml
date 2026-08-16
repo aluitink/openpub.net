@@ -20,7 +20,9 @@
                         <a asp-controller="Follow" asp-action="Following" class="nav-link">Following</a>
                         <a asp-controller="Follow" asp-action="Followers" class="nav-link">Followers</a>
                         <a asp-controller="Profile" asp-action="Index" class="nav-link">Profile</a>
-                        <a asp-controller="Notifications" asp-action="Index" class="nav-link">Notifications</a>
+                        <a asp-controller="Notifications" asp-action="Index" class="nav-link">
+                            Notifications <span id="notification-badge" class="notification-badge" style="display:none">0</span>
+                        </a>
                         <a asp-controller="Search" asp-action="Index" class="nav-link">Search</a>
                         <span class="user-greeting">Hello, @User.Identity.Name</span>
                         <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
@@ -46,6 +48,47 @@
             <p>Fediblog - A federated microblogging platform powered by ActivityPub.NET</p>
         </div>
     </footer>
+    @if (User.Identity?.IsAuthenticated ?? false)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/%40microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/notifications/ws')
+                    .withAutomaticReconnect()
+                    .build();
+
+                var notificationCount = 0;
+                var badge = document.getElementById('notification-badge');
+
+                connection.on('NewActivity', function(data) {
+                    notificationCount++;
+                    if (badge) {
+                        badge.textContent = notificationCount;
+                        badge.style.display = 'inline';
+                    }
+                    console.log('[SignalR] New activity:', data.Type, 'by', data.ActorName);
+                });
+
+                connection.on('NewNotification', function(data) {
+                    notificationCount++;
+                    if (badge) {
+                        badge.textContent = notificationCount;
+                        badge.style.display = 'inline';
+                    }
+                    console.log('[SignalR] Notification:', data.Type, data.Message);
+                });
+
+                connection.on('Connected', function(username) {
+                    console.log('[SignalR] Connected as', username);
+                });
+
+                connection.start().catch(function(err) {
+                    console.log('[SignalR] Connection failed:', err);
+                });
+            });
+        </script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

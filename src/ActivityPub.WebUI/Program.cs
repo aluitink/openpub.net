@@ -48,6 +48,8 @@ public class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddResponseCaching();
         builder.Services.AddMemoryCache();
+        builder.Services.AddSignalR();
+        builder.Services.AddScoped<ActivityPub.WebUI.Services.INotificationService, ActivityPub.WebUI.Services.SignalRNotificationService>();
         builder.Services.AddHttpClient<IWebFingerService, WebFingerService>();
         builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
         {
@@ -84,6 +86,8 @@ public class Program
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
+
+        app.MapHub<ActivityPub.WebUI.Hubs.NotificationHub>("/notifications/ws");
 
         app.Run();
     }

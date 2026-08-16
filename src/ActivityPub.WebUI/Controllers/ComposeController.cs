@@ -1,5 +1,6 @@
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.WebUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,16 +13,21 @@ public class ComposeController : Controller
 {
     private readonly IActivityPubRepository _repository;
     private readonly ILogger<ComposeController> _logger;
+    private readonly INotificationService _notificationService;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true
     };
 
-    public ComposeController(IActivityPubRepository repository, ILogger<ComposeController> logger)
+    public ComposeController(
+        IActivityPubRepository repository,
+        ILogger<ComposeController> logger,
+        INotificationService notificationService)
     {
         _repository = repository;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -74,6 +80,8 @@ public class ComposeController : Controller
 
         var activityJson = JsonSerializer.Serialize(activity, JsonOptions);
         await DistributeToFollowerInboxes(username, activityId, activityJson);
+
+        await _notificationService.BroadcastNewActivityAsync(activityId, "Note", username, model.Content);
 
         _logger.LogInformation("User {Username} created note {NoteId}", username, noteId);
         TempData["ComposeSuccess"] = true;
@@ -140,6 +148,8 @@ public class ComposeController : Controller
 
         var activityJson = JsonSerializer.Serialize(activity, JsonOptions);
         await DistributeToFollowerInboxes(username, activityId, activityJson);
+
+        await _notificationService.BroadcastNewActivityAsync(activityId, "Article", username, model.Name);
 
         _logger.LogInformation("User {Username} created article {ArticleId}", username, articleId);
         TempData["ComposeSuccess"] = true;
