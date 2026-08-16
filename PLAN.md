@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-30 complete. All Fediblog MVP features implemented.
+**Status:** Phase 30 complete. Next: Phase 31 (Performance & Scalability).
 
 ## Testing Guidelines
 
@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 617 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 618
+- **Tests:** 625 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 626
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -135,11 +135,56 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 **Tasks:**
 1. ✅ Responsive CSS (mobile-friendly)
 2. ✅ Error pages (404, 500)
-3. ⬜ Rate limiting on compose and follow endpoints
-4. ⬜ Hashtag support: parse #tags in notes, hashtag page with filtered timeline
+3. ✅ Rate limiting on compose and follow endpoints (path-scoped, 20 req/min, 3 tests)
+4. ✅ Hashtag support: word-boundary matching, paginated feed (HashtagController, 5 tests)
 5. ✅ Search: local user and note search (SearchController, 7 tests)
 6. ✅ Notifications page: follows, mentions, likes (NotificationsController, 5 tests)
 7. ✅ Dockerfile for ActivityPub.WebUI + docker-compose.yml
-8. ⬜ Update deployment docs with social platform config
-9. ✅ Integration tests: 617 passing (12 new in Phase 30)
-10. ⬜ Update README with Fediblog showcase
+8. ✅ Deployment docs (docs/deployment.md)
+9. ✅ Integration tests: 625 passing
+10. ✅ README with Fediblog showcase
+
+### Phase 31: Performance & Scalability
+
+**Goal:** Optimize data access, add caching, and improve response times for large-scale usage.
+
+**Tasks:**
+1. Add EF Core compiled queries for hot paths (actor lookup, outbox, inbox)
+2. Implement response caching on timeline and profile endpoints
+3. Add Redis-backed distributed cache option for federation cache
+4. Optimize ActivityPubRepository JSON queries (add content/index columns)
+5. Pagination for all list endpoints (following, followers, timeline)
+6. Database indexing strategy (actor lookup, activity ordering, search)
+7. Performance benchmarks for key endpoints
+8. Memory profiling and leak detection
+9. Load testing with 100+ concurrent users
+
+### Phase 32: Admin & Moderation
+
+**Goal:** Provide tools for site administrators and content moderation.
+
+**Tasks:**
+1. Admin dashboard: user management, activity overview, server stats
+2. User roles: admin flag on ApplicationUser
+3. Content moderation: block/mute users, delete foreign content from local DB
+4. MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
+5. ActivityPub moderation extensions: Block, Reject, Undo activities
+6. Audit log: track admin actions
+7. Report system: users can flag inappropriate content
+8. Rate limit configuration from admin panel
+9. Federation health monitoring: delivery queue status, error rates
+
+### Phase 33: Extended Federation
+
+**Goal:** Improve federation compatibility and add missing ActivityPub features.
+
+**Tasks:**
+1. Inbox processor: handle all ActivityPub activity types (Create, Delete, Update, Move)
+2. Outbox: proper OrderedCollectionPage with pagination (first/next/prev/last)
+3. Followers/Following: full OrderedCollectionPage endpoints
+4. Article support: long-form content (extended description, HTML body)
+5. Image uploads: attachment support with local hosting
+6. Poll support in notes
+7. Editable notes: Update activity for existing notes
+8. Block/Undo block: ActivityPub Block activity support
+9. Server-to-server federation testing with remote ActivityPub servers
