@@ -107,7 +107,7 @@
             <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost">↻ @Model.BoostCount</button>
         </form>
 
-        <a href="#reply-@Model.ActivityId" class="btn-action btn-reply">💬 @Model.ReplyCount</a>
+        <button type="button" class="btn-action btn-reply" data-reply-target="reply-@Model.ActivityId">💬 @Model.ReplyCount</button>
 
         <div class="note-more-menu">
             <button type="button" class="btn-action btn-more" title="More actions" aria-haspopup="true" aria-expanded="false">&#8943;</button>
@@ -130,7 +130,7 @@
         </div>
     </div>
 
-    <div id="reply-@Model.ActivityId" class="reply-form-container">
+    <div id="reply-@Model.ActivityId" class="reply-form-container" hidden>
         <div class="reply-context-banner">
             <span class="reply-context-icon">&#8617;</span>
             <span class="reply-context-text">Replying to <strong>@Model.AuthorDisplayName</strong> (@Model.AuthorName)</span>

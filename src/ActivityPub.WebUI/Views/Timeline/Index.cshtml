@@ -184,6 +184,24 @@ else
         });
     });
 
+    document.querySelectorAll('.btn-reply[data-reply-target]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var target = document.getElementById(btn.dataset.replyTarget);
+            if (!target) return;
+            var isOpen = !target.hidden;
+            document.querySelectorAll('.reply-form-container[hidden]').forEach(function(c) { c.hidden = false; });
+            document.querySelectorAll('.reply-form-container').forEach(function(c) {
+                if (c !== target) c.hidden = true;
+            });
+            target.hidden = isOpen;
+            if (!target.hidden) {
+                var textarea = target.querySelector('textarea');
+                if (textarea) textarea.focus();
+            }
+        });
+    });
+
     document.querySelectorAll('.note-more-menu').forEach(function(menu) {
         var btn = menu.querySelector('.btn-more');
         var dropdown = menu.querySelector('.note-more-dropdown');
