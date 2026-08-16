@@ -225,4 +225,27 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("showToast", body);
     }
+
+    [Fact]
+    public async Task ComposePage_HasImagePreview()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/compose");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("image-preview-container", body);
+        Assert.Contains("image-preview", body);
+        Assert.Contains("image-remove-btn", body);
+    }
+
+    [Fact]
+    public async Task TimelinePage_HasCwToggleJs()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/timeline");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("cw-toggle-btn", body);
+        Assert.Contains("cw-hidden", body);
+    }
 }

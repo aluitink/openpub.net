@@ -204,6 +204,21 @@ else
     }
 
     document.addEventListener('click', closeAllMoreMenus);
+
+    document.querySelectorAll('.cw-toggle-btn').forEach(function(btn) {
+        var noteCard = btn.closest('.note-card');
+        if (noteCard && btn.getAttribute('aria-expanded') !== 'true') {
+            noteCard.classList.add('cw-hidden');
+        }
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!noteCard) return;
+            var isExpanded = btn.getAttribute('aria-expanded') === 'true';
+            noteCard.classList.toggle('cw-hidden', isExpanded);
+            btn.textContent = isExpanded ? 'Show' : 'Hide';
+            btn.setAttribute('aria-expanded', String(!isExpanded));
+        });
+    });
 })();
 </script>
 }

@@ -26,6 +26,10 @@
             <div class="form-group">
                 <label for="Image">Attach Image (max 10MB)</label>
                 <input type="file" name="Image" id="Image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
+                <div id="image-preview-container" class="image-preview-container" style="display:none">
+                    <img id="image-preview" class="image-preview" alt="Preview" />
+                    <button type="button" id="image-remove" class="image-remove-btn" title="Remove image">&#10005; Remove</button>
+                </div>
             </div>
 
             <div class="form-group">

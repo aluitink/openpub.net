@@ -2235,3 +2235,86 @@ footer {
     color: #6c63ff;
     font-weight: 500;
 }
+
+.cw-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.cw-label {
+    color: #856404;
+    font-weight: 500;
+}
+
+.cw-toggle-btn {
+    background: none;
+    border: 1px solid #856404;
+    color: #856404;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.cw-toggle-btn:hover {
+    background: #856404;
+    color: #fff;
+}
+
+.note-content-blurred {
+    filter: blur(8px);
+    user-select: none;
+    transition: filter 0.3s;
+}
+
+.note-attachment-blurred img {
+    filter: blur(20px);
+    transition: filter 0.3s;
+}
+
+.note-card.cw-hidden [data-cw-content] {
+    filter: blur(10px);
+    user-select: none;
+}
+
+.note-card:not(.cw-hidden) [data-cw-content] {
+    filter: none;
+    user-select: auto;
+}
+
+.image-preview-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.image-preview {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #e0e0e0;
+}
+
+.image-remove-btn {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.image-remove-btn:hover {
+    background: #dc2626;
+}

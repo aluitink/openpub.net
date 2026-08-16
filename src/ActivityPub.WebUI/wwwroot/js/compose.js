@@ -44,4 +44,30 @@
     }
     update();
     textarea.addEventListener('input', update);
+
+    var imageInput = document.getElementById('Image');
+    var previewContainer = document.getElementById('image-preview-container');
+    var previewImg = document.getElementById('image-preview');
+    var removeBtn = document.getElementById('image-remove');
+    if (imageInput && previewContainer && previewImg) {
+        imageInput.addEventListener('change', function() {
+            var file = imageInput.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewContainer.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                imageInput.value = '';
+                previewContainer.style.display = 'none';
+            });
+        }
+    }
 })();

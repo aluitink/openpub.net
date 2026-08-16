@@ -64,6 +64,8 @@ public class TimelineController : Controller
                         IsLiked = isLiked,
                         IsBoosted = isBoosted,
                         ImageUrl = ExtractImageUrl(note),
+                        Sensitive = ExtractSensitive(note),
+                        ContentWarning = ExtractContentWarning(note),
                         DocumentAttachments = ExtractDocumentAttachments(note),
                         PollQuestion = ExtractPollQuestion(note),
                         PollOptions = ExtractPollOptions(note),
@@ -155,6 +157,38 @@ public class TimelineController : Controller
                 if (first.ValueKind == JsonValueKind.Object && first.TryGetProperty("url", out var urlProp))
                     return urlProp.GetString();
             }
+        }
+        return null;
+    }
+
+    static bool ExtractSensitive(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties != null)
+        {
+            if (obj.AdditionalProperties.TryGetValue("sensitive", out var sensitiveVal))
+            {
+                if (sensitiveVal.ValueKind == JsonValueKind.True) return true;
+                if (sensitiveVal.ValueKind == JsonValueKind.String && bool.TryParse(sensitiveVal.GetString(), out var b) && b) return true;
+            }
+        }
+        if (obj.Content != null && obj.Content.TrimStart().StartsWith("CW:", StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    static string? ExtractContentWarning(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties != null)
+        {
+            if (obj.AdditionalProperties.TryGetValue("contentWarning", out var cwVal))
+            {
+                var s = cwVal.ValueKind == JsonValueKind.String ? cwVal.GetString() : cwVal.ToString();
+                if (!string.IsNullOrWhiteSpace(s)) return s;
+            }
+        }
+        if (obj.Content != null && obj.Content.TrimStart().StartsWith("CW:", StringComparison.OrdinalIgnoreCase))
+        {
+            var cw = obj.Content.TrimStart().Substring(3).Trim();
+            if (!string.IsNullOrWhiteSpace(cw)) return cw;
         }
         return null;
     }
@@ -276,6 +310,8 @@ public class TimelineActivityItem
     public bool IsLiked { get; set; }
     public bool IsBoosted { get; set; }
     public string? ImageUrl { get; set; }
+    public bool Sensitive { get; set; }
+    public string? ContentWarning { get; set; }
     public List<DocumentAttachmentItem>? DocumentAttachments { get; set; }
     public string? PollQuestion { get; set; }
     public List<PollOptionItem>? PollOptions { get; set; }
