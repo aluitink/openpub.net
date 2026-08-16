@@ -122,7 +122,7 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 7. ✅ Dark mode toggle (CSS custom properties, preference persisted in `localStorage`; token overrides under `[data-theme=dark]`) — *full dark palette + `[data-theme=dark]` overrides, toggle button + `localStorage` persistence in layout; mobile hamburger bars + hover states fixed*
 8. ⬜ Accessibility: contrast audit, focus-visible styles, alt text on images, form labels — *Phase 44 P2-11: several icon-only buttons lack `aria-label`/`title` (e.g. note-card overflow menu trigger), some decorative icons not `aria-hidden`*
 9. ⬜ Footer: useful links (about, help, server stats) instead of single tagline
-10. ⬜ Consistent page header pattern (title + primary action button) — *deferred from Phase 42*
+10. ✅ Consistent page header pattern (title + primary action button) — *all 20 `.page-header` views standardized: title left (unified `<h1>`), actions right in `.page-header-actions`; CSS added; deferred from Phase 42*
 
 **Acceptance criteria:**
 - No page uses one-off styling inconsistent with the rest of the app
