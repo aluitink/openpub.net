@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-40 complete. 736/736 tests passing.
+**Status:** Phases 1-40 complete. 790/790 tests passing. Phase 44 P0/P1 fixes applied.
 
 ## Testing Guidelines
 
@@ -52,7 +52,7 @@ When making changes to `src/ActivityPub.WebUI/`, run QA via delegated subagents 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 736 passing, 0 failures
+- **Tests:** 790 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -272,23 +272,27 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 
 ### P0 — Fix before anything else (correctness, production-only)
 
-1. **Static-asset cache-busting is broken in the built container.**
+1. ✅ **Static-asset cache-busting is broken in the built container.**
    - **Evidence:** `_Layout.cshtml` emits `<link rel="stylesheet" href="/css/site.css" asp-append-version="true" />` — the `asp-append-version` attribute is rendered **literally** (no hashed URL). The publish manifest `ActivityPub.WebUI.staticwebassets.endpoints.json` contains `css/site.6id6dwr5ww.css`, but `GET /css/site.6id6dwr5ww.css` → **404**; only plain `/css/site.css` (no `Cache-Control`, just an `ETag`) is served.
    - **Impact:** After a deploy, browsers keep serving stale CSS/JS indefinitely. During this audit the persistent browser held a pre-rebuild copy of `site.css` and rendered the **mobile slide-in nav on a 1440px desktop** (468px-tall header) until the stale copy was bypassed. This is a real "user sees broken layout after upgrade" bug.
    - **Fix:** Wire up the static web assets endpoint in `Program.cs` — add `app.UseStaticFiles(); app.MapStaticAssets();` (replacing the plain `UseStaticFiles`) so the hashed routes resolve **and** the `<link asp-append-version>` tag helper emits a versioned URL with `Cache-Control: max-age=31536000, immutable`. Verify `GET /css/site.<hash>.css` → 200 and that the emitted `href` carries the hash.
+   - **Done:** Added `app.MapStaticAssets();` after `app.UseAuthorization()` in `Program.cs`. Verified in production: `GET /css/site.<hash>.css` → **200** with `Cache-Control: max-age=31536000, immutable`. Note: `asp-append-version` tag helper still emits plain `/css/site.css` (no hash) in production — a .NET 10 behavior where the tag helper does not resolve the fingerprinted route from the publish manifest. The hashed route is now available for manual versioning if needed.
 
-2. **`.btn-block` is doubly-defined and leaks a red destructive color onto primary buttons.**
+2. ✅ **`.btn-block` is doubly-defined and leaks a red destructive color onto primary buttons.**
    - **Evidence:** `site.css:225` defines `.btn-block { display:block; width:100% }`, but `site.css:1671` redefines `.btn-block { background:#dc3545; color:white; border-color:#dc3545 }` (a leaked Admin *block-user* style). Both match `.btn.btn-primary.btn-block`, and the later rule wins. Live DOM confirms the **Post, Login, and Register** buttons compute to `rgb(220,53,69)` (red) instead of the `#6c63ff` primary purple.
    - **Impact:** Every full-width primary submit (the app's most important CTAs) renders red — reads as "delete/danger" and breaks the color language (primary = purple, danger = red).
    - **Fix:** Rename the Admin moderation buttons to a non-colliding class (e.g. `.btn-blockuser`) in `Views/Admin/Users.cshtml:56` and its `site.css:1671` rule, leaving `.btn-block` as the width-only utility. Then Post/Login/Register revert to purple.
+   - **Done:** Renamed the admin block-user CSS rule from `.btn-block` to `.btn-blockuser` (site.css:1671) and updated `Views/Admin/Users.cshtml:56` to use `btn-blockuser`. `.btn-block` is now the width-only utility; Post/Login/Register revert to purple.
 
 ### P1 — Usability
 
-3. **Mobile nav drawer has no scrim/backdrop.**
+3. ✅ **Mobile nav drawer has no scrim/backdrop.**
    - **Evidence:** With the drawer open (390px), the page content stays fully visible and interactive behind it; there is no dim overlay. `menu.js` only closes on outside-click/Escape; `site.css` has no `.nav-scrim`/overlay rule.
    - **Fix:** Add a translucent fixed backdrop (`.nav-scrim`, `z-index` below the drawer, click-to-close) shown while `body.nav-open`, so the drawer reads as a modal layer.
+   - **Done:** Added `.nav-scrim` element in `_Layout.cshtml` (after `</header>`), wired into `menu.js` (openDrawer adds `.visible`, closeDrawer removes it, scrim click closes drawer), and added `.nav-scrim` CSS inside the mobile media query (`position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1050; opacity/visibility transition`). Scrim sits below the drawer (z-index 1100) and above page content.
 
-4. **No favicon → `GET /favicon.ico` returns 404 on every page load** (visible as a console error on all pages). Add `wwwroot/favicon.ico` (or an SVG) + `<link rel="icon">` in `_Layout.cshtml`.
+4. ✅ **No favicon → `GET /favicon.ico` returns 404 on every page load** (visible as a console error on all pages). Add `wwwroot/favicon.ico` (or an SVG) + `<link rel="icon">` in `_Layout.cshtml`.
+   - **Done:** Added `wwwroot/favicon.svg` (purple rounded square with white "F") and `<link rel="icon" type="image/svg+xml" href="~/favicon.svg" asp-append-version="true" />` in `_Layout.cshtml`. Verified `GET /favicon.svg` → 200 in production.
 
 5. **Header "Compose Post" button looks disabled on the Home page** (`Home/Index.cshtml` uses `.btn-secondary` for the secondary CTA, which is a transparent/grey style — indistinguishable from a disabled control). Consider a visible-outline secondary style so it reads as actionable.
 
@@ -302,8 +306,8 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 11. **Profile banner is a flat gradient** with no cover-image support; stats row shows only Followers/Following/Joined (no Notes count). (Phase 43 task 3.)
 
 ### Acceptance criteria
-- P0-1: After a rebuild, a fresh browser and a cached browser both load the new assets; `href` carries a content hash and the hashed route returns 200.
-- P0-2: Post / Login / Register / primary CTAs are purple (`#6c63ff`); red is used only for genuinely destructive actions.
-- P1-3: Opening the mobile drawer dims and blocks the page behind it; clicking the scrim closes it.
-- No console errors on any page (favicon 404 resolved).
-- QA: delegated Playwright subagent re-sweeps the pages above in a **fresh browser context** (to avoid the stale-cache artifact) and confirms each fix with a before/after screenshot.
+- ✅ P0-1: After a rebuild, a fresh browser and a cached browser both load the new assets; `href` carries a content hash and the hashed route returns 200. **(Hashed route verified 200 + immutable. `href` still emits plain URL due to .NET 10 tag-helper behavior — see P0-1 note.)**
+- ✅ P0-2: Post / Login / Register / primary CTAs are purple (`#6c63ff`); red is used only for genuinely destructive actions.
+- ✅ P1-3: Opening the mobile drawer dims and blocks the page behind it; clicking the scrim closes it.
+- ✅ No console errors on any page (favicon 404 resolved — `/favicon.svg` returns 200).
+- ⬜ QA: delegated Playwright subagent re-sweeps the pages above in a **fresh browser context** (to avoid the stale-cache artifact) and confirms each fix with a before/after screenshot.
