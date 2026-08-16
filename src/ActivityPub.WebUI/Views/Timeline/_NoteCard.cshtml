@@ -47,6 +47,13 @@
 
         <a href="#reply-@Model.ActivityId" class="btn-action btn-reply">💬 @Model.ReplyCount</a>
 
+        <form asp-controller="Compose" asp-action="EditNote" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ActivityId" value="@Model.ActivityId" />
+            <input type="hidden" name="Content" value="@Model.Content" />
+            <button type="submit" class="btn-action btn-edit" title="Edit">Edit</button>
+        </form>
+
         <form asp-controller="Compose" asp-action="Delete" method="post" style="display:inline;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="activityId" value="@Model.ActivityId" />

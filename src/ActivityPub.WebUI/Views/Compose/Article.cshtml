@@ -1,0 +1,34 @@
+@model ArticleComposeModel
+@{
+    ViewData["Title"] = "New Article";
+}
+
+<div class="compose-page">
+    <h1>New Article</h1>
+
+    <form asp-action="PostArticle" method="post" class="compose-form">
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+
+        <div class="form-group">
+            <label for="Name">Title</label>
+            <input type="text" id="Name" name="Name" class="form-control" value="@Model?.Name" maxlength="200" />
+            <span asp-validation-for="Name" class="text-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="Summary">Summary (optional, shown in preview)</label>
+            <input type="text" id="Summary" name="Summary" class="form-control" value="@Model?.Summary" maxlength="500" />
+        </div>
+
+        <div class="form-group">
+            <label for="Content">Content (HTML allowed)</label>
+            <textarea id="Content" name="Content" class="form-control compose-textarea" rows="12">@Model?.Content</textarea>
+            <small class="form-hint">Up to 50,000 characters. HTML tags are encoded for safety.</small>
+        </div>
+
+        <div class="compose-actions">
+            <button type="submit" class="btn btn-primary">Publish Article</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

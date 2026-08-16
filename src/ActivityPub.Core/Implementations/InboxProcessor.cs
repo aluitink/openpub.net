@@ -86,6 +86,15 @@ public class InboxProcessor : IActivityPubEventHandler
             case "undo":
                 await ProcessUndoAsync(activity);
                 break;
+            case "delete":
+                await ProcessDeleteAsync(activity);
+                break;
+            case "update":
+                await ProcessUpdateAsync(activity);
+                break;
+            case "move":
+                await ProcessMoveAsync(activity);
+                break;
             default:
                 _logger.LogWarning("Unknown activity type: {ActivityType}", activity.Type);
                 throw new InvalidDataException($"Unknown activity type: {activity.Type}");
@@ -185,6 +194,71 @@ public class InboxProcessor : IActivityPubEventHandler
             {
                 var followActorId = childActivity.ActorId ?? GetActorIdFromObject(childActivity.Actor);
                 _logger.LogInformation("Undoing follow: {FollowActorId} -> {ObjectId}", followActorId, objectId);
+            }
+        }
+    }
+
+    private async Task ProcessDeleteAsync(Activity activity)
+    {
+        _logger.LogInformation("Processing Delete activity");
+
+        var actorId = activity.ActorId ?? GetActorIdFromObject(activity.Actor);
+        var objectId = activity.ObjectId ?? GetActorIdFromObject(activity.Object);
+
+        _logger.LogInformation("Actor {ActorId} deleted {ObjectId}", actorId, objectId);
+
+        if (activity.Object is Models.Object obj)
+        {
+            if (obj.Type?.ToLowerInvariant() == "tombstone")
+            {
+                _logger.LogInformation("Tombstone confirmed for {ObjectId}", objectId);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(objectId))
+        {
+            var originalActivity = await _repository.GetActivityAsync(objectId);
+            if (originalActivity != null)
+            {
+                await _repository.DeleteActivityAsync(objectId);
+                _logger.LogInformation("Deleted original activity {ActivityId}", objectId);
+            }
+        }
+    }
+
+    private async Task ProcessUpdateAsync(Activity activity)
+    {
+        _logger.LogInformation("Processing Update activity");
+
+        var actorId = activity.ActorId ?? GetActorIdFromObject(activity.Actor);
+        var objectId = activity.ObjectId ?? GetActorIdFromObject(activity.Object);
+
+        _logger.LogInformation("Actor {ActorId} updated {ObjectId}", actorId, objectId);
+
+        if (activity.Object is Models.Object obj)
+        {
+            if (!string.IsNullOrEmpty(obj.Updated?.ToString()))
+            {
+                _logger.LogInformation("Updated timestamp: {Updated}", obj.Updated);
+            }
+        }
+    }
+
+    private async Task ProcessMoveAsync(Activity activity)
+    {
+        _logger.LogInformation("Processing Move activity");
+
+        var actorId = activity.ActorId ?? GetActorIdFromObject(activity.Actor);
+        var objectId = activity.ObjectId ?? GetActorIdFromObject(activity.Object);
+
+        var target = activity.AdditionalProperties?.TryGetValue("target", out var targetVal) == true ? targetVal?.ToString() : null;
+        _logger.LogInformation("Actor {ActorId} moved {ObjectId} to {Target}", actorId, objectId, target ?? "unknown");
+
+        if (activity.Object is Models.Object obj)
+        {
+            if (obj.Type?.ToLowerInvariant() == "tombstone")
+            {
+                _logger.LogInformation("Tombstone for moved object {ObjectId}", objectId);
             }
         }
     }

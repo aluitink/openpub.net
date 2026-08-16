@@ -362,6 +362,15 @@ footer {
     color: #c0392b;
 }
 
+.btn-edit {
+    color: #4a90d9;
+}
+
+.btn-edit:hover {
+    background-color: #f0f4ff;
+    color: #357abd;
+}
+
 .empty-timeline {
     text-align: center;
     padding: 3rem 1rem;
