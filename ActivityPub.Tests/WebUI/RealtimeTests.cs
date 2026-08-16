@@ -3,6 +3,7 @@ using ActivityPub.WebUI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -120,5 +121,67 @@ public class RealtimeTests : IClassFixture<WebUIFactory>
         Assert.True(response.IsSuccessStatusCode, $"Home failed: {(int)response.StatusCode}");
         var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("signalr", body.ToLower());
+    }
+
+    [Fact]
+    public async Task PushNotificationService_Registered()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var pushService = scope.ServiceProvider.GetRequiredService<ActivityPub.WebUI.Services.IPushNotificationService>();
+        Assert.NotNull(pushService);
+    }
+
+    [Fact]
+    public async Task PushController_Register_Returns200()
+    {
+        var (client, _) = await RegisterAndLogin($"rt_push_{Guid.NewGuid().ToString("N")[..8]}");
+        var json = System.Text.Json.JsonSerializer.Serialize(new { endpoint = "https://example.com/push", p256dh = "test-key", auth = "test-auth" });
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/push/register", content);
+        Assert.True(response.IsSuccessStatusCode, $"Push register failed: {(int)response.StatusCode}");
+    }
+
+    [Fact]
+    public async Task RealtimeSettings_Get_Returns200()
+    {
+        var (client, _) = await RegisterAndLogin($"rt_settings_{Guid.NewGuid().ToString("N")[..8]}");
+        var response = await client.GetAsync("/RealtimeSettings/get");
+        Assert.True(response.IsSuccessStatusCode, $"Settings failed: {(int)response.StatusCode}");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("pollingIntervalMs", body);
+    }
+
+    [Fact]
+    public async Task RealtimeSettings_Update_Returns200()
+    {
+        var (client, _) = await RegisterAndLogin($"rt_settings2_{Guid.NewGuid().ToString("N")[..8]}");
+        var json = System.Text.Json.JsonSerializer.Serialize(new { pollingIntervalMs = 10000, sseEnabled = true, signalREnabled = true, desktopNotificationsEnabled = true, notificationSoundEnabled = true, maxConnections = 3 });
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/RealtimeSettings/update", content);
+        Assert.True(response.IsSuccessStatusCode, $"Settings update failed: {(int)response.StatusCode}");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("pollingIntervalMs", body);
+    }
+
+    [Fact]
+    public async Task DesktopNotification_Code_ExistsInLayout()
+    {
+        var (client, _) = await RegisterAndLogin($"rt_desktop_{Guid.NewGuid().ToString("N")[..8]}");
+        var response = await client.GetAsync("/");
+        Assert.True(response.IsSuccessStatusCode, $"Home failed: {(int)response.StatusCode}");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Notification", body);
+        Assert.Contains("desktopNotification", body);
+    }
+
+    [Fact]
+    public async Task NotificationSound_Code_ExistsInLayout()
+    {
+        var (client, _) = await RegisterAndLogin($"rt_sound_{Guid.NewGuid().ToString("N")[..8]}");
+        var response = await client.GetAsync("/");
+        Assert.True(response.IsSuccessStatusCode, $"Home failed: {(int)response.StatusCode}");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("notificationSound", body);
+        Assert.Contains("playNotificationSound", body);
     }
 }

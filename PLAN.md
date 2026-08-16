@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 654 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 655
+- **Tests:** 660 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 661
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -201,9 +201,11 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 4. ✅ Real-time notification badge on navbar (red counter, SignalR-driven)
 5. ✅ SignalR script in layout (CDN, DOMContentLoaded connection)
 6. ✅ ComposeController integration: broadcasts on note post and article post
-7. ✅ 7 integration tests: SSE auth, SSE stream, SignalR hub registered, notification service registered, compose broadcast, badge in layout, signalr script in layout
-8. ⬜ Push notification service for mobile/desktop
-9. ⬜ Notification sound and desktop alerts
-10. ⬜ Polling interval configuration
-11. ⬜ WebSocket scaling: sticky sessions, Redis backplane
-12. ⬜ Rate limiting for real-time connections
+7. ✅ 7 integration tests: SSE endpoint, SSE stream, SignalR hub registered, notification service registered, compose broadcast, badge in layout, signalr script in layout
+8. ✅ IPushNotificationService with PushNotificationService (Web Push API subscription storage)
+9. ✅ PushController: `/push/register` and `/push/test` endpoints
+10. ✅ Notification sound (inline WAV data URI) and desktop alerts (Notification API)
+11. ✅ Polling interval configuration: RealtimeSettingsController (`/RealtimeSettings/get`, `/RealtimeSettings/update`) with clamping (5s-5m)
+12. ✅ Rate limiting for real-time connections: per-connection message limit (50/min) in NotificationHub
+13. ⬜ WebSocket scaling: sticky sessions, Redis backplane (future)
+14. ✅ 13 integration tests total (6 added: push service, push register, settings get/update, desktop notification code, notification sound code)

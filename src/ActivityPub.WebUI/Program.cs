@@ -50,6 +50,7 @@ public class Program
         builder.Services.AddMemoryCache();
         builder.Services.AddSignalR();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.INotificationService, ActivityPub.WebUI.Services.SignalRNotificationService>();
+        builder.Services.AddScoped<ActivityPub.WebUI.Services.IPushNotificationService, ActivityPub.WebUI.Services.PushNotificationService>();
         builder.Services.AddHttpClient<IWebFingerService, WebFingerService>();
         builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
         {

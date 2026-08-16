@@ -53,13 +53,30 @@
         <script src="https://cdn.jsdelivr.net/npm/%40microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                var notificationCount = 0;
+                var badge = document.getElementById('notification-badge');
+                var soundEnabled = true;
+                var desktopEnabled = false;
+                var maxConnections = 5;
+                var connectionCount = 0;
+                var notificationSound = new Audio();
+                notificationSound.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeVe5CTm3+UlZl+eX+Yd2V9c3F6dHByeG97b3RxcnpxdHJ5bXpvdm91b3BvcG5vbG9vbW5uc25sbmxrbm1vbWxrbGttbGxsa2xrbGtsbGtsbWxsbWxsa21sbGtsbWxtbW1sbm1tbWxtbW1tbm5tbm5ucXFucm1wb25ybXNycm5sbm1ubm1sc3JybHRycmxscnJrbG5ycnRsbG1sc3JybXJscnRsbG1scnJrbG5ycnRsa21sbW5ubW5ucnRrbW5ubW5ucm5yc3Zsc3Zrbm5yd3Rrdm5zd21tc3Vvc3VvbG1yc3Vuc3Vvc3RrbW1yc3RvcXZuc3NvbW1yc3VvcnVvc3NvbW5zc3ZvcnZvc3RvbW9zc3Zuc3Zvc3RvbW9zc3dvcndvc3RvbW9zc3dvcndvc3RvbW90c3dvcndvc3RvbW90c3dvcndvc3Q=';
+
+                fetch('/RealtimeSettings/get')
+                    .then(function(r) { return r.ok ? r.json() : {}; })
+                    .then(function(settings) {
+                        if (settings) {
+                            soundEnabled = settings.notificationSoundEnabled !== false;
+                            desktopEnabled = settings.desktopNotificationsEnabled || false;
+                            maxConnections = settings.maxConnections || 5;
+                        }
+                    })
+                    .catch(function() {});
+
                 var connection = new signalR.HubConnectionBuilder()
                     .withUrl('/notifications/ws')
                     .withAutomaticReconnect()
                     .build();
-
-                var notificationCount = 0;
-                var badge = document.getElementById('notification-badge');
 
                 connection.on('NewActivity', function(data) {
                     notificationCount++;
@@ -67,6 +84,8 @@
                         badge.textContent = notificationCount;
                         badge.style.display = 'inline';
                     }
+                    playNotificationSound();
+                    sendDesktopNotification('New ' + data.Type, data.Content || '', data.ActorName);
                     console.log('[SignalR] New activity:', data.Type, 'by', data.ActorName);
                 });
 
@@ -76,12 +95,33 @@
                         badge.textContent = notificationCount;
                         badge.style.display = 'inline';
                     }
+                    playNotificationSound();
+                    sendDesktopNotification(data.Type, data.Message || '', '');
                     console.log('[SignalR] Notification:', data.Type, data.Message);
                 });
 
                 connection.on('Connected', function(username) {
                     console.log('[SignalR] Connected as', username);
                 });
+
+                function playNotificationSound() {
+                    if (!soundEnabled) return;
+                    try { notificationSound.play().catch(function() {}); } catch(e) {}
+                }
+
+                function sendDesktopNotification(title, body, actorName) {
+                    if (!desktopEnabled) return;
+                    if (!('Notification' in window)) return;
+                    if (Notification.permission === 'granted') {
+                        new Notification(title + (actorName ? ' by ' + actorName : ''), { body: body });
+                    } else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission().then(function(permission) {
+                            if (permission === 'granted') {
+                                new Notification(title, { body: body });
+                            }
+                        });
+                    }
+                }
 
                 connection.start().catch(function(err) {
                     console.log('[SignalR] Connection failed:', err);
