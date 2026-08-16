@@ -253,7 +253,7 @@ public class ProfileTests : IClassFixture<WebUIFactory>
     }
 
     [Fact]
-    public async Task OutboxEndpoint_ReturnsOrderedCollection()
+    public async Task OutboxEndpoint_ReturnsOrderedCollectionPage()
     {
         var (client, username) = await GetAuthenticatedClientWithUsername();
 
@@ -266,12 +266,14 @@ public class ProfileTests : IClassFixture<WebUIFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("OrderedCollection", body);
-        Assert.Contains("totalItems", body);
+        Assert.Contains("OrderedCollectionPage", body);
+        Assert.Contains("partOf", body);
+        Assert.Contains("first", body);
+        Assert.Contains("last", body);
     }
 
     [Fact]
-    public async Task FollowersEndpoint_ReturnsOrderedCollection()
+    public async Task FollowersEndpoint_ReturnsOrderedCollectionPage()
     {
         var (client, username) = await GetAuthenticatedClientWithUsername();
 
@@ -279,12 +281,14 @@ public class ProfileTests : IClassFixture<WebUIFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("OrderedCollection", body);
-        Assert.Contains("totalItems", body);
+        Assert.Contains("OrderedCollectionPage", body);
+        Assert.Contains("partOf", body);
+        Assert.Contains("first", body);
+        Assert.Contains("last", body);
     }
 
     [Fact]
-    public async Task FollowingEndpoint_ReturnsOrderedCollection()
+    public async Task FollowingEndpoint_ReturnsOrderedCollectionPage()
     {
         var (client, username) = await GetAuthenticatedClientWithUsername();
 
@@ -292,12 +296,14 @@ public class ProfileTests : IClassFixture<WebUIFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("OrderedCollection", body);
-        Assert.Contains("totalItems", body);
+        Assert.Contains("OrderedCollectionPage", body);
+        Assert.Contains("partOf", body);
+        Assert.Contains("first", body);
+        Assert.Contains("last", body);
     }
 
     [Fact]
-    public async Task LikedEndpoint_ReturnsOrderedCollection()
+    public async Task LikedEndpoint_ReturnsOrderedCollectionPage()
     {
         var (client, username) = await GetAuthenticatedClientWithUsername();
 
@@ -305,8 +311,10 @@ public class ProfileTests : IClassFixture<WebUIFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("OrderedCollection", body);
-        Assert.Contains("totalItems", body);
+        Assert.Contains("OrderedCollectionPage", body);
+        Assert.Contains("partOf", body);
+        Assert.Contains("first", body);
+        Assert.Contains("last", body);
     }
 
     [Fact]

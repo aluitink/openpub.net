@@ -20,6 +20,7 @@ public class TimelineController : Controller
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 3, VaryByHeader = "Cookie", Location = ResponseCacheLocation.Client)]
     public async Task<IActionResult> Index(int page = 1)
     {
         var username = User.Identity!.Name!;

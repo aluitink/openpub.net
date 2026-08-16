@@ -61,6 +61,12 @@ public class ActivityPubDbContext : DbContext
             .Property(a => a.UpdatedAt)
             .HasDefaultValueSql("datetime('now')");
 
+        modelBuilder.Entity<ActivityEntity>()
+            .HasIndex(a => a.CreatedAt);
+
+        modelBuilder.Entity<ActivityEntity>()
+            .HasIndex(a => new { a.ActivityId, a.CreatedAt });
+
         modelBuilder.Entity<SharedInboxDeliveryEntity>()
             .HasKey(d => d.Id);
 

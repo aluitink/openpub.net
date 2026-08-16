@@ -203,4 +203,14 @@ public interface IActivityPubRepository
     Task<int> GetBoostCountAsync(string activityId);
 
     Task<int> GetReplyCountAsync(string activityId);
+
+    /// <summary>
+    /// Gets the follower count for an actor
+    /// </summary>
+    Task<int> GetFollowerCountAsync(string username);
+
+    /// <summary>
+    /// Gets the following count for an actor
+    /// </summary>
+    Task<int> GetFollowingCountAsync(string username);
 }

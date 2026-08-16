@@ -46,6 +46,8 @@ public class Program
                 "Data Source=fediblog_ap.db"));
         builder.Services.AddRazorPages();
         builder.Services.AddControllersWithViews();
+        builder.Services.AddResponseCaching();
+        builder.Services.AddMemoryCache();
         builder.Services.AddHttpClient<IWebFingerService, WebFingerService>();
         builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
         {
@@ -69,6 +71,7 @@ public class Program
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseResponseCaching();
         app.UseAuthorization();
 
         app.UseRateLimiting(options =>

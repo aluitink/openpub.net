@@ -19,6 +19,7 @@ public class ProfileController : Controller
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 5, VaryByHeader = "Cookie", Location = ResponseCacheLocation.Client)]
     public async Task<IActionResult> Index(string? username = null)
     {
         var targetUsername = username ?? User.Identity!.Name!;
@@ -28,8 +29,8 @@ public class ProfileController : Controller
             return NotFound();
         }
 
-        var followingIds = await _repository.GetFollowingAsync(targetUsername, 0, 1000);
-        var followerIds = await _repository.GetFollowersAsync(targetUsername, 0, 1000);
+        var followingCount = await _repository.GetFollowingCountAsync(targetUsername);
+        var followerCount = await _repository.GetFollowerCountAsync(targetUsername);
 
         var isOwnProfile = targetUsername == User.Identity.Name;
 
@@ -40,8 +41,8 @@ public class ProfileController : Controller
             Bio = actor.Summary ?? "",
             IconUrl = actor.Icon?.Url ?? "",
             BannerUrl = actor.Image?.Url ?? "",
-            FollowingCount = followingIds.Count,
-            FollowerCount = followerIds.Count,
+            FollowingCount = followingCount,
+            FollowerCount = followerCount,
             IsOwnProfile = isOwnProfile,
             JoinedDate = actor.Published?.ToString("MMMM yyyy") ?? "Recently"
         };

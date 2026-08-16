@@ -52,6 +52,7 @@ public class ActorsController : Controller
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 5, Location = ResponseCacheLocation.Client)]
     public async Task<IActionResult> Outbox(string username, int page = 1)
     {
         var actor = await _repository.GetUserActorAsync(username);
@@ -63,21 +64,29 @@ public class ActorsController : Controller
         var total = activityIds.Count;
         var totalPages = Math.Max(1, (int)Math.Ceiling((double)total / pageSize));
 
+        var first = $"https://localhost/actors/outbox/{username}?page=1";
+        var last = $"https://localhost/actors/outbox/{username}?page={totalPages}";
+        var prev = page > 1 ? $"https://localhost/actors/outbox/{username}?page={page - 1}" : null;
+        var next = page < totalPages ? $"https://localhost/actors/outbox/{username}?page={page + 1}" : null;
+
         var orderedCollection = new
         {
             @context = "https://www.w3.org/ns/activitystreams",
-            type = "OrderedCollection",
-            id = $"https://localhost/actors/outbox/{username}",
-            totalItems = total,
+            type = "OrderedCollectionPage",
+            id = $"https://localhost/actors/outbox/{username}?page={page}",
+            partOf = $"https://localhost/actors/outbox/{username}",
             orderedItems = activityIds.Select(id => new { id }).ToList(),
-            first = $"https://localhost/actors/outbox/{username}?page=1",
-            last = $"https://localhost/actors/outbox/{username}?page={totalPages}"
+            first,
+            last,
+            prev,
+            next
         };
 
         return Content(JsonSerializer.Serialize(orderedCollection, JsonOpts), "application/ld+json");
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 5, Location = ResponseCacheLocation.Client)]
     public async Task<IActionResult> Followers(string username, int page = 1)
     {
         var actor = await _repository.GetUserActorAsync(username);
@@ -89,21 +98,29 @@ public class ActorsController : Controller
         var total = followerIds.Count;
         var totalPages = Math.Max(1, (int)Math.Ceiling((double)total / pageSize));
 
+        var first = $"https://localhost/actors/followers/{username}?page=1";
+        var last = $"https://localhost/actors/followers/{username}?page={totalPages}";
+        var prev = page > 1 ? $"https://localhost/actors/followers/{username}?page={page - 1}" : null;
+        var next = page < totalPages ? $"https://localhost/actors/followers/{username}?page={page + 1}" : null;
+
         var orderedCollection = new
         {
             @context = "https://www.w3.org/ns/activitystreams",
-            type = "OrderedCollection",
-            id = $"https://localhost/actors/followers/{username}",
-            totalItems = total,
+            type = "OrderedCollectionPage",
+            id = $"https://localhost/actors/followers/{username}?page={page}",
+            partOf = $"https://localhost/actors/followers/{username}",
             orderedItems = followerIds.Select(id => new { id }).ToList(),
-            first = $"https://localhost/actors/followers/{username}?page=1",
-            last = $"https://localhost/actors/followers/{username}?page={totalPages}"
+            first,
+            last,
+            prev,
+            next
         };
 
         return Content(JsonSerializer.Serialize(orderedCollection, JsonOpts), "application/ld+json");
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 5, Location = ResponseCacheLocation.Client)]
     public async Task<IActionResult> Following(string username, int page = 1)
     {
         var actor = await _repository.GetUserActorAsync(username);
@@ -115,21 +132,29 @@ public class ActorsController : Controller
         var total = followingIds.Count;
         var totalPages = Math.Max(1, (int)Math.Ceiling((double)total / pageSize));
 
+        var first = $"https://localhost/actors/following/{username}?page=1";
+        var last = $"https://localhost/actors/following/{username}?page={totalPages}";
+        var prev = page > 1 ? $"https://localhost/actors/following/{username}?page={page - 1}" : null;
+        var next = page < totalPages ? $"https://localhost/actors/following/{username}?page={page + 1}" : null;
+
         var orderedCollection = new
         {
             @context = "https://www.w3.org/ns/activitystreams",
-            type = "OrderedCollection",
-            id = $"https://localhost/actors/following/{username}",
-            totalItems = total,
+            type = "OrderedCollectionPage",
+            id = $"https://localhost/actors/following/{username}?page={page}",
+            partOf = $"https://localhost/actors/following/{username}",
             orderedItems = followingIds.Select(id => new { id }).ToList(),
-            first = $"https://localhost/actors/following/{username}?page=1",
-            last = $"https://localhost/actors/following/{username}?page={totalPages}"
+            first,
+            last,
+            prev,
+            next
         };
 
         return Content(JsonSerializer.Serialize(orderedCollection, JsonOpts), "application/ld+json");
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 5, Location = ResponseCacheLocation.Client)]
     public async Task<IActionResult> Liked(string username, int page = 1)
     {
         var actor = await _repository.GetUserActorAsync(username);
@@ -141,15 +166,22 @@ public class ActorsController : Controller
         var total = likedIds.Count;
         var totalPages = Math.Max(1, (int)Math.Ceiling((double)total / pageSize));
 
+        var first = $"https://localhost/actors/liked/{username}?page=1";
+        var last = $"https://localhost/actors/liked/{username}?page={totalPages}";
+        var prev = page > 1 ? $"https://localhost/actors/liked/{username}?page={page - 1}" : null;
+        var next = page < totalPages ? $"https://localhost/actors/liked/{username}?page={page + 1}" : null;
+
         var orderedCollection = new
         {
             @context = "https://www.w3.org/ns/activitystreams",
-            type = "OrderedCollection",
-            id = $"https://localhost/actors/liked/{username}",
-            totalItems = total,
+            type = "OrderedCollectionPage",
+            id = $"https://localhost/actors/liked/{username}?page={page}",
+            partOf = $"https://localhost/actors/liked/{username}",
             orderedItems = likedIds.Select(id => new { id }).ToList(),
-            first = $"https://localhost/actors/liked/{username}?page=1",
-            last = $"https://localhost/actors/liked/{username}?page={totalPages}"
+            first,
+            last,
+            prev,
+            next
         };
 
         return Content(JsonSerializer.Serialize(orderedCollection, JsonOpts), "application/ld+json");

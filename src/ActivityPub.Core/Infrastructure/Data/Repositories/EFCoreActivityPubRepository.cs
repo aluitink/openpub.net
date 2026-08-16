@@ -119,30 +119,15 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         }
 
         var actorId = actor.Id;
-        var allActivities = await _context.Activities
+        var activityIds = await _context.Activities
+            .Where(a => a.JsonData.Contains($"\"actor\":\"{actorId}\""))
             .OrderBy(a => a.CreatedAt)
-            .Select(a => new { a.ActivityId, a.JsonData })
-            .ToListAsync();
-
-        var activityIds = new List<string>();
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("actor", out var actorElement) &&
-                actorElement.ValueKind == JsonValueKind.String &&
-                actorElement.GetString() == actorId)
-            {
-                activityIds.Add(item.ActivityId);
-            }
-        }
-
-        return activityIds
-            .OrderBy(id => id)
             .Skip(skip)
             .Take(limit)
-            .ToList();
+            .Select(a => a.ActivityId)
+            .ToListAsync();
+
+        return activityIds;
     }
 
     public async Task<ICollection<string>> GetFollowersAsync(string username, int skip, int limit)
@@ -377,6 +362,26 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         return followerIds.ToList();
     }
 
+    public async Task<int> GetFollowerCountAsync(string username)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return 0;
+
+        return await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actor.Id}\""))
+            .CountAsync();
+    }
+
+    public async Task<int> GetFollowingCountAsync(string username)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return 0;
+
+        return await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Follow\"") && a.JsonData.Contains($"\"actor\":\"{actor.Id}\""))
+            .CountAsync();
+    }
+
     public async Task<bool> SaveWebhookConfigAsync(WebhookConfigEntity config)
     {
         var existing = await _context.WebhookConfigs
@@ -487,48 +492,15 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         }
 
         var actorId = actor.Id;
-        var allActivities = await _context.Activities
+        var activityIds = await _context.Activities
+            .Where(a => a.JsonData.Contains($"\"to\":\"{actorId}\"") || a.JsonData.Contains($"\"{actorId}\""))
             .OrderByDescending(a => a.CreatedAt)
-            .Select(a => new { a.ActivityId, a.JsonData })
-            .ToListAsync();
-
-        var activityIds = new List<string>();
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("to", out var toElement))
-            {
-                var isTargeted = false;
-
-                if (toElement.ValueKind == JsonValueKind.String && toElement.GetString() == actorId)
-                {
-                    isTargeted = true;
-                }
-                else if (toElement.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var toItem in toElement.EnumerateArray())
-                    {
-                        if (toItem.ValueKind == JsonValueKind.String && toItem.GetString() == actorId)
-                        {
-                            isTargeted = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (isTargeted)
-                {
-                    activityIds.Add(item.ActivityId);
-                }
-            }
-        }
-
-        return activityIds
             .Skip(skip)
             .Take(limit)
-            .ToList();
+            .Select(a => a.ActivityId)
+            .ToListAsync();
+
+        return activityIds;
     }
 
     public async Task<ICollection<string>> GetLikedActivitiesAsync(string username, int skip, int limit)
@@ -540,49 +512,24 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         }
 
         var actorId = actor.Id;
-        var allActivities = await _context.Activities
+        var likeActivities = await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Like\"") && a.JsonData.Contains($"\"actor\":\"{actorId}\""))
             .OrderByDescending(a => a.CreatedAt)
+            .Skip(skip)
+            .Take(limit)
             .Select(a => new { a.ActivityId, a.JsonData })
             .ToListAsync();
 
         var likedIds = new List<string>();
-        foreach (var item in allActivities)
+        foreach (var item in likeActivities)
         {
             using var doc = JsonDocument.Parse(item.JsonData);
             var root = doc.RootElement;
-
-            bool isLike = false;
-            if (root.TryGetProperty("type", out var typeElement) &&
-                typeElement.ValueKind == JsonValueKind.String &&
-                typeElement.GetString() == "Like")
-            {
-                isLike = true;
-            }
-
-            if (!isLike)
-            {
-                continue;
-            }
-
-            bool isByActor = false;
-            if (root.TryGetProperty("actor", out var actorElement))
-            {
-                if (actorElement.ValueKind == JsonValueKind.String && actorElement.GetString() == actorId)
-                {
-                    isByActor = true;
-                }
-            }
-
-            if (!isByActor)
-            {
-                continue;
-            }
-
             if (root.TryGetProperty("object", out var objectElement))
             {
                 var likedId = objectElement.ValueKind == JsonValueKind.String
                     ? objectElement.GetString()!
-                    : objectElement.GetProperty("id").GetString();
+                    : objectElement.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
 
                 if (!string.IsNullOrEmpty(likedId))
                 {
@@ -591,10 +538,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             }
         }
 
-        return likedIds
-            .Skip(skip)
-            .Take(limit)
-            .ToList();
+        return likedIds;
     }
 
     public async Task<bool> IsLikedByActorAsync(string username, string targetActivityId)
@@ -602,33 +546,13 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         var actor = await GetUserActorAsync(username);
         if (actor == null) return false;
 
-        var allActivities = await _context.Activities
-            .Select(a => new { a.ActivityId, a.JsonData })
-            .ToListAsync();
+        var count = await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Like\"") &&
+                        a.JsonData.Contains($"\"actor\":\"{actor.Id}\"") &&
+                        a.JsonData.Contains($"\"{targetActivityId}\""))
+            .CountAsync();
 
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Like") continue;
-
-            bool isByActor = false;
-            if (root.TryGetProperty("actor", out var actorEl))
-            {
-                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
-                    isByActor = true;
-            }
-            if (!isByActor) continue;
-
-            if (root.TryGetProperty("object", out var objEl))
-            {
-                var likedId = objEl.ValueKind == JsonValueKind.String
-                    ? objEl.GetString()!
-                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                if (likedId == targetActivityId) return true;
-            }
-        }
-        return false;
+        return count > 0;
     }
 
     public async Task<string?> GetLikeByActorAsync(string username, string targetActivityId)
@@ -636,33 +560,14 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         var actor = await GetUserActorAsync(username);
         if (actor == null) return null;
 
-        var allActivities = await _context.Activities
-            .Select(a => new { a.ActivityId, a.JsonData })
-            .ToListAsync();
+        var likeActivity = await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Like\"") &&
+                        a.JsonData.Contains($"\"actor\":\"{actor.Id}\"") &&
+                        a.JsonData.Contains($"\"{targetActivityId}\""))
+            .Select(a => a.ActivityId)
+            .FirstOrDefaultAsync();
 
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Like") continue;
-
-            bool isByActor = false;
-            if (root.TryGetProperty("actor", out var actorEl))
-            {
-                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
-                    isByActor = true;
-            }
-            if (!isByActor) continue;
-
-            if (root.TryGetProperty("object", out var objEl))
-            {
-                var likedId = objEl.ValueKind == JsonValueKind.String
-                    ? objEl.GetString()!
-                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                if (likedId == targetActivityId) return item.ActivityId;
-            }
-        }
-        return null;
+        return likeActivity;
     }
 
     public async Task<bool> IsBoostedByActorAsync(string username, string targetActivityId)
@@ -670,33 +575,13 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         var actor = await GetUserActorAsync(username);
         if (actor == null) return false;
 
-        var allActivities = await _context.Activities
-            .Select(a => new { a.ActivityId, a.JsonData })
-            .ToListAsync();
+        var count = await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Announce\"") &&
+                        a.JsonData.Contains($"\"actor\":\"{actor.Id}\"") &&
+                        a.JsonData.Contains($"\"{targetActivityId}\""))
+            .CountAsync();
 
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Announce") continue;
-
-            bool isByActor = false;
-            if (root.TryGetProperty("actor", out var actorEl))
-            {
-                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
-                    isByActor = true;
-            }
-            if (!isByActor) continue;
-
-            if (root.TryGetProperty("object", out var objEl))
-            {
-                var boostedId = objEl.ValueKind == JsonValueKind.String
-                    ? objEl.GetString()!
-                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                if (boostedId == targetActivityId) return true;
-            }
-        }
-        return false;
+        return count > 0;
     }
 
     public async Task<string?> GetBoostByActorAsync(string username, string targetActivityId)
@@ -704,106 +589,37 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         var actor = await GetUserActorAsync(username);
         if (actor == null) return null;
 
-        var allActivities = await _context.Activities
-            .Select(a => new { a.ActivityId, a.JsonData })
-            .ToListAsync();
+        var boostActivity = await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Announce\"") &&
+                        a.JsonData.Contains($"\"actor\":\"{actor.Id}\"") &&
+                        a.JsonData.Contains($"\"{targetActivityId}\""))
+            .Select(a => a.ActivityId)
+            .FirstOrDefaultAsync();
 
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Announce") continue;
-
-            bool isByActor = false;
-            if (root.TryGetProperty("actor", out var actorEl))
-            {
-                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
-                    isByActor = true;
-            }
-            if (!isByActor) continue;
-
-            if (root.TryGetProperty("object", out var objEl))
-            {
-                var boostedId = objEl.ValueKind == JsonValueKind.String
-                    ? objEl.GetString()!
-                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                if (boostedId == targetActivityId) return item.ActivityId;
-            }
-        }
-        return null;
+        return boostActivity;
     }
 
     public async Task<int> GetLikeCountAsync(string activityId)
     {
-        var allActivities = await _context.Activities
-            .Select(a => new { a.JsonData })
-            .ToListAsync();
-
-        int count = 0;
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Like") continue;
-
-            if (root.TryGetProperty("object", out var objEl))
-            {
-                var likedId = objEl.ValueKind == JsonValueKind.String
-                    ? objEl.GetString()!
-                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                if (likedId == activityId) count++;
-            }
-        }
-        return count;
+        return await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Like\"") &&
+                        a.JsonData.Contains($"\"{activityId}\""))
+            .CountAsync();
     }
 
     public async Task<int> GetBoostCountAsync(string activityId)
     {
-        var allActivities = await _context.Activities
-            .Select(a => new { a.JsonData })
-            .ToListAsync();
-
-        int count = 0;
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Announce") continue;
-
-            if (root.TryGetProperty("object", out var objEl))
-            {
-                var boostedId = objEl.ValueKind == JsonValueKind.String
-                    ? objEl.GetString()!
-                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                if (boostedId == activityId) count++;
-            }
-        }
-        return count;
+        return await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Announce\"") &&
+                        a.JsonData.Contains($"\"{activityId}\""))
+            .CountAsync();
     }
 
     public async Task<int> GetReplyCountAsync(string activityId)
     {
-        var allActivities = await _context.Activities
-            .Select(a => new { a.JsonData })
-            .ToListAsync();
-
-        int count = 0;
-        foreach (var item in allActivities)
-        {
-            using var doc = JsonDocument.Parse(item.JsonData);
-            var root = doc.RootElement;
-            if (root.TryGetProperty("object", out var objEl) && objEl.ValueKind == JsonValueKind.Object)
-            {
-                if (objEl.TryGetProperty("inReplyTo", out var replyEl) &&
-                    (replyEl.ValueKind == JsonValueKind.String || replyEl.ValueKind == JsonValueKind.Object))
-                {
-                    var replyId = replyEl.ValueKind == JsonValueKind.String
-                        ? replyEl.GetString()!
-                        : replyEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                    if (replyId == activityId) count++;
-                }
-            }
-        }
-        return count;
+        return await _context.Activities
+            .Where(a => a.JsonData.Contains("\"inReplyTo\"") &&
+                        a.JsonData.Contains($"\"{activityId}\""))
+            .CountAsync();
     }
 }

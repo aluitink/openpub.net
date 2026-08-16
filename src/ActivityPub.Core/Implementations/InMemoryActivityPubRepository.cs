@@ -379,4 +379,21 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             obj.InReplyTo == activityId);
         return Task.FromResult(count);
     }
+
+    public Task<int> GetFollowerCountAsync(string username)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var count = _activities.Values.Count(a => a.Type == "Follow" &&
+            ((a.Object is string objStr && objStr == actorId) ||
+             (a.Object is Models.Object obj && obj.Id == actorId)));
+        return Task.FromResult(count);
+    }
+
+    public Task<int> GetFollowingCountAsync(string username)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var count = _activities.Values.Count(a => a.Type == "Follow" &&
+            (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)));
+        return Task.FromResult(count);
+    }
 }
