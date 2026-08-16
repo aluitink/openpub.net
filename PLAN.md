@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 30-32 complete. Next: Phase 33 (Extended Federation).
+**Status:** Phases 30-33 complete. Next: Phase 34 (Real-time & Notifications).
 
 ## Testing Guidelines
 
@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 636 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 637
+- **Tests:** 647 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 648
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -175,17 +175,31 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 8. ⬜ Rate limit configuration from admin panel
 9. ⬜ Federation health monitoring: delivery queue status, error rates
 
-### Phase 33: Extended Federation
+### Phase 33: Extended Federation **✅ Complete**
 
 **Goal:** Improve federation compatibility and add missing ActivityPub features.
 
 **Tasks:**
-1. Inbox processor: handle all ActivityPub activity types (Create, Delete, Update, Move)
-2. Outbox: proper OrderedCollectionPage with pagination (first/next/prev/last)
-3. Followers/Following: full OrderedCollectionPage endpoints
-4. Article support: long-form content (extended description, HTML body)
-5. Image uploads: attachment support with local hosting
-6. Poll support in notes
-7. Editable notes: Update activity for existing notes
-8. Block/Undo block: ActivityPub Block activity support
-9. Server-to-server federation testing with remote ActivityPub servers
+1. ✅ Inbox processor: handle all ActivityPub activity types (Create, Delete, Update, Move)
+2. ✅ Outbox: proper OrderedCollectionPage with pagination (first/next/prev/last)
+3. ✅ Followers/Following: full OrderedCollectionPage endpoints
+4. ✅ Article support: long-form content (extended description, HTML body)
+5. ⬜ Image uploads: attachment support with local hosting
+6. ⬜ Poll support in notes
+7. ✅ Editable notes: Update activity for existing notes
+8. ⬜ Block/Undo block: ActivityPub Block activity support
+9. ⬜ Server-to-server federation testing with remote ActivityPub servers
+
+### Phase 34: Real-time & Notifications
+
+**Goal:** Add real-time updates and push notification support.
+
+**Tasks:**
+1. WebSocket support for live timeline updates
+2. Server-Sent Events (SSE) fallback for notifications
+3. Push notification service for mobile/desktop
+4. Real-time activity counter badges
+5. Notification sound and desktop alerts
+6. Polling interval configuration
+7. WebSocket scaling: sticky sessions, Redis backplane
+8. Rate limiting for real-time connections
