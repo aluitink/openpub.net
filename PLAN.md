@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-41 complete. 797/797 tests passing. Phase 42 done (2 tasks deferred to Phase 43). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding). Phase 45 next.
+**Status:** Phases 1-41 complete. 798/798 tests passing. Phase 42 done (2 tasks deferred to Phase 43). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding). Phase 45 complete (all code under `src/`). Phase 43 (interface polish) next.
 
 ---
 
@@ -46,7 +46,7 @@ When making changes to `src/ActivityPub.WebUI/`, run QA via delegated subagents 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 797 passing, 0 failures
+- **Tests:** 798 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -100,6 +100,7 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 | 30 | Polish & Production — responsive CSS, error pages, rate limiting, hashtags, search, Docker | 42 | Core UX Improvements — char counter, previews, optimistic like/boost, toasts, skeletons (inline reply completed in Phase 44 P1; 2 other tasks deferred to Phase 43) |
 | 31 | Performance — DB indexes, response caching, query optimization | 44 | WebUI Look & Feel Review — screenshot audit; P0/P1/P2 fixes applied (fresh-context QA re-sweep outstanding) |
 | 32 | Admin & Moderation — dashboard, roles, MRF, audit log, reports, federation health | 43 | (open — see Open Work) |
+| 45 | Consolidate All Code Under `src/` — Tests, Benchmarks, samples moved; solution, scripts, CI, docs updated | | |
 
 **Phase 44 fixes applied (summary):** P0-1 static-asset cache-busting wired via `app.MapStaticAssets()` (hashed routes 200 + immutable; `asp-append-version` still emits plain URLs — .NET 10 tag-helper behavior). P0-2 admin block-user style renamed `.btn-block` → `.btn-blockuser` so primary CTAs are purple again. P1 mobile drawer scrim, favicon (`/favicon.svg`), secondary-button outline restyle, **inline reply compose** (`/compose?replyTo=…` with reply-context banner, hidden `InReplyTo`, reply sets `Note.InReplyTo` + queues shared-inbox delivery to the target actor; note-card reply links now route to it; `ReplyComposeTests` added, 797 tests passing). P2 muted action-bar colors + Edit/Delete/Report moved to overflow menu, collapsed-by-default reply boxes, richer empty states, note-card avatars, `:root` design-token block in `site.css`.
 
@@ -174,24 +175,17 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 4. ⬜ Memory profiling and leak detection
 5. ⬜ Load testing with 100+ concurrent users
 
-### Phase 45: Consolidate All Code Under `src/`
+### Phase 45: Consolidate All Code Under `src/` — COMPLETE
 
 **Goal:** Move the remaining top-level code projects into `src/` so `src/` is the single home for all code (production, tests, benchmarks, samples), leaving only docs, config, scripts, and CI at the repo root.
 
-**Context:** `src/` already contains `ActivityPub.Core`, `ActivityPub.Admin`, `ActivityPub.Cli`, `ActivityPub.WebUI`, but three code areas still live at the root: `ActivityPub.Tests/`, `ActivityPub.Benchmarks/` (not in the solution), and `samples/` (ConsoleClient, DemoApp, BotApp, FederationApp, quickstart, advanced).
-
-**Tasks:**
-1. ⬜ Move `ActivityPub.Tests/` → `src/ActivityPub.Tests/` (git mv, preserve history)
-2. ⬜ Move `ActivityPub.Benchmarks/` → `src/ActivityPub.Benchmarks/` and add it to `ActivityPub.sln` (it is currently missing from the solution)
-3. ⬜ Move `samples/` → `src/samples/` (keep internal structure: BotApp, ConsoleClient, DemoApp, FederationApp, quickstart, advanced)
-4. ⬜ Update `ActivityPub.sln`: fix project paths for Tests, ConsoleClient, FederationApp, BotApp, DemoApp (`samples\…` → `src\samples\…`, `ActivityPub.Tests\…` → `src\ActivityPub.Tests\…`)
-5. ⬜ Update build/test scripts: `scripts/build.sh`, `scripts/test.sh` (and `backup.sh`/`publish.sh`/`deploy.sh` if they reference the old paths)
-6. ⬜ Update `.github/workflows/ci.yml`: paths for build/test/publish and the `ActivityPub.Tests/bin/Release/` cache key
-7. ⬜ Update docs and README: `README.md` (directory tree + `cd samples/quickstart`), `docs/directory-structure.md`, `docs/overview.md`, `docs/testing.md`, `docs/state-report.md`
-8. ⬜ Verify: `dotnet build ActivityPub.sln` (0 errors) and full test suite (790/790 passing) from the new locations; run `scripts/build.sh` + `scripts/test.sh` end-to-end
-
-**Acceptance criteria:**
-- No code project directories remain at the repo root (`ActivityPub.Tests/`, `ActivityPub.Benchmarks/`, `samples/` are gone)
-- `dotnet build` and `dotnet test` succeed from the repo root with zero path errors
-- CI workflow passes with the updated paths
-- All docs reference the new `src/…` layout
+**Done (commit a880e37 + 062075f):**
+1. ✅ Moved `ActivityPub.Tests/` → `src/ActivityPub.Tests/` (git mv, history preserved)
+2. ✅ Moved `ActivityPub.Benchmarks/` → `src/ActivityPub.Benchmarks/` and added it to `ActivityPub.sln` (newly included, nested under the `src` solution folder)
+3. ✅ Moved `samples/` → `src/samples/` (internal structure kept: BotApp, ConsoleClient, DemoApp, FederationApp, quickstart, advanced)
+4. ✅ `ActivityPub.sln`: all project paths fixed; Benchmarks project + 12 config entries added; Tests/Benchmarks nested under `src`
+5. ✅ Fixed `ProjectReference` paths in Tests, Benchmarks, and all 4 sample csproj files
+6. ✅ `scripts/build.sh` + `scripts/test.sh` point at `src/…` paths
+7. ✅ `.github/workflows/ci.yml`: build-artifact path → `src/ActivityPub.Tests/bin/Release/`
+8. ✅ Docs updated: README (directory tree + `cd src/samples/quickstart`), directory-structure, testing, overview, state-report
+9. ✅ Verified: `dotnet build` 0 errors, `dotnet test` 798/798 passing, `scripts/build.sh` + `scripts/test.sh` succeed end-to-end
