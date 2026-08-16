@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 30-34 complete. Next: Phase 35 (Extended Federation features).
+**Status:** Phases 30-34 complete. Phase 32.9 (Federation Health Monitoring) complete.
 
 ## Testing Guidelines
 
@@ -30,18 +30,18 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 673 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 674
+- **Tests:** 695 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 696
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
 ## Core Library Surface
 
-**Models:** Actor, Note, Create, Follow, Like, Announce, Article, Page, Video, Image, Collection, OrderedCollection, Activity, Accept, Reject, Undo, Delete, Tombstone, Update, Event, PublicKey, Endpoints + WebFinger/NodeInfo/HostMeta discovery types
+**Models:** Actor, Note, Create, Follow, Like, Announce, Article, Page, Video, Image, Collection, OrderedCollection, Activity, Accept, Reject, Undo, Delete, Tombstone, Update, Event, PublicKey, Endpoints, Poll + WebFinger/NodeInfo/HostMeta discovery types
 
 **Repository (`IActivityPubRepository`):** Actor CRUD, Activity CRUD, Outbox/Followers/Following/Liked collections, deduplication, shared inbox delivery queue, webhook delivery queue
 
-**Services:** ActivityPubService (actor lookup, activity processing, cache invalidation), InboxProcessorService, OutboundActivityService, OutboundSigningService, FederationDiscoveryService, KeyFetching/Generation, SharedInboxService, WebhookDelivery, WebFingerCache, ActivityValidation, MRFService, ActivityCache, ActivityPubEventDispatcher
+**Services:** ActivityPubService (actor lookup, activity processing, cache invalidation), InboxProcessorService, OutboundActivityService, OutboundSigningService, FederationDiscoveryService, KeyFetching/Generation, SharedInboxService, WebhookDelivery, WebFingerCache, ActivityValidation, MRFService, ActivityCache, ActivityPubEventDispatcher, FederationHealthService
 
 **Middleware:** RateLimiting, SecurityHeaders, HttpSignature, SigningVerification
 
@@ -160,7 +160,7 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 9. ⬜ Memory profiling and leak detection (future)
 10. ⬜ Load testing with 100+ concurrent users (future)
 
-### Phase 32: Admin & Moderation **✅ Complete**
+### Phase 32: Admin & Moderation **✅ Complete** — All 9 tasks done
 
 **Goal:** Provide tools for site administrators and content moderation.
 
@@ -168,14 +168,14 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 1. ✅ Admin dashboard: user management, activity overview, server stats
 2. ✅ User roles: IsAdmin/IsBlocked flags on ApplicationUser
 3. ✅ Content moderation: block users, delete activities, view deliveries
-4. ⬜ MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
+4. ✅ MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
 5. ✅ ActivityPub moderation extensions: Block, Reject activities
 6. ✅ Audit log: track admin actions
 7. ✅ Report system: users can flag inappropriate content
-8. ⬜ Rate limit configuration from admin panel
-9. ⬜ Federation health monitoring: delivery queue status, error rates
+8. ✅ Rate limit configuration from admin panel
+9. ✅ Federation health monitoring: delivery queue status, error rates, remote probes, JSON API
 
-### Phase 33: Extended Federation **✅ Complete**
+### Phase 33: Extended Federation **✅ 8/9 Complete**
 
 **Goal:** Improve federation compatibility and add missing ActivityPub features.
 
@@ -185,7 +185,7 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 3. ✅ Followers/Following: full OrderedCollectionPage endpoints
 4. ✅ Article support: long-form content (extended description, HTML body)
 5. ✅ Image uploads: attachment support with local hosting
-6. ⬜ Poll support in notes
+6. ✅ Poll support in notes: Poll model, PollController, timeline rendering, vote UI
 7. ✅ Editable notes: Update activity for existing notes
 8. ✅ Block activity: ActivityPub Block activity support
 9. ⬜ Server-to-server federation testing with remote ActivityPub servers
