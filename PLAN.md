@@ -163,7 +163,7 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 **Tasks:**
 1. Compose:
    - ✅ Character counter (500 limit) with color states (ok / near / over)
-   - ⬜ Live markdown/link preview before posting
+    - ✅ Live markdown/link preview before posting (links, hashtags, mentions, bold/italic via compose.js)
    - ⬜ Reply context banner (replying to @user: snippet)
    - ⬜ Visible image upload progress + preview + remove
    - ⬜ Poll preview (choices, duration, multi-select)
@@ -172,11 +172,11 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
    - ✅ Like/Boost with optimistic UI update (instant count change, revert on error)
    - ✅ "Load more" pagination button (keep existing paging, add button UX)
    - ⬜ Content warning / sensitive-media blur toggle
-   - ⬜ Note actions menu (copy link, report, mute author)
+    - ✅ Note actions menu (copy link, report, mute author) — "more" dropdown in _NoteCard
 3. Interactions:
    - ✅ Inline reply box under a note (expand in place), not just navigation to compose
    - ✅ Confirm dialogs for destructive actions (delete note, delete poll, block)
-   - ⬜ Toast/snackbar feedback for success/error instead of full reload where possible
+    - ✅ Toast/snackbar feedback for success/error (toast.js, wired into like/boost/delete/reply)
 4. Notifications:
    - ✅ Group by type (likes/follows/replies/mentions) with section headers
    - ✅ Mark-all-read button; unread indicator styling
