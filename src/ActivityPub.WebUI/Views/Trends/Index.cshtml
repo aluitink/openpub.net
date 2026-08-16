@@ -1,0 +1,47 @@
+@model ActivityPub.WebUI.Controllers.TrendsViewModel
+@{
+    ViewData["Title"] = "Trending";
+}
+
+<div class="trends-container">
+    <h1>Trending Hashtags</h1>
+
+    <div class="trends-filters">
+        <a href="/trends?period=hourly" class="filter-btn @(Model.Period == "hourly" ? "active" : "")">Hourly</a>
+        <a href="/trends?period=daily" class="filter-btn @(Model.Period == "daily" ? "active" : "")">Daily</a>
+        <a href="/trends?period=weekly" class="filter-btn @(Model.Period == "weekly" ? "active" : "")">Weekly</a>
+        <a href="/trends" class="filter-btn @(Model.Period == "all" ? "active" : "")">All Time</a>
+    </div>
+
+    @if (Model.Hashtags.Any())
+    {
+        <ol class="trends-list">
+            @foreach (var tag in Model.Hashtags)
+            {
+                <li>
+                    <a href="/hashtag/@tag.Tag" class="hashtag-link">
+                        <span class="hashtag-name">@tag.Tag</span>
+                        <span class="hashtag-count">@tag.Count post@(tag.Count != 1 ? "s" : "")</span>
+                    </a>
+                </li>
+            }
+        </ol>
+    }
+    else
+    {
+        <p class="empty-state">No trending hashtags yet.</p>
+    }
+</div>
+
+<style>
+    .trends-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .trends-filters { display: flex; gap: 8px; margin: 16px 0; }
+    .filter-btn { padding: 8px 16px; border-radius: 20px; text-decoration: none; color: #666; border: 1px solid #ddd; }
+    .filter-btn.active { background: #1d9bf0; color: white; border-color: #1d9bf0; }
+    .trends-list { list-style: none; padding: 0; }
+    .trends-list li { padding: 12px 0; border-bottom: 1px solid #eee; }
+    .hashtag-link { text-decoration: none; display: flex; justify-content: space-between; }
+    .hashtag-name { font-weight: 600; color: #1d9bf0; }
+    .hashtag-count { color: #888; font-size: 14px; }
+    .empty-state { color: #888; text-align: center; padding: 40px; }
+</style>

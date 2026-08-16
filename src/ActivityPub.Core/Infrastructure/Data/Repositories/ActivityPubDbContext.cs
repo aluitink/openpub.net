@@ -14,6 +14,9 @@ public class ActivityPubDbContext : DbContext
     public DbSet<OAuth2AuthorizationCodeEntity> AuthorizationCodes { get; set; } = null!;
     public DbSet<OAuth2AccessTokenEntity> AccessTokens { get; set; } = null!;
     public DbSet<OAuth2RefreshTokenEntity> RefreshTokens { get; set; } = null!;
+    public DbSet<UserPreferenceEntity> UserPreferences { get; set; } = null!;
+    public DbSet<CommunityEntity> Communities { get; set; } = null!;
+    public DbSet<CommunityMemberEntity> CommunityMembers { get; set; } = null!;
 
     public ActivityPubDbContext(DbContextOptions<ActivityPubDbContext> options) : base(options)
     {
@@ -275,5 +278,78 @@ public class ActivityPubDbContext : DbContext
             .HasOne(r => r.Actor)
             .WithMany()
             .HasForeignKey(r => r.ActorId);
+
+        modelBuilder.Entity<UserPreferenceEntity>()
+            .HasKey(p => p.Id);
+
+        modelBuilder.Entity<UserPreferenceEntity>()
+            .Property(p => p.Key)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<UserPreferenceEntity>()
+            .Property(p => p.Value)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<UserPreferenceEntity>()
+            .HasIndex(p => new { p.ActorId, p.Key, p.Value })
+            .IsUnique();
+
+        modelBuilder.Entity<UserPreferenceEntity>()
+            .HasOne(p => p.Actor)
+            .WithMany()
+            .HasForeignKey(p => p.ActorId);
+
+        modelBuilder.Entity<CommunityEntity>()
+            .HasKey(c => c.Id);
+
+        modelBuilder.Entity<CommunityEntity>()
+            .Property(c => c.CommunityId)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<CommunityEntity>()
+            .HasIndex(c => c.CommunityId)
+            .IsUnique();
+
+        modelBuilder.Entity<CommunityEntity>()
+            .Property(c => c.Name)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<CommunityEntity>()
+            .Property(c => c.CreatedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<CommunityEntity>()
+            .Property(c => c.UpdatedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<CommunityEntity>()
+            .HasOne(c => c.Owner)
+            .WithMany()
+            .HasForeignKey(c => c.OwnerActorId);
+
+        modelBuilder.Entity<CommunityMemberEntity>()
+            .HasKey(m => m.Id);
+
+        modelBuilder.Entity<CommunityMemberEntity>()
+            .HasIndex(m => new { m.CommunityId, m.ActorId })
+            .IsUnique();
+
+        modelBuilder.Entity<CommunityMemberEntity>()
+            .Property(m => m.JoinedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<CommunityMemberEntity>()
+            .HasOne(m => m.Community)
+            .WithMany()
+            .HasForeignKey(m => m.CommunityId);
+
+        modelBuilder.Entity<CommunityMemberEntity>()
+            .HasOne(m => m.Actor)
+            .WithMany()
+            .HasForeignKey(m => m.ActorId);
     }
 }

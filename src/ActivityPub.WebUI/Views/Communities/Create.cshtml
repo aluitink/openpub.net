@@ -1,0 +1,25 @@
+@model CreateCommunityViewModel
+@{
+    ViewData["Title"] = "Create Community";
+}
+
+<div class="page-header">
+    <h1>Create Community</h1>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</div>
+
+<form asp-action="Create" method="post" class="form">
+    <div class="form-group">
+        <label for="Name">Name *</label>
+        <input type="text" id="Name" name="Name" value="@Model.Name" class="form-control" required maxlength="100" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="Summary">Description</label>
+        <textarea id="Summary" name="Summary" class="form-control" rows="4" maxlength="500">@Model.Summary</textarea>
+        <span asp-validation-for="Summary" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Community</button>
+</form>

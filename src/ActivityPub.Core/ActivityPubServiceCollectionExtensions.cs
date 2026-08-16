@@ -82,6 +82,8 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<CacheInvalidationService>();
         services.AddScoped<Core.Services.IMRFService, Core.Services.MRFService>();
         services.AddScoped<IFederationHealthService, FederationHealthService>();
+        services.AddScoped<IDiscoveryService, DiscoveryServiceImpl>();
+        services.AddScoped<ICommunityService, CommunityServiceImpl>();
         services.AddScoped<InboxProcessor>();
         services.AddHostedService<SharedInboxBackgroundService>();
 

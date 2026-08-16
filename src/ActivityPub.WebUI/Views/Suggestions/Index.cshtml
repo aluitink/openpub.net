@@ -1,0 +1,127 @@
+@model ActivityPub.WebUI.Controllers.SuggestionsViewModel
+@{
+    ViewData["Title"] = "Discover";
+}
+
+<div class="discover-container">
+    <h1>Discover People</h1>
+
+    <div class="section">
+        <h2>Suggested for you</h2>
+
+        @if (Model.Suggestions.Any())
+        {
+            <div class="suggestions-grid">
+                @foreach (var s in Model.Suggestions)
+                {
+                    <div class="suggestion-card">
+                        <div class="suggestion-avatar">
+                            <img src="@s.AvatarUrl" alt="@s.DisplayName" />
+                        </div>
+                        <div class="suggestion-info">
+                            <a href="/profile/@s.Username" class="display-name">@s.DisplayName</a>
+                            <span class="username">@s.Username</span>
+                            @if (!string.IsNullOrEmpty(s.Bio))
+                            {
+                                <p class="bio">@s.Bio</p>
+                            }
+                            <span class="follower-count">@s.Followers follower@(s.Followers != 1 ? "s" : "")</span>
+                        </div>
+                        <div class="suggestion-actions">
+                            <form method="post" asp-controller="Suggestions" asp-action="UnmuteUser" asp-route-userId="@s.ActorId">
+                                <button type="submit" class="btn-follow">Follow</button>
+                            </form>
+                            <form method="post" asp-controller="Suggestions" asp-action="MuteUser" asp-route-userId="@s.ActorId">
+                                <button type="submit" class="btn-muted">Mute</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="empty-state">No suggestions yet. Follow some people to get started!</p>
+        }
+    </div>
+
+    <div class="section">
+        <h2>Content Filters</h2>
+
+        @if (Model.ContentFilters.Any())
+        {
+            <ul class="filter-list">
+                @foreach (var filter in Model.ContentFilters)
+                {
+                    <li>
+                        <span class="filter-keyword">@filter</span>
+                        <button class="btn-remove-filter" onclick="removeFilter('@filter')">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="empty-state">No content filters configured.</p>
+        }
+
+        <div class="add-filter-form">
+            <input type="text" id="filterInput" placeholder="Add keyword to filter..." maxlength="50" />
+            <button class="btn-add-filter" onclick="addFilter()">Add Filter</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .discover-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    .section { margin: 24px 0; }
+    .suggestions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .suggestion-card { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #eee; border-radius: 12px; }
+    .suggestion-avatar img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+    .suggestion-info { flex: 1; }
+    .display-name { font-weight: 600; text-decoration: none; color: #333; }
+    .username { color: #888; }
+    .bio { font-size: 13px; color: #666; margin: 4px 0; }
+    .follower-count { font-size: 12px; color: #999; }
+    .suggestion-actions { display: flex; gap: 4px; }
+    .btn-follow, .btn-muted, .btn-add-filter, .btn-remove-filter {
+        padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; font-size: 13px;
+    }
+    .btn-follow { background: #1d9bf0; color: white; border-color: #1d9bf0; }
+    .btn-muted { background: transparent; color: #888; }
+    .filter-list { list-style: none; padding: 0; }
+    .filter-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .filter-keyword { color: #1d9bf0; font-weight: 500; }
+    .btn-add-filter { padding: 6px 16px; background: #1d9bf0; color: white; border-radius: 20px; border: none; cursor: pointer; }
+    .btn-remove-filter { background: transparent; color: #e0245e; border: none; cursor: pointer; }
+    .add-filter-form { display: flex; gap: 8px; margin-top: 12px; }
+    #filterInput { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; }
+    .empty-state { color: #888; text-align: center; padding: 20px; }
+</style>
+
+<script>
+async function addFilter() {
+    const input = document.getElementById('filterInput');
+    const keyword = input.value.trim();
+    if (!keyword) return;
+
+    await fetch('/suggestions/add-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword })
+    });
+
+    input.value = '';
+    location.reload();
+}
+
+async function removeFilter(keyword) {
+    await fetch('/suggestions/remove-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword })
+    });
+
+    location.reload();
+}
+</script>
