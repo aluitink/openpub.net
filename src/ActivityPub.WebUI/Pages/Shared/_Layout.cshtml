@@ -104,7 +104,9 @@
             <p>Fediblog - A federated microblogging platform powered by ActivityPub.NET</p>
         </div>
     </footer>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <script src="~/js/menu.js" asp-append-version="true"></script>
+    <script src="~/js/toast.js" asp-append-version="true"></script>
     @if (User.Identity?.IsAuthenticated ?? false)
     {
         <script src="https://cdn.jsdelivr.net/npm/%40microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>

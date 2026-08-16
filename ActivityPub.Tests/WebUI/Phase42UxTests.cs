@@ -182,4 +182,47 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         Assert.Contains("note-timestamp", body);
         Assert.Contains("data-published", body);
     }
+
+    [Fact]
+    public async Task Layout_HasToastContainer()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("toast-container", body);
+        Assert.Contains("toast.js", body);
+    }
+
+    [Fact]
+    public async Task ComposePage_HasLivePreview()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/compose");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("compose-preview", body);
+        Assert.Contains("compose.js", body);
+    }
+
+    [Fact]
+    public async Task TimelinePage_HasMoreMenu()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/timeline");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("note-more-menu", body);
+        Assert.Contains("copy-link", body);
+    }
+
+    [Fact]
+    public async Task TimelinePage_HasToastFeedback()
+    {
+        var client = await GetAuthenticatedClient();
+        var response = await client.GetAsync("/timeline");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("showToast", body);
+    }
 }

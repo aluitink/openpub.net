@@ -19,7 +19,8 @@
                     rows="5"
                     maxlength="500"
                     placeholder="Write your post... (max 500 characters)">@Model?.Content</textarea>
-                <span class="char-counter"><span id="charCount">0</span>/500</span>
+                <span class="char-counter char-ok" data-states="char-ok char-near char-over"><span id="charCount">0</span>/500</span>
+                <div id="compose-preview" class="compose-preview" style="display:none"></div>
             </div>
 
             <div class="form-group">
@@ -47,23 +48,4 @@
     </form>
 </div>
 
-<script>
-    (function() {
-        var textarea = document.getElementById('Content');
-        var counter = document.getElementById('charCount');
-        var max = 500;
-        if (!textarea || !counter) return;
-        function update() {
-            var len = textarea.value.length;
-            counter.textContent = len;
-            var parent = counter.closest('.char-counter');
-            if (!parent) return;
-            parent.classList.remove('char-ok', 'char-near', 'char-over');
-            if (len > max) parent.classList.add('char-over');
-            else if (len > max * 0.9) parent.classList.add('char-near');
-            else parent.classList.add('char-ok');
-        }
-        update();
-        textarea.addEventListener('input', update);
-    })();
-</script>
+<script src="~/js/compose.js" asp-append-version="true"></script>

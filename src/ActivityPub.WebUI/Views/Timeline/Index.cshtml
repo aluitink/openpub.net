@@ -93,31 +93,28 @@ else
     document.querySelectorAll('.btn-like, .btn-boost').forEach(function(btn) {
         var form = btn.closest('form');
         if (!form) return;
-        var origSubmit = form.submit;
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            var countSpan = btn;
             var text = btn.textContent;
             var parts = text.split(/\s+/);
             var count = parseInt(parts[parts.length - 1], 10) || 0;
             var isActive = btn.classList.contains('active');
             var isLike = btn.classList.contains('btn-like');
-            var action = isLike ? (isActive ? 'Unlike' : 'Like') : (isActive ? 'Unboost' : 'Boost');
             var newCount = isActive ? count - 1 : count + 1;
             var icon = isLike ? '♥' : '↻';
             btn.textContent = icon + ' ' + newCount;
-            if (!isActive) btn.classList.add('active');
-            else btn.classList.remove('active');
+            btn.classList.toggle('active', !isActive);
             var fd = new FormData(form);
             fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin' })
                 .then(function(r) {
                     if (!r.ok) throw new Error('Failed');
-                    window.location.reload();
+                    var msg = isLike ? (isActive ? 'Unlike successful' : 'Liked') : (isActive ? 'Unboosted' : 'Boosted');
+                    showToast(msg, 'success');
                 })
                 .catch(function() {
                     btn.textContent = text;
-                    if (isActive) btn.classList.add('active');
-                    else btn.classList.remove('active');
+                    btn.classList.toggle('active', isActive);
+                    showToast('Action failed. Please try again.', 'error');
                 });
         });
     });
@@ -128,9 +125,85 @@ else
         form.addEventListener('submit', function(e) {
             if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) {
                 e.preventDefault();
+                return;
             }
+            var noteCard = btn.closest('.note-card');
+            var fd = new FormData(form);
+            fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed');
+                    showToast('Post deleted', 'success');
+                    if (noteCard) {
+                        noteCard.style.transition = 'opacity 0.3s, transform 0.3s';
+                        noteCard.style.opacity = '0';
+                        noteCard.style.transform = 'translateX(20px)';
+                        setTimeout(function() { noteCard.remove(); }, 300);
+                    }
+                })
+                .catch(function() {
+                    showToast('Delete failed. Please try again.', 'error');
+                });
         });
     });
+
+    document.querySelectorAll('.reply-form-container form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            var fd = new FormData(form);
+            fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed');
+                    showToast('Reply posted', 'success');
+                    var textarea = form.querySelector('textarea');
+                    if (textarea) textarea.value = '';
+                })
+                .catch(function() {
+                    showToast('Reply failed. Please try again.', 'error');
+                });
+        });
+    });
+
+    document.querySelectorAll('.note-more-menu').forEach(function(menu) {
+        var btn = menu.querySelector('.btn-more');
+        var dropdown = menu.querySelector('.note-more-dropdown');
+        if (!btn || !dropdown) return;
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var isOpen = btn.getAttribute('aria-expanded') === 'true';
+            closeAllMoreMenus();
+            btn.setAttribute('aria-expanded', String(!isOpen));
+            dropdown.classList.toggle('open', !isOpen);
+        });
+
+        dropdown.querySelectorAll('[data-action="copy-link"]').forEach(function(item) {
+            item.addEventListener('click', function() {
+                var url = item.dataset.url || window.location.origin;
+                navigator.clipboard.writeText(url).then(function() {
+                    showToast('Link copied to clipboard', 'success');
+                }).catch(function() {
+                    showToast('Failed to copy link', 'error');
+                });
+                closeAllMoreMenus();
+            });
+        });
+
+        dropdown.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                closeAllMoreMenus();
+            });
+        });
+    });
+
+    function closeAllMoreMenus() {
+        document.querySelectorAll('.note-more-menu').forEach(function(m) {
+            var b = m.querySelector('.btn-more');
+            var d = m.querySelector('.note-more-dropdown');
+            if (b) b.setAttribute('aria-expanded', 'false');
+            if (d) d.classList.remove('open');
+        });
+    }
+
+    document.addEventListener('click', closeAllMoreMenus);
 })();
 </script>
 }

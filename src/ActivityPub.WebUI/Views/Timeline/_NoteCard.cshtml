@@ -115,6 +115,15 @@
         </form>
 
         <a asp-controller="Report" asp-action="Form" asp-route-targetUsername="@Model.AuthorName" asp-route-activityId="@Model.ActivityId" class="btn-action btn-report" title="Report">Report</a>
+
+        <div class="note-more-menu">
+            <button type="button" class="btn-action btn-more" title="More actions" aria-haspopup="true" aria-expanded="false">&#8943;</button>
+            <div class="note-more-dropdown" role="menu">
+                <button type="button" class="note-more-item" data-action="copy-link" data-url="@Url.Action("Show", "Timeline", new { id = Model.ActivityId })" role="menuitem">Copy link</button>
+                <a asp-controller="Report" asp-action="Form" asp-route-targetUsername="@Model.AuthorName" asp-route-activityId="@Model.ActivityId" class="note-more-item" role="menuitem">Report note</a>
+                <a href="/suggestions/mute/@Model.AuthorName" class="note-more-item" role="menuitem">Mute @Model.AuthorName</a>
+            </div>
+        </div>
     </div>
 
     <div id="reply-@Model.ActivityId" class="reply-form-container">
