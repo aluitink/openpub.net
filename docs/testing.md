@@ -8,21 +8,21 @@ This guide explains the testing structure and approach for the ActivityPub .NET 
 
 ### Phase 1-4: Unit Testing
 - **Status**: Complete
-- **Location**: `ActivityPub.Tests/UnitTests/`
+- **Location**: `src/ActivityPub.Tests/UnitTests/`
 - **Coverage**: Core service logic, repositories, models
 - **Test Count**: 150+ tests
 - **Runtime**: <5s
 
 ### Phase 5: Integration Testing  
 - **Status**: Complete
-- **Location**: `ActivityPub.Tests/IntegrationTests/`
+- **Location**: `src/ActivityPub.Tests/IntegrationTests/`
 - **Coverage**: Database operations, API endpoints, background services
 - **Test Count**: 93 integration tests, 353+ total tests
 - **Runtime**: ~9s (parallelized)
 
 ### Phase 6: Scale Testing
 - **Status**: In progress
-- **Location**: `ActivityPub.Tests/IntegrationTests/Scale/`
+- **Location**: `src/ActivityPub.Tests/IntegrationTests/Scale/`
 - **Coverage**: Performance, concurrent operations, large datasets
 - **Test Count**: 44 scale tests (15 new in this phase)
 - **Runtime**: ~9s for all tests

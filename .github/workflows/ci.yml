@@ -33,7 +33,7 @@ jobs:
           name: build-artifacts
           path: |
             src/ActivityPub.Core/bin/Release/
-            ActivityPub.Tests/bin/Release/
+            src/ActivityPub.Tests/bin/Release/
 
   test:
     name: Test

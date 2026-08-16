@@ -75,12 +75,14 @@ app.Run();
 │   │   ├── Infrastructure/        # Data, caching, logging, metrics
 │   │   └── Plugins/               # Plugin system
 │   ├── ActivityPub.Cli/           # Command-line tool
-│   └── ActivityPub.Admin/         # Admin dashboard
-├── ActivityPub.Tests/             # Test suite
-│   ├── UnitTests/                 # Unit tests
-│   ├── IntegrationTests/          # Integration tests
-│   └── ScaleTests/                # Performance tests
-├── samples/                       # Sample applications
+│   ├── ActivityPub.Admin/         # Admin dashboard
+│   ├── ActivityPub.WebUI/         # Fediblog web UI
+│   ├── ActivityPub.Tests/         # Test suite
+│   │   ├── UnitTests/             # Unit tests
+│   │   ├── IntegrationTests/      # Integration tests
+│   │   └── ScaleTests/            # Performance tests
+│   ├── ActivityPub.Benchmarks/    # BenchmarkDotNet benchmarks
+│   └── samples/                   # Sample applications
 ├── docs/                          # Documentation
 │   ├── overview.md
 │   ├── architecture.md
@@ -112,7 +114,7 @@ app.Run();
 ### Running the Sample App
 
 ```bash
-cd samples/quickstart
+cd src/samples/quickstart
 dotnet run
 ```
 

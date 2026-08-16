@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 CONFIGURATION="${1:-Debug}"
-TEST_PROJECT="${2:-$PROJECT_DIR/ActivityPub.Tests/ActivityPub.Tests.csproj}"
+TEST_PROJECT="${2:-$PROJECT_DIR/src/ActivityPub.Tests/ActivityPub.Tests.csproj}"
 TEST_FILTER="${3:-}"
 
 if [[ ! -f "$TEST_PROJECT" ]]; then

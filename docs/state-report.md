@@ -13,7 +13,7 @@ Build succeeded.
 - **NU1903** - Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.10 has a known high severity vulnerability (GHSA-2m69-gcr7-jv3q / CVE-2025-6965)
   - Affected packages:
     - ActivityPub.Core
-    - ActivityPub.Tests
+    - src/ActivityPub.Tests
   - This is a high severity vulnerability in SQLite (affects versions <= 2.1.11)
   - CVSS Score: 7.2/10
 
@@ -21,7 +21,7 @@ Build succeeded.
 
 ### `dotnet test` Output:
 ```
-Test run for /workspace/ActivityPub.Tests/bin/Debug/net10.0/ActivityPub.Tests.dll
+Test run for /workspace/src/ActivityPub.Tests/bin/Debug/net10.0/ActivityPub.Tests.dll
 Passed!  - Failed: 0, Passed: 275, Skipped: 0, Total: 275, Duration: 9s
 ```
 
@@ -33,7 +33,7 @@ Passed!  - Failed: 0, Passed: 275, Skipped: 0, Total: 275, Duration: 9s
 
 ## 3. Test File Inventory
 
-### Integration Tests Directory (`ActivityPub.Tests/IntegrationTests/`):
+### Integration Tests Directory (`src/ActivityPub.Tests/IntegrationTests/`):
 
 | Directory | File | Lines |
 |-----------|------|-------|

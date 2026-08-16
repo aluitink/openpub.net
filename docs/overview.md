@@ -65,4 +65,4 @@ See the [Contributing Guide](contributing.md) for development setup instructions
 
 - Read the [Architecture Guide](architecture.md) for detailed system design
 - Check [Testing](testing.md) for testing strategies
-- Explore sample applications in `samples/`
+- Explore sample applications in `src/samples/`

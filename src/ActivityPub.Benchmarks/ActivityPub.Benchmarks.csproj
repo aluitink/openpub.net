@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../src/ActivityPub.Core/ActivityPub.Core.csproj" />
+    <ProjectReference Include="../ActivityPub.Core/ActivityPub.Core.csproj" />
   </ItemGroup>
 
 </Project>

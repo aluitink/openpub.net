@@ -8,15 +8,20 @@ This document describes the directory structure of the ActivityPub.Core project.
 
 ```
 /workspace/
-├── src/                           # Source code
-├── ActivityPub.Tests/             # Test projects
-├── samples/                       # Sample applications
+├── src/                           # Source code (all code projects)
+│   ├── ActivityPub.Core/          # Core library
+│   ├── ActivityPub.Admin/         # Admin dashboard
+│   ├── ActivityPub.Cli/           # Command-line tool
+│   ├── ActivityPub.WebUI/         # Fediblog web UI
+│   ├── ActivityPub.Tests/         # Test projects
+│   ├── ActivityPub.Benchmarks/    # BenchmarkDotNet benchmarks
+│   └── samples/                   # Sample applications
 ├── docs/                          # Documentation
 ├── scripts/                       # Build and deployment scripts
 ├── .github/                       # GitHub workflows
 ├── ActivityPub.sln                # Main solution file
 ├── README.md                      # Project overview
-└── PLAN.md                        # Reorganization plan
+└── PLAN.md                        # Project plan
 ```
 
 ## Source Structure (`src/`)
@@ -98,7 +103,7 @@ src/ActivityPub.Admin/
 ## Tests Structure
 
 ```
-ActivityPub.Tests/
+src/ActivityPub.Tests/
 ├── UnitTests/                     # Unit tests (organized by layer)
 │   ├── Core/
 │   │   ├── Models/
@@ -127,7 +132,7 @@ ActivityPub.Tests/
 ## Samples Structure
 
 ```
-samples/
+src/samples/
 ├── quickstart/                    # Minimal example
 │   ├── Program.cs
 │   ├── appsettings.json
@@ -175,4 +180,4 @@ scripts/
 2. **Business Logic** → `src/ActivityPub.Core/Services/`
 3. **API Layer** → `src/ActivityPub.Core/API/`
 4. **Infrastructure** → `src/ActivityPub.Core/Infrastructure/`
-5. **Tests** → `ActivityPub.Tests/[Unit|Integration|Scale]Tests/`
+5. **Tests** → `src/ActivityPub.Tests/[Unit|Integration|Scale]Tests/`
