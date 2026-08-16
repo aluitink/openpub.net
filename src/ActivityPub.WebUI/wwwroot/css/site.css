@@ -214,12 +214,14 @@ body.nav-open {
 
 .btn-secondary {
     background-color: transparent;
-    color: #ccc;
-    border: 1px solid #555;
+    color: #333;
+    border: 1px solid #333;
+    font-weight: 500;
 }
 
 .btn-secondary:hover {
     background-color: #333;
+    color: #fff;
 }
 
 .btn-block {
