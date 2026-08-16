@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 660 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 661
+- **Tests:** 673 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 674
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -169,9 +169,9 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 2. ✅ User roles: IsAdmin/IsBlocked flags on ApplicationUser
 3. ✅ Content moderation: block users, delete activities, view deliveries
 4. ⬜ MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
-5. ⬜ ActivityPub moderation extensions: Block, Reject, Undo activities
-6. ⬜ Audit log: track admin actions
-7. ⬜ Report system: users can flag inappropriate content
+5. ✅ ActivityPub moderation extensions: Block, Reject activities
+6. ✅ Audit log: track admin actions
+7. ✅ Report system: users can flag inappropriate content
 8. ⬜ Rate limit configuration from admin panel
 9. ⬜ Federation health monitoring: delivery queue status, error rates
 
@@ -184,10 +184,10 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 2. ✅ Outbox: proper OrderedCollectionPage with pagination (first/next/prev/last)
 3. ✅ Followers/Following: full OrderedCollectionPage endpoints
 4. ✅ Article support: long-form content (extended description, HTML body)
-5. ⬜ Image uploads: attachment support with local hosting
+5. ✅ Image uploads: attachment support with local hosting
 6. ⬜ Poll support in notes
 7. ✅ Editable notes: Update activity for existing notes
-8. ⬜ Block/Undo block: ActivityPub Block activity support
+8. ✅ Block activity: ActivityPub Block activity support
 9. ⬜ Server-to-server federation testing with remote ActivityPub servers
 
 ### Phase 34: Real-time & Notifications **✅ Complete**
