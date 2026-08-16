@@ -31,7 +31,33 @@ public class ComposeController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index() => View();
+    public async Task<IActionResult> Index(string? replyTo)
+    {
+        var model = new ComposeIndexViewModel { Compose = new ComposeModel() };
+
+        if (!string.IsNullOrWhiteSpace(replyTo))
+        {
+            var target = await _repository.GetActivityAsync(replyTo);
+            if (target != null)
+            {
+                var note = ExtractReplyNote(target);
+                var authorActor = target.ActorId is { } actorId
+                    ? await _repository.GetUserActorAsync(actorId.Split('/').Last())
+                    : null;
+
+                model.ReplyTarget = new ReplyTarget
+                {
+                    ActivityId = target.Id!,
+                    AuthorName = authorActor?.PreferredUsername ?? target.ActorId?.Split('/').Last() ?? "unknown",
+                    AuthorDisplayName = authorActor?.Name ?? "",
+                    Snippet = note?.Content ?? ""
+                };
+                model.Compose.InReplyTo = target.Id!;
+            }
+        }
+
+        return View("Index", model);
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -42,14 +68,14 @@ public class ComposeController : Controller
         if (string.IsNullOrWhiteSpace(model.Content) || model.Content.Length > 500)
         {
             ModelState.AddModelError("Content", "Content must be between 1 and 500 characters.");
-            return View("Index", model);
+            return View("Index", new ComposeIndexViewModel { Compose = model });
         }
 
         var actor = await _repository.GetUserActorAsync(username);
         if (actor == null)
         {
             ModelState.AddModelError("", "Federation account not found.");
-            return View("Index", model);
+            return View("Index", new ComposeIndexViewModel { Compose = model });
         }
 
         var now = DateTime.UtcNow;
@@ -114,6 +140,7 @@ public class ComposeController : Controller
             Content = System.Net.WebUtility.HtmlEncode(model.Content),
             AttributedTo = actor.Id,
             Published = now,
+            InReplyTo = string.IsNullOrWhiteSpace(model.InReplyTo) ? null : model.InReplyTo,
             To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
         };
 
@@ -136,6 +163,16 @@ public class ComposeController : Controller
 
         var activityJson = JsonSerializer.Serialize(activity, JsonOptions);
         await DistributeToFollowerInboxes(username, activityId, activityJson);
+
+        if (!string.IsNullOrWhiteSpace(model.InReplyTo))
+        {
+            var targetActivity = await _repository.GetActivityAsync(model.InReplyTo);
+            var targetActorId = targetActivity?.ActorId;
+            if (!string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
+            {
+                await _repository.QueueSharedInboxDeliveryAsync(activityId, activityJson, targetActorId);
+            }
+        }
 
         await _notificationService.BroadcastNewActivityAsync(activityId, "Note", username, model.Content);
 
@@ -318,13 +355,47 @@ public class ComposeController : Controller
             await _repository.QueueSharedInboxDeliveryAsync(activityId, activityJson, followerId);
         }
     }
+
+    static ActivityPub.Core.Models.Object? ExtractReplyNote(Activity activity)
+    {
+        if (activity.Object is ActivityPub.Core.Models.Object obj)
+        {
+            return obj.Type == "Tombstone" ? null : obj;
+        }
+
+        if (activity.Object is JsonElement element && element.ValueKind == JsonValueKind.Object)
+        {
+            var typeProp = element.TryGetProperty("type", out var typeVal) ? typeVal.GetString() : null;
+            if (typeProp == "Tombstone")
+                return null;
+
+            return element.Deserialize<ActivityPub.Core.Models.Object>(JsonOptions);
+        }
+
+        return null;
+    }
 }
 
 public class ComposeModel
 {
     public string? Content { get; set; }
+    public string? InReplyTo { get; set; }
     public IFormFile? Image { get; set; }
     public IFormFile? Document { get; set; }
+}
+
+public class ComposeIndexViewModel
+{
+    public ComposeModel Compose { get; set; } = new();
+    public ReplyTarget? ReplyTarget { get; set; }
+}
+
+public class ReplyTarget
+{
+    public string ActivityId { get; set; } = string.Empty;
+    public string AuthorName { get; set; } = string.Empty;
+    public string AuthorDisplayName { get; set; } = string.Empty;
+    public string Snippet { get; set; } = string.Empty;
 }
 
 public class ArticleComposeModel

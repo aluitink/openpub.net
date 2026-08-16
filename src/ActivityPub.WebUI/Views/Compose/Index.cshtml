@@ -1,43 +1,70 @@
+@model ComposeIndexViewModel
 @{
-    ViewData["Title"] = "Compose";
+    var isReply = Model.ReplyTarget != null;
+    var _placeholderLabel = isReply ? "Write your reply..." : "What's on your mind?";
+    var _placeholder = isReply ? "Write your reply... (max 500 characters)" : "What's on your mind (max 500 characters)";
+    ViewData["Title"] = isReply ? "Reply" : "Compose";
 }
-@model ComposeModel
 
 <div class="compose-container">
     <div class="page-header">
-        <h2>Compose New Post</h2>
+        <h2>@(isReply ? "Reply" : "Compose New Post")</h2>
+        @if (Model.ReplyTarget != null)
+        {
+            <a asp-action="Index" class="btn btn-secondary btn-sm reply-cancel-link">Cancel reply</a>
+        }
     </div>
 
     <form asp-action="Post" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
+        @if (Model.ReplyTarget != null)
+        {
+            <input type="hidden" name="InReplyTo" value="@Model.ReplyTarget.ActivityId" />
+        }
 
         <div class="compose-form">
+            @if (Model.ReplyTarget != null)
+            {
+                <div class="reply-context-banner">
+                    <span class="reply-context-icon">&#8617;</span>
+                    <span class="reply-context-text">Replying to <a href="/actors/@Model.ReplyTarget.AuthorName"><strong>@Model.ReplyTarget.AuthorDisplayName</strong></a> (@Model.ReplyTarget.AuthorName)</span>
+                    @if (!string.IsNullOrEmpty(Model.ReplyTarget.Snippet))
+                    {
+                        var snippet = Model.ReplyTarget.Snippet;
+                        <span class="reply-context-snippet">"@(snippet.Length > 80 ? snippet.Substring(0, 80) + "…" : snippet)"</span>
+                    }
+                </div>
+            }
+
             <div class="form-group">
-                <label for="Content">What's on your mind?</label>
+                <label for="Content">@_placeholderLabel</label>
                 <textarea
                     id="Content"
                     name="Content"
                     class="form-control compose-textarea"
                     rows="5"
                     maxlength="500"
-                    placeholder="Write your post... (max 500 characters)">@Model?.Content</textarea>
+                    placeholder="@_placeholder">@Model.Compose?.Content</textarea>
                 <span class="char-counter char-ok" data-states="char-ok char-near char-over"><span id="charCount">0</span>/500</span>
                 <div id="compose-preview" class="compose-preview" style="display:none"></div>
             </div>
 
-            <div class="form-group">
-                <label for="Image">Attach Image (max 10MB)</label>
-                <input type="file" name="Image" id="Image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
-                <div id="image-preview-container" class="image-preview-container" style="display:none">
-                    <img id="image-preview" class="image-preview" alt="Preview" />
-                    <button type="button" id="image-remove" class="image-remove-btn" title="Remove image">&#10005; Remove</button>
+            @if (Model.ReplyTarget == null)
+            {
+                <div class="form-group">
+                    <label for="Image">Attach Image (max 10MB)</label>
+                    <input type="file" name="Image" id="Image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
+                    <div id="image-preview-container" class="image-preview-container" style="display:none">
+                        <img id="image-preview" class="image-preview" alt="Preview" />
+                        <button type="button" id="image-remove" class="image-remove-btn" title="Remove image">&#10005; Remove</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label for="Document">Attach Document (PDF, max 20MB)</label>
-                <input type="file" name="Document" id="Document" class="form-control" accept="application/pdf" />
-            </div>
+                <div class="form-group">
+                    <label for="Document">Attach Document (PDF, max 20MB)</label>
+                    <input type="file" name="Document" id="Document" class="form-control" accept="application/pdf" />
+                </div>
+            }
 
             @if (!ViewData.ModelState.IsValid)
             {
@@ -49,7 +76,7 @@
                 </div>
             }
 
-            <button type="submit" class="btn btn-primary btn-block">Post</button>
+            <button type="submit" class="btn btn-primary btn-block">@(Model.ReplyTarget != null ? "Reply" : "Post")</button>
         </div>
     </form>
 </div>

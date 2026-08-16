@@ -9,7 +9,9 @@
 }
 
 <div class="profile-edit-container">
-    <h2>Edit Profile</h2>
+    <div class="page-header">
+        <h2>Edit Profile</h2>
+    </div>
 
     <form asp-action="Edit" method="post" class="profile-edit-form">
         @Html.AntiForgeryToken()

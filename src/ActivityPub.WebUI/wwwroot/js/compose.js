@@ -45,6 +45,11 @@
     update();
     textarea.addEventListener('input', update);
 
+    var replyBanner = document.querySelector('.reply-context-banner');
+    if (replyBanner) {
+        textarea.focus();
+    }
+
     var imageInput = document.getElementById('Image');
     var previewContainer = document.getElementById('image-preview-container');
     var previewImg = document.getElementById('image-preview');

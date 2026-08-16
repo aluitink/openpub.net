@@ -123,6 +123,7 @@
             <button type="button" class="btn-action btn-more" title="More actions" aria-haspopup="true" aria-expanded="false">&#8943;</button>
             <div class="note-more-dropdown" role="menu">
                 <button type="button" class="note-more-item" data-action="copy-link" data-url="@Url.Action("Show", "Timeline", new { id = Model.ActivityId })" role="menuitem">Copy link</button>
+                <a asp-controller="Compose" asp-action="Index" asp-route-replyTo="@Model.ActivityId" class="note-more-item" role="menuitem">Reply via Compose</a>
                 <form asp-controller="Compose" asp-action="EditNote" method="post" style="margin:0">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="ActivityId" value="@Model.ActivityId" />

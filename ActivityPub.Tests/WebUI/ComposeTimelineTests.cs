@@ -204,7 +204,8 @@ public class ComposeTimelineTests : IClassFixture<WebUIFactory>
         var composeResponse = await client.GetAsync("/compose");
         Assert.Equal(HttpStatusCode.OK, composeResponse.StatusCode);
         var composeBody = await composeResponse.Content.ReadAsStringAsync();
-        Assert.Contains("What's on your mind", composeBody);
+        Assert.True(composeBody.Contains("What's on your mind") || composeBody.Contains("What&#x27;s on your mind"),
+            "Compose page should contain the 'What's on your mind' label");
 
         var postResponse = await client.PostAsync("/compose/post", CreateFormContent(new Dictionary<string, string>
         {

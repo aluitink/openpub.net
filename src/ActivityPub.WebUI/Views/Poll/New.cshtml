@@ -3,7 +3,9 @@
     ViewData["Title"] = "Create Poll";
 }
 
-<h2>Create Poll</h2>
+<div class="page-header">
+    <h2>Create Poll</h2>
+</div>
 
 <form asp-action="Create" method="post">
     @Html.AntiForgeryToken()
