@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-41 complete. 797/797 tests passing. Phase 42 done (2 tasks deferred to Phase 43). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding). Phase 45 complete (all code under `src/`). Phase 43 in progress: design-token pass + dark mode done; **critical nav bug fixed** (layout moved `Pages/Shared/` → `Views/Shared/` so MVC tag helpers generate hrefs — all menu links now work).
+**Status:** Phases 1-41 complete. 797/797 tests passing. Phase 42 done (2 tasks deferred to Phase 43). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding). Phase 45 complete (all code under `src/`). Phase 43 in progress: design-token pass (T1), dark mode (T7), page-header pattern (T10), **avatars (T2)** done; **critical nav bug fixed** (layout moved `Pages/Shared/` → `Views/Shared/` so MVC tag helpers generate hrefs — all menu links now work). T2 also fixed a real EF `ToLowerInvariant` bug that broke all user search and a silent `[Required]` bug that blocked every profile save.
 
 ---
 
@@ -114,7 +114,7 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 
 **Tasks:**
 1. ✅ Design pass: consistent spacing scale, font sizes, button styles across all pages (audit `site.css` for ad-hoc styles; the `:root` design-token block from Phase 44 is the starting point) — *type/spacing/component-metric tokens added and applied*
-2. ⬜ Avatars: consistent sizing, fallback initial-avatar when no image — *timeline note-card avatars done in Phase 44 (P2-9); finish remaining surfaces*
+2. ✅ Avatars: consistent sizing, fallback initial-avatar when no image — *all surfaces standardized (notes 40px, search/suggestions 48px, profile 90px) via a `--avatar-size` token + `.avatar-placeholder-lg`; fixed `Image.ToString()` bug (used `.Url`), added missing Suggestions fallback, synced identity `AvatarUrl` on profile edit, fixed EF `ToLowerInvariant` search bug + silent `[Required]` save failures*
 3. ⬜ Profile pages: banner/avatar polish, follow/unfollow button state, stats row (notes/followers/following counts) — *includes Phase 44 P2-11: banner is a flat gradient with no cover-image support; stats row lacks Notes count*
 4. ⬜ Communities: card grid view with member count and preview; community header with cover
 5. ⬜ Trends/Discover: visual cards for hashtags (tag + post count) rather than bare links
