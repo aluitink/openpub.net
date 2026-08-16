@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-35 complete. All core features implemented. 720/720 tests passing.
+**Status:** Phases 1-35 complete. All core features implemented. 725/725 tests passing.
 
 ## Testing Guidelines
 
@@ -52,7 +52,7 @@ When making changes to `src/ActivityPub.WebUI/`, run QA via delegated subagents 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 720 passing, 0 failures
+- **Tests:** 725 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
