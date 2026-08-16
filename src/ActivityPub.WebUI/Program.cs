@@ -1,6 +1,7 @@
 using ActivityPub.Core;
 using ActivityPub.Core.Implementations;
 using ActivityPub.Core.Interfaces;
+using ActivityPub.Core.Middleware;
 using ActivityPub.Core.Services;
 using ActivityPub.WebUI.Models;
 using Microsoft.AspNetCore.Identity;
@@ -69,6 +70,13 @@ public class Program
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthorization();
+
+        app.UseRateLimiting(options =>
+        {
+            options.Window = TimeSpan.FromMinutes(1);
+            options.MaxRequests = 20;
+            options.Paths = new[] { "/compose/post", "/follow/follow" };
+        });
 
         app.MapControllerRoute(
             name: "default",

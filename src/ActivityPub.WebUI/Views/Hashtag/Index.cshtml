@@ -1,0 +1,66 @@
+@{
+    ViewData["Title"] = $"#{Model.Tag}";
+}
+@model HashtagViewModel
+
+<div class="hashtag-container">
+    <h2 class="hashtag-header">
+        <a href="/hashtag/@Uri.EscapeDataString(Model.Tag.TrimStart('#'))" class="hashtag-link">@Model.Tag</a>
+    </h2>
+
+    @if (!Model.Notes.Any())
+    {
+        <div class="hashtag-empty">
+            <p>No notes found for @Model.Tag. Be the first to post with this hashtag!</p>
+        </div>
+    }
+    else
+    {
+        <div class="hashtag-feed">
+            @foreach (var note in Model.Notes)
+            {
+                <div class="note-card">
+                    <div class="note-header">
+                        <a asp-controller="Profile" asp-action="Index" asp-route-username="@note.AuthorUsername" class="note-author-link">
+                            <span class="note-author-name">@note.AuthorName</span>
+                            <span class="note-author-username">@note.AuthorUsername</span>
+                        </a>
+                        <span class="note-time">@TimeAgo(note.Published)</span>
+                    </div>
+                    <p class="note-content">@HighlightHashtag(note.Content, Model.Tag)</p>
+                </div>
+            }
+        </div>
+
+        @if (Model.HasMore)
+        {
+            <div class="hashtag-pagination">
+                <a href="/hashtag/@Uri.EscapeDataString(Model.Tag.TrimStart('#'))?page=@(Model.Page + 1)" class="btn btn-secondary">Load More</a>
+            </div>
+        }
+    }
+</div>
+
+@functions {
+    string TimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+
+    string HighlightHashtag(string text, string tag)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var lower = text.ToLowerInvariant();
+        var tagLower = tag.ToLowerInvariant();
+        var idx = lower.IndexOf(tagLower);
+        if (idx < 0) return text;
+
+        return text.Substring(0, idx) +
+               $"<mark class=\"hashtag-highlight\">{text.Substring(idx, tag.Length)}</mark>" +
+               text.Substring(idx + tag.Length);
+    }
+}

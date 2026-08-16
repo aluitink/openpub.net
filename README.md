@@ -3,7 +3,7 @@
 A modern, high-performance implementation of the ActivityPub protocol in .NET for building decentralized social networks and federated applications.
 
 [![Build Status](https://img.shields.io/azure-devops/build/)](https://dev.azure.com/)
-[![Tests](https://img.shields.io/badge/tests-386-green)](https://github.com/yourorg/activitypub-dotnet)
+[![Tests](https://img.shields.io/badge/tests-625-green)](https://github.com/yourorg/activitypub-dotnet)
 [![License](https://img.shields.io/github/license/yourorg/activitypub-dotnet)](LICENSE)
 [![Discord](https://img.shields.io/discord/123456789)](https://discord.gg/xyz)
 
@@ -21,7 +21,7 @@ ActivityPub.NET is a comprehensive library for implementing the [ActivityPub](ht
 - ✅ **Background Processing** - Asynchronous activity handling
 - ✅ **Caching** - High-performance caching layer
 - ✅ **Telemetry** - Built-in metrics and monitoring
-- ✅ **Tested** - 386+ unit and integration tests
+- ✅ **Tested** - 625+ unit and integration tests
 
 ## Getting Started
 
@@ -61,6 +61,7 @@ app.Run();
 - [API Reference](docs/api-reference/) - Full API documentation
 - [Directory Structure](docs/directory-structure.md) - Project folder structure
 - [Migration Guide](docs/migration-guide.md) - Migrating from old structure
+- [Deployment](docs/deployment.md) - Deploying Fediblog with Docker
 
 ## Directory Structure
 
@@ -114,6 +115,38 @@ app.Run();
 cd samples/quickstart
 dotnet run
 ```
+
+## Fediblog - Social Platform Demo
+
+[Fediblog](src/ActivityPub.WebUI/) is a Mastodon-like microblogging application built on ActivityPub.NET. It demonstrates a complete ActivityPub-powered social platform:
+
+### Features
+
+- **User Authentication** - Registration, login, cookie-based sessions
+- **Compose & Timeline** - Create notes, view home timeline with chronological feed
+- **Follows** - Follow other users locally and federated accounts
+- **Interactions** - Like, reply to, and boost (repost) notes
+- **Profiles** - Customizable profiles with avatar, banner, bio, and stats
+- **Notifications** - See follows, likes, boosts, and replies
+- **Search** - Find users and notes by keyword
+- **Hashtags** - Discover content by hashtag
+- **Rate Limiting** - Protected compose and follow endpoints
+- **Responsive Design** - Mobile-friendly CSS
+
+### Quick Start
+
+```bash
+cd src/ActivityPub.WebUI
+docker compose up -d
+# Visit http://localhost:8080
+```
+
+### Stack
+
+- ASP.NET Core MVC with Razor views
+- SQLite for both Identity and ActivityPub databases
+- ActivityPub federation with HTTP signature verification
+- Docker deployment with docker-compose
 
 ## Contributing
 

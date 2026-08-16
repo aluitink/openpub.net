@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Builder;
@@ -30,6 +31,13 @@ public class RateLimitingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        if (_options.Paths.Length > 0 && !_options.Paths.Any(p =>
+            context.Request.Path.StartsWithSegments(p)))
+        {
+            await _next(context);
+            return;
+        }
+
         var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var clientKey = GetClientKey(context, clientIp);
 
@@ -107,6 +115,11 @@ public class RateLimitOptions
     /// Maximum requests per window (default: 100)
     /// </summary>
     public int MaxRequests { get; set; } = 100;
+
+    /// <summary>
+    /// Paths to apply rate limiting to. If empty, applies to all paths.
+    /// </summary>
+    public string[] Paths { get; set; } = Array.Empty<string>();
 }
 
 /// <summary>
