@@ -15,6 +15,7 @@
     --color-text-secondary: #666666;
     --color-text-muted: #888888;
     --color-text-faint: #999999;
+    --color-text-on-dark: #cccccc;
     --color-on-dark: #ffffff;
 
     /* Borders */
@@ -36,6 +37,33 @@
     --radius-lg: 12px;
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06);
+
+    /* Type scale */
+    --font-xs: 0.75rem;
+    --font-sm: 0.85rem;
+    --font-base: 0.95rem;
+    --font-md: 1.1rem;
+    --font-lg: 1.4rem;
+    --font-xl: 1.8rem;
+    --font-display: 2.25rem;
+
+    /* Spacing scale */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+
+    /* Component metrics */
+    --btn-radius: 6px;
+    --btn-padding: 0.5rem 1.25rem;
+    --btn-font: var(--font-sm);
+    --card-radius: var(--radius-lg);
+    --page-gutter: 1.5rem;
+    --page-max-width: 960px;
 }
 
 * {
@@ -107,8 +135,8 @@ body {
 }
 
 .user-greeting {
-    color: #ccc;
-    font-size: 0.9rem;
+    color: var(--color-text-on-dark);
+    font-size: var(--font-sm);
     white-space: nowrap;
 }
 
@@ -233,10 +261,10 @@ body.nav-open {
 
 .btn {
     display: inline-block;
-    padding: 0.5rem 1.25rem;
-    border-radius: 6px;
+    padding: var(--btn-padding);
+    border-radius: var(--btn-radius);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: var(--btn-font);
     font-weight: 500;
     cursor: pointer;
     border: none;
@@ -275,25 +303,25 @@ body.nav-open {
 
 .main-container {
     flex: 1;
-    max-width: 960px;
+    max-width: var(--page-max-width);
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: var(--space-6) var(--page-gutter);
     width: 100%;
 }
 
 .auth-form {
     max-width: 420px;
     margin: 0 auto;
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
+    background: var(--color-surface);
+    padding: var(--space-6);
+    border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .auth-form h2 {
     text-align: center;
     margin-bottom: 1.5rem;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .form-group {
@@ -446,13 +474,13 @@ footer {
 
 .compose-container h2 {
     margin-bottom: 1.5rem;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .compose-form {
-    background: white;
+    background: var(--color-surface);
     padding: 2rem;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
@@ -478,7 +506,7 @@ footer {
 }
 
 .timeline-header h2 {
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .timeline-feed {
@@ -488,8 +516,8 @@ footer {
 }
 
 .note-card {
-    background: white;
-    border-radius: 12px;
+    background: var(--color-surface);
+    border-radius: var(--card-radius);
     padding: 1.25rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
@@ -531,7 +559,7 @@ footer {
 
 .note-display-name {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-text);
     margin-right: 0.4rem;
     text-decoration: none;
 }
@@ -633,13 +661,13 @@ footer {
 
 .follow-container h2 {
     margin-bottom: 1.5rem;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .follow-form {
-    background: white;
+    background: var(--color-surface);
     padding: 2rem;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
@@ -688,7 +716,7 @@ footer {
 }
 
 .following-header h2 {
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .following-list {
@@ -698,8 +726,8 @@ footer {
 }
 
 .following-item {
-    background: white;
-    border-radius: 12px;
+    background: var(--color-surface);
+    border-radius: var(--card-radius);
     padding: 1rem 1.25rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     display: flex;
@@ -715,7 +743,7 @@ footer {
 
 .following-display-name {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .following-username {
@@ -843,7 +871,7 @@ footer {
 
 .profile-banner {
     height: 180px;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--card-radius) var(--card-radius) 0 0;
     background-size: cover;
     background-position: center;
 }
@@ -853,7 +881,7 @@ footer {
 }
 
 .profile-info {
-    background: white;
+    background: var(--color-surface);
     border-radius: 0 0 12px 12px;
     padding: 1.5rem 2rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -888,7 +916,7 @@ footer {
 
 .profile-details h1 {
     font-size: 1.5rem;
-    color: #1a1a2e;
+    color: var(--color-text);
     margin-bottom: 0.2rem;
 }
 
@@ -917,7 +945,7 @@ footer {
 }
 
 .profile-stats .stat strong {
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .profile-edit-container {
@@ -927,13 +955,13 @@ footer {
 
 .profile-edit-container h2 {
     margin-bottom: 1.5rem;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .profile-edit-form {
-    background: white;
+    background: var(--color-surface);
     padding: 2rem;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
@@ -961,7 +989,7 @@ footer {
 .notifications-header {
     font-size: 1.4rem;
     margin-bottom: 1.5rem;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .empty-notifications {
@@ -982,7 +1010,7 @@ footer {
     gap: 0.75rem;
     padding: 1rem;
     background: #fff;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     transition: box-shadow 0.2s;
 }
@@ -1075,7 +1103,7 @@ footer {
 .error-page h1 {
     font-size: 1.8rem;
     margin-bottom: 0.75rem;
-    color: #1a1a2e;
+    color: var(--color-text);
 }
 
 .error-message {
@@ -1439,7 +1467,7 @@ footer {
     flex: 1;
     padding: 0.75rem 1rem;
     border: 2px solid #e0e0e0;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     font-size: 1rem;
     outline: none;
     transition: border-color 0.2s;
@@ -1486,7 +1514,7 @@ footer {
 .search-note-card {
     padding: 1rem;
     background: #fff;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -1497,7 +1525,7 @@ footer {
 
 .search-note-author a {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-text);
     text-decoration: none;
 }
 
@@ -1528,7 +1556,7 @@ footer {
     gap: 0.75rem;
     padding: 1rem;
     background: #fff;
-    border-radius: 12px;
+    border-radius: var(--card-radius);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -1564,7 +1592,7 @@ footer {
 }
 
 .search-user-info a {
-    color: #1a1a2e;
+    color: var(--color-text);
     text-decoration: none;
     display: block;
 }
@@ -1719,7 +1747,7 @@ footer {
 }
 
 .stat-card {
-    background: white;
+    background: var(--color-surface);
     border-radius: 8px;
     padding: 1.5rem;
     text-align: center;
@@ -1747,7 +1775,7 @@ footer {
 .admin-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
+    background: var(--color-surface);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -1985,9 +2013,9 @@ footer {
 
 .page-header h1,
 .page-header h2 {
-    color: #1a1a2e;
+    color: var(--color-text);
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--font-lg);
 }
 
 .card-grid {
@@ -1997,9 +2025,9 @@ footer {
 }
 
 .card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    background: var(--color-surface);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
 }
 
@@ -2079,7 +2107,7 @@ footer {
 }
 
 .member-item {
-    background: white;
+    background: var(--color-surface);
     border-radius: 8px;
     padding: 0.5rem 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -2201,7 +2229,7 @@ footer {
     padding: 0.5rem 1rem;
     margin: 0.25rem;
     text-decoration: none;
-    color: #1a1a2e;
+    color: var(--color-text);
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
