@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-26 complete. Next: Phase 27 (Follows & Federation).
+**Status:** Phases 1-28 complete. Next: Phase 29 (Profiles & Actor Endpoints).
 
 ## Testing Guidelines
 
@@ -25,11 +25,12 @@
 | 10 | Production Readiness | 21 | Benchmarks - BenchmarkDotNet |
 | 11 | Identity - JWT for DemoApp | 22 | Observatory Compliance - 32 tests |
 | 25 | WebUI Foundation & Auth | 26 | Compose & Timeline |
+| 27 | Follows & Federation | 28 | Interactions (Like, Reply, Boost) |
 
 ## Build State
 
 - **Build:** 0 errors, 0 warnings
-- **Tests:** 556 passing (1 pre-existing failure)
+- **Tests:** 582 passing (1 pre-existing failure)
 - **Format:** Clean
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
@@ -102,17 +103,17 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 6. Remote notes appearing in timeline via inbox processing of Create activities
 7. Add integration tests for follow/unfollow/federation flow
 
-### Phase 28: Interactions (Like, Reply, Boost)
+### Phase 28: Interactions (Like, Reply, Boost) — COMPLETE
 
 **Goal:** Users can like, reply to, and boost (repost) notes.
 
 **Tasks:**
-1. Like: create Like activity, save to liked collection, distribute to author
-2. Reply: create Note with `inReplyTo`, wrap in Create, distribute to conversation participants
-3. Boost (Announce): create Announce activity referencing original, distribute
-4. Reply threading in timeline view (show reply chains)
-5. Interaction counts on note cards (likes, replies, boosts)
-6. Add integration tests for each interaction type
+1. ✅ Like: create Like activity, save to liked collection, distribute to author
+2. ✅ Reply: create Note with `inReplyTo`, wrap in Create, distribute to conversation participants
+3. ✅ Boost (Announce): create Announce activity referencing original, distribute
+4. ✅ Reply threading in timeline view (show reply chains)
+5. ✅ Interaction counts on note cards (likes, replies, boosts)
+6. ✅ Add integration tests for each interaction type (13 tests)
 
 ### Phase 29: Profiles & Actor Endpoints
 
