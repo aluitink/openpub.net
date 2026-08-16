@@ -161,33 +161,33 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 **Goal:** Make the day-to-day flows (compose, read, interact) feel complete rather than skeletal.
 
 **Tasks:**
-1. ⬜ Compose:
-   - ⬜ Character counter (500 limit) with color states (ok / near / over)
+1. Compose:
+   - ✅ Character counter (500 limit) with color states (ok / near / over)
    - ⬜ Live markdown/link preview before posting
    - ⬜ Reply context banner (replying to @user: snippet)
    - ⬜ Visible image upload progress + preview + remove
    - ⬜ Poll preview (choices, duration, multi-select)
-2. ⬜ Timeline:
-   - ⬜ Relative timestamps (2m, 3h, 2d) with full date on hover (`title` attr + JS)
-   - ⬜ Like/Boost with optimistic UI update (instant count change, revert on error)
-   - ⬜ "Load more" pagination button (keep existing paging, add button UX)
+2. Timeline:
+   - ✅ Relative timestamps (2m, 3h, 2d) with full date on hover (`title` attr + JS)
+   - ✅ Like/Boost with optimistic UI update (instant count change, revert on error)
+   - ✅ "Load more" pagination button (keep existing paging, add button UX)
    - ⬜ Content warning / sensitive-media blur toggle
    - ⬜ Note actions menu (copy link, report, mute author)
-3. ⬜ Interactions:
-   - ⬜ Inline reply box under a note (expand in place), not just navigation to compose
-   - ⬜ Confirm dialogs for destructive actions (delete note, delete poll, block)
+3. Interactions:
+   - ✅ Inline reply box under a note (expand in place), not just navigation to compose
+   - ✅ Confirm dialogs for destructive actions (delete note, delete poll, block)
    - ⬜ Toast/snackbar feedback for success/error instead of full reload where possible
-4. ⬜ Notifications:
-   - ⬜ Group by type (likes/follows/replies/mentions) with section headers
-   - ⬜ Mark-all-read button; unread indicator styling
-5. ⬜ Search:
-   - ⬜ Debounced input with results as-you-type
-   - ⬜ Tabs: Top / Notes / People / Hashtags
-6. ⬜ General:
+4. Notifications:
+   - ✅ Group by type (likes/follows/replies/mentions) with section headers
+   - ✅ Mark-all-read button; unread indicator styling
+5. Search:
+   - ✅ Debounced input with results as-you-type
+   - ✅ Tabs: Top / Notes / People / Hashtags
+6. General:
    - ⬜ Consistent page header pattern (title + primary action button)
    - ⬜ Loading skeletons or spinner for async fetches
-   - ⬜ 404/500 pages with useful links back to timeline
-   - ⬜ Keyboard: `/` focuses search, `n` opens compose (when logged in)
+   - ✅ 404/500 pages with useful links back to timeline
+   - ✅ Keyboard: `/` focuses search, `n` opens compose (when logged in)
 
 **Acceptance criteria:**
 - Compose flow (note, article, poll, with image) usable end-to-end with visible feedback
