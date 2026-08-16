@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Improvement Plan
 
-**Last Updated:** Aug 15, 2026
-**Status:** Phases 1-19 complete. Next phases planned below.
+**Last Updated:** Aug 16, 2026
+**Status:** Phases 1-21 complete. Next: Phase 22.
 
 ---
 
@@ -29,6 +29,7 @@
 | 18 | Admin Dashboard Scaffolding - ActivityPub.Admin | ✅ Complete |
 | 19 | CLI Tool Scaffolding - ActivityPub.Cli | ✅ Complete |
 | 20 | Integration Test Expansion - 502 tests | ✅ Complete |
+| 21 | Benchmark Suite - BenchmarkDotNet | ✅ Complete |
 
 ---
 
@@ -37,6 +38,7 @@
 - **Build:** 0 errors, 0 warnings
 - **Tests:** 502 passing, 0 failed
 - **Format:** Clean (dotnet format --verify-no-changes passes)
+- **Benchmarks:** ActivityPub.Benchmarks project with 4 benchmark suites
 - **Target Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -90,16 +92,16 @@
 4. ✅ Add tests for ActivityPub object type validation (20 tests)
 5. ✅ Target: 500+ total tests (achieved: 502)
 
-### Phase 21: Benchmark Suite
+### Phase 21: Benchmark Suite ✅ Complete
 
 **Goal:** Add performance benchmarks using BenchmarkDotNet.
 
 **Tasks:**
-1. Create `ActivityPub.Benchmarks/` project
-2. Benchmark JSON serialization/deserialization for ActivityPub objects
-3. Benchmark cache lookup performance (MemoryFederationCache)
-4. Benchmark HTTP signature generation/verification
-5. Add baseline metrics to documentation
+1. ✅ Create `ActivityPub.Benchmarks/` project
+2. ✅ Benchmark JSON serialization/deserialization for ActivityPub objects
+3. ✅ Benchmark cache lookup performance (MemoryFederationCache)
+4. ✅ Benchmark HTTP signature generation/verification
+5. ✅ Add baseline metrics to documentation
 
 ### Phase 22: Observatory Compliance
 
