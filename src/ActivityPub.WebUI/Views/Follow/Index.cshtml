@@ -1,0 +1,35 @@
+@model ActivityPub.WebUI.Controllers.FollowModel
+@{
+    ViewData["Title"] = "Follow";
+}
+
+<div class="follow-container">
+    <h2>Follow Someone</h2>
+
+    @if (TempData["FollowSuccess"] != null)
+    {
+        <div class="alert-success">@TempData["FollowSuccess"]</div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert-error">@Model.Error</div>
+    }
+
+    <form asp-action="Follow" method="post" class="follow-form">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label for="Handle">Handle</label>
+            <input asp-for="Handle" type="text" class="form-control" placeholder="username@example.com or username" />
+            <span asp-validation-for="Handle" class="field-error"></span>
+        </div>
+        <p class="handle-help">Enter a username to follow. Use <code>username</code> for local users or <code>username@domain.com</code> for remote users.</p>
+        <button type="submit" class="btn btn-primary">Follow</button>
+    </form>
+
+    <div class="follow-links">
+        <a asp-controller="Follow" asp-action="Following">View Following</a>
+        <span class="separator">&middot;</span>
+        <a asp-controller="Follow" asp-action="Followers">View Followers</a>
+    </div>
+</div>

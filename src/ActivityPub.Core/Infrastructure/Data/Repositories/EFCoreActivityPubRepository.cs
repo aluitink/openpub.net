@@ -182,7 +182,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             .Select(a => a.JsonData)
             .ToListAsync();
 
-        return followingActivities.Select(json => ExtractActorIdFromFollowJson(json)).Where(id => !string.IsNullOrEmpty(id)).ToList();
+        return followingActivities.Select(json => ExtractObjectIdFromFollowJson(json)).Where(id => !string.IsNullOrEmpty(id)).ToList();
     }
 
     private string ExtractActorIdFromFollowJson(string json)
@@ -192,6 +192,29 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             if (json.Contains("\"actor\""))
             {
                 var start = json.IndexOf("\"actor\"");
+                var colon = json.IndexOf(':', start);
+                var quote1 = json.IndexOf('"', colon + 1);
+                var quote2 = json.IndexOf('"', quote1 + 1);
+                if (quote1 > 0 && quote2 > 0)
+                {
+                    return json.Substring(quote1 + 1, quote2 - quote1 - 1);
+                }
+            }
+        }
+        catch
+        {
+            return string.Empty;
+        }
+        return string.Empty;
+    }
+
+    private string ExtractObjectIdFromFollowJson(string json)
+    {
+        try
+        {
+            if (json.Contains("\"object\""))
+            {
+                var start = json.IndexOf("\"object\"");
                 var colon = json.IndexOf(':', start);
                 var quote1 = json.IndexOf('"', colon + 1);
                 var quote2 = json.IndexOf('"', quote1 + 1);

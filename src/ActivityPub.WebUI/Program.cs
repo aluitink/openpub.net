@@ -45,6 +45,7 @@ public class Program
                 "Data Source=fediblog_ap.db"));
         builder.Services.AddRazorPages();
         builder.Services.AddControllersWithViews();
+        builder.Services.AddHttpClient<IWebFingerService, WebFingerService>();
         builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
         {
             options.ConstraintMap.Add("apiVersion", typeof(ActivityPub.WebUI.DummyRouteConstraint));

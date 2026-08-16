@@ -478,6 +478,7 @@ public class EFCoreActivityPubRepositoryTests
         var following = await repository.GetFollowingAsync("testuser", 0, 10);
 
         Assert.Equal(2, following.Count);
-        Assert.Contains("https://example.com/users/testuser", following);
+        Assert.Contains("https://example.com/users/beingfollowed1", following);
+        Assert.Contains("https://example.com/users/beingfollowed2", following);
     }
 }

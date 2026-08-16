@@ -67,7 +67,7 @@ public class TimelineController : Controller
             return obj.Type == "Tombstone" ? null : obj;
         }
 
-        if (activity.Object is JsonElement element)
+        if (activity.Object is JsonElement element && element.ValueKind == JsonValueKind.Object)
         {
             var typeProp = element.TryGetProperty("type", out var typeVal) ? typeVal.GetString() : null;
             if (typeProp == "Tombstone")

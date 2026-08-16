@@ -1,0 +1,40 @@
+@model IEnumerable<ActivityPub.WebUI.Controllers.FollowingItem>
+@{
+    ViewData["Title"] = "Followers";
+}
+
+<div class="following-container">
+    <div class="following-header">
+        <h2>Followers</h2>
+        <a asp-controller="Follow" asp-action="Index" class="btn btn-primary">Follow Someone</a>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="following-list">
+            @foreach (var item in Model)
+            {
+                <div class="following-item">
+                    <div class="following-info">
+                        <span class="following-display-name">@item.DisplayName</span>
+                        <span class="following-username">@item.Username</span>
+                        @if (!string.IsNullOrEmpty(item.Domain) && item.Domain != "localhost")
+                        {
+                            <span class="following-domain">@item.Domain</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-timeline">
+            <p>No followers yet.</p>
+        </div>
+    }
+
+    <div class="following-links">
+        <a asp-controller="Follow" asp-action="Following">View Following</a>
+    </div>
+</div>

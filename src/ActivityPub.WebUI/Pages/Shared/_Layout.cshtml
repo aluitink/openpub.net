@@ -16,6 +16,9 @@
                     {
                         <a asp-controller="Timeline" asp-action="Index" class="nav-link">Timeline</a>
                         <a asp-controller="Compose" asp-action="Index" class="nav-link">Compose</a>
+                        <a asp-controller="Follow" asp-action="Index" class="nav-link">Follow</a>
+                        <a asp-controller="Follow" asp-action="Following" class="nav-link">Following</a>
+                        <a asp-controller="Follow" asp-action="Followers" class="nav-link">Followers</a>
                         <span class="user-greeting">Hello, @User.Identity.Name</span>
                         <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
                             <button type="submit" class="btn btn-secondary">Logout</button>

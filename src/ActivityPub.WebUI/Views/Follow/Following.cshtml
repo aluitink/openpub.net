@@ -1,0 +1,51 @@
+@model IEnumerable<ActivityPub.WebUI.Controllers.FollowingItem>
+@{
+    ViewData["Title"] = "Following";
+}
+
+<div class="following-container">
+    <div class="following-header">
+        <h2>Following</h2>
+        <a asp-controller="Follow" asp-action="Index" class="btn btn-primary">Follow Someone</a>
+    </div>
+
+    @if (TempData["UnfollowSuccess"] != null)
+    {
+        <div class="alert-success">Successfully unfollowed.</div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="following-list">
+            @foreach (var item in Model)
+            {
+                <div class="following-item">
+                    <div class="following-info">
+                        <span class="following-display-name">@item.DisplayName</span>
+                        <span class="following-username">@item.Username</span>
+                        @if (!string.IsNullOrEmpty(item.Domain) && item.Domain != "localhost")
+                        {
+                            <span class="following-domain">@item.Domain</span>
+                        }
+                    </div>
+                    <form asp-action="Unfollow" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="actorId" value="@item.ActorId" />
+                        <button type="submit" class="btn btn-unfollow">Unfollow</button>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-timeline">
+            <p>You are not following anyone yet.</p>
+            <a asp-controller="Follow" asp-action="Index">Follow someone</a>
+        </div>
+    }
+
+    <div class="following-links">
+        <a asp-controller="Follow" asp-action="Followers">View Followers</a>
+    </div>
+</div>

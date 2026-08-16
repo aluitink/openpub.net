@@ -205,6 +205,9 @@ public class WebUIFactory : WebApplicationFactory<ActivityPub.WebUI.Program>
             services.AddDbContext<ActivityPubDbContext>(options =>
                 options.UseSqlite($"Data Source=/tmp/test_ap_{_dbId}.db"));
 
+            var antiforgeryDesc = services.FirstOrDefault(s => s.ServiceType == typeof(IAntiforgery));
+            if (antiforgeryDesc != null)
+                services.Remove(antiforgeryDesc);
             services.AddSingleton<IAntiforgery, PermissiveAntiforgery>();
         });
     }
