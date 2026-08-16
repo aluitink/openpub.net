@@ -39,6 +39,19 @@
         </div>
     }
 
+    @if (Model.DocumentAttachments != null && Model.DocumentAttachments.Count > 0)
+    {
+        <div class="note-attachments">
+            @foreach (var doc in Model.DocumentAttachments)
+            {
+                <a href="@doc.Url" download class="doc-attachment">
+                    <span class="doc-icon">&#128196;</span>
+                    <span class="doc-name">@(string.IsNullOrEmpty(doc.Name) ? "Download" : doc.Name)</span>
+                </a>
+            }
+        </div>
+    }
+
     @if (Model.PollQuestion != null)
     {
         <div class="poll-widget">

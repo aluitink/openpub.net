@@ -96,9 +96,6 @@ public class PollController : Controller
             To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
         };
 
-        if (note.AdditionalProperties == null)
-            note.AdditionalProperties = new Dictionary<string, JsonElement>();
-
         var pollElement = JsonSerializer.SerializeToElement(new
         {
             id = pollId,
@@ -111,7 +108,7 @@ public class PollController : Controller
             votesCount = 0
         });
 
-        note.AdditionalProperties["attachment"] = JsonSerializer.SerializeToElement(new[] { pollElement });
+        note.Attachment = new List<object> { pollElement };
 
         var activity = new Activity
         {

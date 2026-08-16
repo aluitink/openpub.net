@@ -82,6 +82,31 @@ public class ComposeController : Controller
             _logger.LogInformation("Uploaded image {Filename} for user {Username}", filename, username);
         }
 
+        if (model.Document != null && model.Document.Length > 0 && model.Document.Length <= 20 * 1024 * 1024)
+        {
+            if (attachments == null)
+                attachments = new List<Dictionary<string, object>>();
+
+            var extension = Path.GetExtension(model.Document.FileName);
+            var filename = $"{Guid.NewGuid():N}{extension}";
+            var uploadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadPath);
+            var filepath = Path.Combine(uploadPath, filename);
+            using (var stream = new FileStream(filepath, FileMode.Create))
+            {
+                await model.Document.CopyToAsync(stream);
+            }
+            var url = $"/uploads/{filename}";
+            attachments.Add(new Dictionary<string, object>
+            {
+                { "type", "Document" },
+                { "mediaType", string.IsNullOrEmpty(model.Document.ContentType) ? "application/octet-stream" : model.Document.ContentType },
+                { "url", url },
+                { "name", model.Document.FileName }
+            });
+            _logger.LogInformation("Uploaded document {Filename} for user {Username}", filename, username);
+        }
+
         var note = new Note
         {
             Id = noteId,
@@ -94,9 +119,7 @@ public class ComposeController : Controller
 
         if (attachments != null)
         {
-            if (note.AdditionalProperties == null)
-                note.AdditionalProperties = new Dictionary<string, JsonElement>();
-            note.AdditionalProperties["attachment"] = JsonSerializer.SerializeToElement(attachments);
+            note.Attachment = attachments.Select(a => (object)JsonSerializer.SerializeToElement(a)).ToList();
         }
 
         var activity = new Activity
@@ -301,6 +324,7 @@ public class ComposeModel
 {
     public string? Content { get; set; }
     public IFormFile? Image { get; set; }
+    public IFormFile? Document { get; set; }
 }
 
 public class ArticleComposeModel

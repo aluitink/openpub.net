@@ -961,6 +961,41 @@ footer {
     object-fit: cover;
 }
 
+.note-attachments {
+    margin: 0.5rem 0;
+}
+
+.doc-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #f4f4f8;
+    border: 1px solid #e0e0e8;
+    border-radius: 8px;
+    color: #333;
+    text-decoration: none;
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.doc-attachment:hover {
+    background: #e8e8f0;
+    border-color: #c0c0d0;
+}
+
+.doc-icon {
+    font-size: 1.1rem;
+}
+
+.doc-name {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .report-form-container {
     margin: 1rem 0;
     padding: 1rem;

@@ -60,11 +60,5 @@ public class Article : Object
     /// The replies collection
     /// </summary>
     [JsonPropertyName("replies")]
-    public OrderedCollection? Replies { get; set; }
-
-    /// <summary>
-    /// Additional properties
-    /// </summary>
-    [JsonExtensionData]
-    public new IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
+    public new OrderedCollection? Replies { get; set; }
 }

@@ -1,10 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY *.sln .
 COPY src/ActivityPub.Core/ActivityPub.Core.csproj src/ActivityPub.Core/
 COPY src/ActivityPub.WebUI/ActivityPub.WebUI.csproj src/ActivityPub.WebUI/
-RUN dotnet restore
+RUN dotnet restore src/ActivityPub.WebUI/ActivityPub.WebUI.csproj
 
 COPY src/ActivityPub.Core/ src/ActivityPub.Core/
 COPY src/ActivityPub.WebUI/ src/ActivityPub.WebUI/

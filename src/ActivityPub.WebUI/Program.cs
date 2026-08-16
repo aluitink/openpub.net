@@ -7,6 +7,7 @@ using ActivityPub.WebUI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using ActivityPub.Core.Repositories;
 
 namespace ActivityPub.WebUI;
 
@@ -93,6 +94,13 @@ public class Program
             pattern: "{controller=Home}/{action=Index}/{id?}");
 
         app.MapHub<ActivityPub.WebUI.Hubs.NotificationHub>("/notifications/ws");
+
+        using (var scope = app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            context.Database.EnsureCreated();
+            scope.ServiceProvider.GetRequiredService<ActivityPubDbContext>().Database.EnsureCreated();
+        }
 
         app.Run();
     }

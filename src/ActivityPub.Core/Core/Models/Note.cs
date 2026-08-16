@@ -25,10 +25,4 @@ public class Note : Object
     /// </summary>
     [JsonPropertyName("replies")]
     public new OrderedCollection? Replies { get; set; }
-
-    /// <summary>
-    /// Additional properties that are not explicitly defined
-    /// </summary>
-    [JsonExtensionData]
-    public new IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
 }

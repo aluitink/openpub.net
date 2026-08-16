@@ -27,6 +27,11 @@
                 <input type="file" name="Image" id="Image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
             </div>
 
+            <div class="form-group">
+                <label for="Document">Attach Document (PDF, max 20MB)</label>
+                <input type="file" name="Document" id="Document" class="form-control" accept="application/pdf" />
+            </div>
+
             @if (!ViewData.ModelState.IsValid)
             {
                 <div class="alert-error">

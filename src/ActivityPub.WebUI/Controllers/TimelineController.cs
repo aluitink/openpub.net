@@ -64,6 +64,7 @@ public class TimelineController : Controller
                         IsLiked = isLiked,
                         IsBoosted = isBoosted,
                         ImageUrl = ExtractImageUrl(note),
+                        DocumentAttachments = ExtractDocumentAttachments(note),
                         PollQuestion = ExtractPollQuestion(note),
                         PollOptions = ExtractPollOptions(note),
                         PollEndTime = ExtractPollEndTime(note),
@@ -105,32 +106,100 @@ public class TimelineController : Controller
         return null;
     }
 
+    static JsonElement? GetAttachmentElement(ActivityPub.Core.Models.Object obj)
+    {
+        var collection = obj.Attachment;
+        if (collection is { Count: > 0 })
+        {
+            var items = collection
+                .Select(item => item switch
+                {
+                    JsonElement je => je,
+                    string s => JsonDocument.Parse(s).RootElement,
+                    _ => default
+                })
+                .Where(e => e.ValueKind == JsonValueKind.Object)
+                .ToList();
+            if (items.Count > 0)
+                return JsonSerializer.SerializeToElement(items);
+        }
+
+        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true &&
+            attachment.ValueKind == JsonValueKind.Array)
+        {
+            return attachment;
+        }
+
+        return null;
+    }
+
     static string? ExtractImageUrl(ActivityPub.Core.Models.Object obj)
     {
-        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        var elem = GetAttachmentElement(obj);
+        if (elem is { } att)
         {
-            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            foreach (var item in att.EnumerateArray())
             {
-                var first = elem[0];
-                if (first.TryGetProperty("url", out var urlProp))
+                var type = item.ValueKind == JsonValueKind.Object && item.TryGetProperty("type", out var t) ? t.GetString() : null;
+                if ("Image".Equals(type, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (item.TryGetProperty("url", out var urlProp))
+                        return urlProp.GetString();
+                }
+            }
+            if (att.GetArrayLength() > 0)
+            {
+                var first = att[0];
+                if (first.ValueKind == JsonValueKind.Object && first.TryGetProperty("url", out var urlProp))
                     return urlProp.GetString();
             }
         }
         return null;
     }
 
+    static List<DocumentAttachmentItem>? ExtractDocumentAttachments(ActivityPub.Core.Models.Object obj)
+    {
+        var elem = GetAttachmentElement(obj);
+        if (elem is not { } att)
+            return null;
+
+        var docs = new List<DocumentAttachmentItem>();
+        foreach (var item in att.EnumerateArray())
+        {
+            var type = item.ValueKind == JsonValueKind.Object && item.TryGetProperty("type", out var t) ? t.GetString() : null;
+            if (!"Document".Equals(type, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            docs.Add(new DocumentAttachmentItem
+            {
+                Url = item.TryGetProperty("url", out var urlProp) ? urlProp.GetString() ?? "" : "",
+                Name = item.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? "" : ""
+            });
+        }
+        return docs.Count > 0 ? docs : null;
+    }
+
+    static JsonElement? GetPollElement(ActivityPub.Core.Models.Object obj)
+    {
+        var elem = GetAttachmentElement(obj);
+        if (elem is { } att && att.GetArrayLength() > 0)
+        {
+            var first = att[0];
+            if (first.ValueKind == JsonValueKind.Object)
+                return first;
+        }
+        return null;
+    }
+
     static string? ExtractPollQuestion(ActivityPub.Core.Models.Object obj)
     {
-        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        var poll = GetPollElement(obj);
+        if (poll is { } p)
         {
-            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            if (p.TryGetProperty("type", out var typeVal) && "Question".Equals(typeVal.GetString(), StringComparison.OrdinalIgnoreCase))
             {
-                var first = elem[0];
-                if (first.TryGetProperty("type", out var typeVal) && "Question".Equals(typeVal.GetString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    if (first.TryGetProperty("name", out var nameProp))
-                        return nameProp.GetString();
-                }
+                if (p.TryGetProperty("name", out var nameProp))
+                    return nameProp.GetString();
             }
         }
         return null;
@@ -138,22 +207,19 @@ public class TimelineController : Controller
 
     static List<PollOptionItem>? ExtractPollOptions(ActivityPub.Core.Models.Object obj)
     {
-        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        var poll = GetPollElement(obj);
+        if (poll is { } p)
         {
-            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            if (p.TryGetProperty("type", out var typeVal) && "Question".Equals(typeVal.GetString(), StringComparison.OrdinalIgnoreCase))
             {
-                var first = elem[0];
-                if (first.TryGetProperty("type", out var typeVal) && "Question".Equals(typeVal.GetString(), StringComparison.OrdinalIgnoreCase))
+                if (p.TryGetProperty("options", out var optionsProp) && optionsProp.ValueKind == JsonValueKind.Array)
                 {
-                    if (first.TryGetProperty("options", out var optionsProp) && optionsProp.ValueKind == JsonValueKind.Array)
+                    var options = new List<PollOptionItem>();
+                    foreach (var opt in optionsProp.EnumerateArray())
                     {
-                        var options = new List<PollOptionItem>();
-                        foreach (var opt in optionsProp.EnumerateArray())
-                        {
-                            options.Add(new PollOptionItem { Text = opt.GetString() ?? "" });
-                        }
-                        return options;
+                        options.Add(new PollOptionItem { Text = opt.ValueKind == JsonValueKind.String ? opt.GetString() ?? "" : "" });
                     }
+                    return options;
                 }
             }
         }
@@ -162,28 +228,22 @@ public class TimelineController : Controller
 
     static DateTime? ExtractPollEndTime(ActivityPub.Core.Models.Object obj)
     {
-        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        var poll = GetPollElement(obj);
+        if (poll is { } p)
         {
-            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
-            {
-                var first = elem[0];
-                if (first.TryGetProperty("endTime", out var endTimeProp))
-                    return endTimeProp.GetDateTime();
-            }
+            if (p.TryGetProperty("endTime", out var endTimeProp))
+                return endTimeProp.GetDateTime();
         }
         return null;
     }
 
     static string? ExtractPollId(ActivityPub.Core.Models.Object obj)
     {
-        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        var poll = GetPollElement(obj);
+        if (poll is { } p)
         {
-            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
-            {
-                var first = elem[0];
-                if (first.TryGetProperty("id", out var idProp))
-                    return idProp.GetString();
-            }
+            if (p.TryGetProperty("id", out var idProp))
+                return idProp.GetString();
         }
         return null;
     }
@@ -214,6 +274,7 @@ public class TimelineActivityItem
     public bool IsLiked { get; set; }
     public bool IsBoosted { get; set; }
     public string? ImageUrl { get; set; }
+    public List<DocumentAttachmentItem>? DocumentAttachments { get; set; }
     public string? PollQuestion { get; set; }
     public List<PollOptionItem>? PollOptions { get; set; }
     public DateTime? PollEndTime { get; set; }
@@ -225,4 +286,10 @@ public class PollOptionItem
     public string Text { get; set; } = string.Empty;
     public int? Votes { get; set; } = 0;
     public int Percent => 0;
+}
+
+public class DocumentAttachmentItem
+{
+    public string Url { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 }
