@@ -10,7 +10,8 @@
     <p class="error-message">@Model.Message</p>
     <p class="error-status">Error @(Model.StatusCode)</p>
     <div class="error-actions">
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Go Home</a>
+        <a asp-controller="Timeline" asp-action="Index" class="btn btn-primary">Go to Timeline</a>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Go Home</a>
         <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
     </div>
 </div>

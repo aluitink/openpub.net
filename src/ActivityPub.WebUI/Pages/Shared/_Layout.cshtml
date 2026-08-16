@@ -124,6 +124,7 @@
                     })
                     .catch(function() {});
 
+                if (typeof signalR === 'undefined') return;
                 var connection = new signalR.HubConnectionBuilder()
                     .withUrl('/notifications/ws')
                     .withAutomaticReconnect()

@@ -29,6 +29,8 @@ public class CommunitiesController : Controller
         _options = options.Value;
     }
 
+    [HttpGet]
+    [Route("")]
     public async Task<IActionResult> Index()
     {
         var communities = await _communityService.GetAllCommunitiesAsync();
@@ -51,14 +53,15 @@ public class CommunitiesController : Controller
         return View(model);
     }
 
-    [Route("communities/create")]
+    [HttpGet]
+    [Route("create")]
     public IActionResult Create()
     {
         return View(new CreateCommunityViewModel());
     }
 
     [HttpPost]
-    [Route("communities/create")]
+    [Route("create")]
     public async Task<IActionResult> Create([FromForm] CreateCommunityViewModel model)
     {
         var currentUser = await GetCurrentActorId();
@@ -81,9 +84,13 @@ public class CommunitiesController : Controller
         return RedirectToAction("Show", new { communityId = community.Id });
     }
 
-    [Route("communities/{communityId}")]
+    [HttpGet]
+    [Route("{communityId}")]
     public async Task<IActionResult> Show(string communityId)
     {
+        if (communityId is "create" or "my" or "search")
+            return RedirectToAction(communityId == "create" ? "Create" : communityId == "my" ? "MyCommunities" : "Search");
+
         var community = await _communityService.GetCommunityByIdAsync(communityId);
         if (community == null) return NotFound();
 
@@ -103,7 +110,7 @@ public class CommunitiesController : Controller
     }
 
     [HttpPost]
-    [Route("communities/{communityId}/join")]
+    [Route("{communityId}/join")]
     public async Task<IActionResult> Join(string communityId)
     {
         var currentUser = await GetCurrentActorId();
@@ -114,7 +121,7 @@ public class CommunitiesController : Controller
     }
 
     [HttpPost]
-    [Route("communities/{communityId}/leave")]
+    [Route("{communityId}/leave")]
     public async Task<IActionResult> Leave(string communityId)
     {
         var currentUser = await GetCurrentActorId();
@@ -125,7 +132,7 @@ public class CommunitiesController : Controller
     }
 
     [HttpPost]
-    [Route("communities/{communityId}/delete")]
+    [Route("{communityId}/delete")]
     public async Task<IActionResult> Delete(string communityId)
     {
         var currentUser = await GetCurrentActorId();
@@ -135,7 +142,8 @@ public class CommunitiesController : Controller
         return RedirectToAction("Index");
     }
 
-    [Route("communities/my")]
+    [HttpGet]
+    [Route("my")]
     public async Task<IActionResult> MyCommunities()
     {
         var currentUser = await GetCurrentActorId();
@@ -158,7 +166,8 @@ public class CommunitiesController : Controller
         return View(model);
     }
 
-    [Route("communities/search")]
+    [HttpGet]
+    [Route("search")]
     public async Task<IActionResult> Search([FromQuery] string q)
     {
         if (string.IsNullOrWhiteSpace(q)) return RedirectToAction("Index");

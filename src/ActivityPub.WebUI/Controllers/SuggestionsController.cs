@@ -65,7 +65,7 @@ public class SuggestionsController : Controller
     }
 
     [HttpPost]
-    [Route("suggestions/mute/{userId}")]
+    [Route("mute/{userId}")]
     public async Task<IActionResult> MuteUser(string userId)
     {
         var user = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
@@ -76,7 +76,7 @@ public class SuggestionsController : Controller
     }
 
     [HttpPost]
-    [Route("suggestions/unmute/{userId}")]
+    [Route("unmute/{userId}")]
     public async Task<IActionResult> UnmuteUser(string userId)
     {
         var user = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
@@ -87,7 +87,7 @@ public class SuggestionsController : Controller
     }
 
     [HttpPost]
-    [Route("suggestions/add-filter")]
+    [Route("add-filter")]
     public async Task<IActionResult> AddFilter([FromBody] FilterRequest req)
     {
         var user = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
@@ -101,7 +101,7 @@ public class SuggestionsController : Controller
     }
 
     [HttpPost]
-    [Route("suggestions/remove-filter")]
+    [Route("remove-filter")]
     public async Task<IActionResult> RemoveFilter([FromBody] FilterRequest req)
     {
         var user = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);

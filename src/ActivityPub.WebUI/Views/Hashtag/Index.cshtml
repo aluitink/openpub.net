@@ -4,9 +4,12 @@
 @model HashtagViewModel
 
 <div class="hashtag-container">
-    <h2 class="hashtag-header">
-        <a href="/hashtag/@Uri.EscapeDataString(Model.Tag.TrimStart('#'))" class="hashtag-link">@Model.Tag</a>
-    </h2>
+    <div class="page-header">
+        <h2 class="hashtag-header">
+            <a href="/hashtag/@Uri.EscapeDataString(Model.Tag.TrimStart('#'))" class="hashtag-link">@Model.Tag</a>
+        </h2>
+        <a asp-controller="Timeline" asp-action="Index" class="btn btn-secondary">Back to Timeline</a>
+    </div>
 
     @if (!Model.Notes.Any())
     {

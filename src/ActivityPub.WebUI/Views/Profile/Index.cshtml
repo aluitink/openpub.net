@@ -4,6 +4,11 @@
 @model ProfileViewModel
 
 <div class="profile-page">
+    @if (!Model.IsOwnProfile)
+    {
+        <a asp-controller="Timeline" asp-action="Index" class="btn btn-secondary back-link">Back to Timeline</a>
+    }
+
     @if (!string.IsNullOrEmpty(Model.BannerUrl))
     {
         <div class="profile-banner" style="background-image: url('@Model.BannerUrl')"></div>

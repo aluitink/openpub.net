@@ -1743,6 +1743,10 @@ footer {
     margin: 1rem 0;
 }
 
+.back-link {
+    margin-bottom: 0.75rem;
+}
+
 .alert-error {
     background: #f8d7da;
     color: #721c24;

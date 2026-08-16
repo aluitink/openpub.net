@@ -149,11 +149,11 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 | Admin | `/admin/dashboard` + Users/Reports/Moderation/MRF/AuditLog/RateLimits/FederationHealth | Role-gated, each reachable from Admin menu |
 
 **Tasks:**
-1. ⬜ Verify each route above resolves (no 404) with and without auth (redirect unauthenticated to login where required)
-2. ⬜ Add "empty state" messaging for all list pages (no notes, no notifications, no communities, etc.)
-3. ⬜ Wire up missing actions found during audit (e.g., delete post, edit note, mark notifications read)
-4. ⬜ Consistent breadcrumbs/back-links on detail pages (profile, community, poll, hashtag)
-5. ⬜ Role-gating: admin routes return 403 for non-admins (verify)
+1. ✅ Verify each route above resolves (no 404) with and without auth (redirect unauthenticated to login where required) — 32 RouteAuditTests cover all routes; fixed route-prefix bugs in CommunitiesController and SuggestionsController
+2. ✅ Add "empty state" messaging for all list pages (no notes, no notifications, no communities, etc.) — added to Admin/Moderation; other pages already have empty states
+3. ✅ Wire up missing actions found during audit (e.g., delete post, edit note, mark notifications read) — verified existing actions work; no missing actions found
+4. ✅ Consistent breadcrumbs/back-links on detail pages (profile, community, poll, hashtag) — added back-links to Hashtag, Profile (other users), NotFound pages
+5. ✅ Role-gating: admin routes return 403 for non-admins (verify) — verified via RouteAuditTests (body-content assertions due to status-code-pages middleware)
 6. ⬜ QA: delegated Playwright subagent clicks through every route in the table; log failures with screenshots
 
 ### Phase 42: Core UX Improvements
