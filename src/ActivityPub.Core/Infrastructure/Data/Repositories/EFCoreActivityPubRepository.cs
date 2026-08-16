@@ -596,4 +596,214 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             .Take(limit)
             .ToList();
     }
+
+    public async Task<bool> IsLikedByActorAsync(string username, string targetActivityId)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return false;
+
+        var allActivities = await _context.Activities
+            .Select(a => new { a.ActivityId, a.JsonData })
+            .ToListAsync();
+
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Like") continue;
+
+            bool isByActor = false;
+            if (root.TryGetProperty("actor", out var actorEl))
+            {
+                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
+                    isByActor = true;
+            }
+            if (!isByActor) continue;
+
+            if (root.TryGetProperty("object", out var objEl))
+            {
+                var likedId = objEl.ValueKind == JsonValueKind.String
+                    ? objEl.GetString()!
+                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (likedId == targetActivityId) return true;
+            }
+        }
+        return false;
+    }
+
+    public async Task<string?> GetLikeByActorAsync(string username, string targetActivityId)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return null;
+
+        var allActivities = await _context.Activities
+            .Select(a => new { a.ActivityId, a.JsonData })
+            .ToListAsync();
+
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Like") continue;
+
+            bool isByActor = false;
+            if (root.TryGetProperty("actor", out var actorEl))
+            {
+                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
+                    isByActor = true;
+            }
+            if (!isByActor) continue;
+
+            if (root.TryGetProperty("object", out var objEl))
+            {
+                var likedId = objEl.ValueKind == JsonValueKind.String
+                    ? objEl.GetString()!
+                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (likedId == targetActivityId) return item.ActivityId;
+            }
+        }
+        return null;
+    }
+
+    public async Task<bool> IsBoostedByActorAsync(string username, string targetActivityId)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return false;
+
+        var allActivities = await _context.Activities
+            .Select(a => new { a.ActivityId, a.JsonData })
+            .ToListAsync();
+
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Announce") continue;
+
+            bool isByActor = false;
+            if (root.TryGetProperty("actor", out var actorEl))
+            {
+                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
+                    isByActor = true;
+            }
+            if (!isByActor) continue;
+
+            if (root.TryGetProperty("object", out var objEl))
+            {
+                var boostedId = objEl.ValueKind == JsonValueKind.String
+                    ? objEl.GetString()!
+                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (boostedId == targetActivityId) return true;
+            }
+        }
+        return false;
+    }
+
+    public async Task<string?> GetBoostByActorAsync(string username, string targetActivityId)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return null;
+
+        var allActivities = await _context.Activities
+            .Select(a => new { a.ActivityId, a.JsonData })
+            .ToListAsync();
+
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Announce") continue;
+
+            bool isByActor = false;
+            if (root.TryGetProperty("actor", out var actorEl))
+            {
+                if (actorEl.ValueKind == JsonValueKind.String && actorEl.GetString() == actor.Id)
+                    isByActor = true;
+            }
+            if (!isByActor) continue;
+
+            if (root.TryGetProperty("object", out var objEl))
+            {
+                var boostedId = objEl.ValueKind == JsonValueKind.String
+                    ? objEl.GetString()!
+                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (boostedId == targetActivityId) return item.ActivityId;
+            }
+        }
+        return null;
+    }
+
+    public async Task<int> GetLikeCountAsync(string activityId)
+    {
+        var allActivities = await _context.Activities
+            .Select(a => new { a.JsonData })
+            .ToListAsync();
+
+        int count = 0;
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Like") continue;
+
+            if (root.TryGetProperty("object", out var objEl))
+            {
+                var likedId = objEl.ValueKind == JsonValueKind.String
+                    ? objEl.GetString()!
+                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (likedId == activityId) count++;
+            }
+        }
+        return count;
+    }
+
+    public async Task<int> GetBoostCountAsync(string activityId)
+    {
+        var allActivities = await _context.Activities
+            .Select(a => new { a.JsonData })
+            .ToListAsync();
+
+        int count = 0;
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "Announce") continue;
+
+            if (root.TryGetProperty("object", out var objEl))
+            {
+                var boostedId = objEl.ValueKind == JsonValueKind.String
+                    ? objEl.GetString()!
+                    : objEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (boostedId == activityId) count++;
+            }
+        }
+        return count;
+    }
+
+    public async Task<int> GetReplyCountAsync(string activityId)
+    {
+        var allActivities = await _context.Activities
+            .Select(a => new { a.JsonData })
+            .ToListAsync();
+
+        int count = 0;
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("object", out var objEl) && objEl.ValueKind == JsonValueKind.Object)
+            {
+                if (objEl.TryGetProperty("inReplyTo", out var replyEl) &&
+                    (replyEl.ValueKind == JsonValueKind.String || replyEl.ValueKind == JsonValueKind.Object))
+                {
+                    var replyId = replyEl.ValueKind == JsonValueKind.String
+                        ? replyEl.GetString()!
+                        : replyEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                    if (replyId == activityId) count++;
+                }
+            }
+        }
+        return count;
+    }
 }

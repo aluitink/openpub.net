@@ -322,4 +322,61 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
 
         return Task.FromResult<ICollection<string>>(activityIds);
     }
+
+    public Task<bool> IsLikedByActorAsync(string username, string targetActivityId)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var found = _activities.Values.Any(a => a.Type == "Like" &&
+            (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)) &&
+            (a.ObjectId == targetActivityId || a.Object?.ToString() == targetActivityId));
+        return Task.FromResult(found);
+    }
+
+    public Task<string?> GetLikeByActorAsync(string username, string targetActivityId)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var match = _activities.Values.FirstOrDefault(a => a.Type == "Like" &&
+            (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)) &&
+            (a.ObjectId == targetActivityId || a.Object?.ToString() == targetActivityId));
+        return Task.FromResult(match?.Id);
+    }
+
+    public Task<bool> IsBoostedByActorAsync(string username, string targetActivityId)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var found = _activities.Values.Any(a => a.Type == "Announce" &&
+            (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)) &&
+            (a.ObjectId == targetActivityId || a.Object?.ToString() == targetActivityId));
+        return Task.FromResult(found);
+    }
+
+    public Task<string?> GetBoostByActorAsync(string username, string targetActivityId)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var match = _activities.Values.FirstOrDefault(a => a.Type == "Announce" &&
+            (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)) &&
+            (a.ObjectId == targetActivityId || a.Object?.ToString() == targetActivityId));
+        return Task.FromResult(match?.Id);
+    }
+
+    public Task<int> GetLikeCountAsync(string activityId)
+    {
+        var count = _activities.Values.Count(a => a.Type == "Like" &&
+            (a.ObjectId == activityId || a.Object?.ToString() == activityId));
+        return Task.FromResult(count);
+    }
+
+    public Task<int> GetBoostCountAsync(string activityId)
+    {
+        var count = _activities.Values.Count(a => a.Type == "Announce" &&
+            (a.ObjectId == activityId || a.Object?.ToString() == activityId));
+        return Task.FromResult(count);
+    }
+
+    public Task<int> GetReplyCountAsync(string activityId)
+    {
+        var count = _activities.Values.Count(a => a.Object is ActivityPub.Core.Models.Object obj &&
+            obj.InReplyTo == activityId);
+        return Task.FromResult(count);
+    }
 }

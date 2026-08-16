@@ -42,6 +42,12 @@ public class TimelineController : Controller
                 if (note != null)
                 {
                     var authorActor = await GetAuthorActor(activity);
+                    var likeCount = await _repository.GetLikeCountAsync(activity.Id);
+                    var boostCount = await _repository.GetBoostCountAsync(activity.Id);
+                    var replyCount = await _repository.GetReplyCountAsync(activity.Id);
+                    var isLiked = await _repository.IsLikedByActorAsync(username, activity.Id);
+                    var isBoosted = await _repository.IsBoostedByActorAsync(username, activity.Id);
+
                     activities.Add(new TimelineActivityItem
                     {
                         ActivityId = activity.Id!,
@@ -49,7 +55,13 @@ public class TimelineController : Controller
                         AuthorDisplayName = authorActor?.Name ?? "",
                         Content = note.Content ?? "",
                         Published = note.Published ?? DateTime.UtcNow,
-                        ActivityType = activity.Type ?? "Create"
+                        ActivityType = activity.Type ?? "Create",
+                        InReplyTo = note.InReplyTo,
+                        LikeCount = likeCount,
+                        BoostCount = boostCount,
+                        ReplyCount = replyCount,
+                        IsLiked = isLiked,
+                        IsBoosted = isBoosted
                     });
                 }
             }
@@ -57,6 +69,9 @@ public class TimelineController : Controller
 
         activities.Sort((a, b) => b.Published.CompareTo(a.Published));
         ViewBag.ComposeSuccess = TempData["ComposeSuccess"];
+        ViewBag.InteractionSuccess = TempData["InteractionSuccess"];
+        ViewBag.InteractionError = TempData["InteractionError"];
+        ViewBag.ReplyError = TempData["ReplyError"];
         return View(activities);
     }
 
@@ -103,4 +118,10 @@ public class TimelineActivityItem
     public string Content { get; set; } = string.Empty;
     public DateTime Published { get; set; }
     public string ActivityType { get; set; } = string.Empty;
+    public string? InReplyTo { get; set; }
+    public int LikeCount { get; set; }
+    public int BoostCount { get; set; }
+    public int ReplyCount { get; set; }
+    public bool IsLiked { get; set; }
+    public bool IsBoosted { get; set; }
 }

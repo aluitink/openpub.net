@@ -511,3 +511,76 @@ footer {
 .following-links a:hover {
     text-decoration: underline;
 }
+
+.btn-like {
+    color: #e74c3c;
+}
+
+.btn-like.active {
+    color: #c0392b;
+    font-weight: 700;
+}
+
+.btn-like:hover {
+    background-color: #fdf0f0;
+}
+
+.btn-boost {
+    color: #27ae60;
+}
+
+.btn-boost.active {
+    color: #1e8449;
+    font-weight: 700;
+}
+
+.btn-boost:hover {
+    background-color: #f0fdf0;
+}
+
+.btn-reply {
+    color: #2980b9;
+}
+
+.btn-reply:hover {
+    background-color: #f0f4ff;
+    color: #1a5276;
+}
+
+.boost-banner {
+    background: #f0fdf0;
+    border: 1px solid #27ae60;
+    color: #1e8449;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px 6px 0 0;
+    font-size: 0.85rem;
+    margin: -1.25rem -1.25rem 0.75rem -1.25rem;
+}
+
+.reply-indicator {
+    color: #999;
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+}
+
+.note-reply {
+    border-left: 3px solid #6c63ff;
+    margin-left: 2rem;
+}
+
+.reply-form-container {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+}
+
+.reply-textarea {
+    resize: none;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+}
+
+.reply-actions {
+    display: flex;
+    justify-content: flex-end;
+}

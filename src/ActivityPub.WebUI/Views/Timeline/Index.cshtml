@@ -3,6 +3,21 @@
 }
 @model IEnumerable<TimelineActivityItem>
 
+@if (ViewBag.InteractionSuccess != null)
+{
+    <div class="alert-success">@ViewBag.InteractionSuccess</div>
+}
+
+@if (ViewBag.InteractionError != null)
+{
+    <div class="alert-error">@ViewBag.InteractionError</div>
+}
+
+@if (ViewBag.ReplyError != null)
+{
+    <div class="alert-error">@ViewBag.ReplyError</div>
+}
+
 @if (ViewBag.ComposeSuccess != null && (bool)ViewBag.ComposeSuccess)
 {
     <div class="alert-success">Post published successfully!</div>
@@ -15,26 +30,23 @@
 
 @if (Model != null && Model.Any())
 {
+    var topLevel = Model.Where(x => x.InReplyTo == null).ToList();
+    var replies = Model.Where(x => x.InReplyTo != null).ToList();
+
     <div class="timeline-feed">
-        @foreach (var item in Model)
+        @foreach (var item in topLevel)
         {
-            <div class="note-card">
-                <div class="note-header">
-                    <div class="note-author">
-                        <span class="note-display-name">@Html.Raw(item.AuthorDisplayName)</span>
-                        <span class="note-username">@item.AuthorName</span>
-                    </div>
-                    <span class="note-timestamp">@TimeAgo(item.Published)</span>
-                </div>
-                <div class="note-content">@Html.Raw(item.Content)</div>
-                <div class="note-actions">
-                    <form asp-controller="Compose" asp-action="Delete" method="post" style="display:inline;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="activityId" value="@item.ActivityId" />
-                        <button type="submit" class="btn-action btn-delete" title="Delete">Delete</button>
-                    </form>
-                </div>
-            </div>
+            @await Html.PartialAsync("_NoteCard", item)
+
+            @foreach (var reply in replies.Where(r => r.InReplyTo == item.ActivityId))
+            {
+                @await Html.PartialAsync("_NoteCard", reply)
+            }
+        }
+
+        @foreach (var orphan in replies.Where(r => topLevel.All(t => t.ActivityId != r.InReplyTo)))
+        {
+            @await Html.PartialAsync("_NoteCard", orphan)
         }
     </div>
 }
@@ -43,15 +55,4 @@ else
     <div class="empty-timeline">
         <p>No posts yet. <a asp-controller="Compose" asp-action="Index">Write your first post!</a></p>
     </div>
-}
-
-@functions {
-    string TimeAgo(DateTime dateTime)
-    {
-        var diff = DateTime.UtcNow - dateTime;
-        if (diff.TotalMinutes < 1) return "just now";
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        return $"{(int)diff.TotalDays}d ago";
-    }
 }

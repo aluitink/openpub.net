@@ -1,0 +1,67 @@
+@model TimelineActivityItem
+
+@{
+    string TimeAgo(DateTime dateTime)
+    {
+        var diff = DateTime.UtcNow - dateTime;
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+        return $"{(int)diff.TotalDays}d ago";
+    }
+}
+
+<div class="note-card@(Model.InReplyTo != null ? " note-reply" : "")">
+    @if (Model.ActivityType == "Announce")
+    {
+        <div class="boost-banner">Boosted by @Model.AuthorName</div>
+    }
+
+    <div class="note-header">
+        <div class="note-author">
+            <span class="note-display-name">@Html.Raw(Model.AuthorDisplayName)</span>
+            <span class="note-username">@Model.AuthorName</span>
+        </div>
+        <span class="note-timestamp">@TimeAgo(Model.Published)</span>
+    </div>
+
+    @if (Model.InReplyTo != null)
+    {
+        <div class="reply-indicator">↩ Reply</div>
+    }
+
+    <div class="note-content">@Html.Raw(Model.Content)</div>
+
+    <div class="note-actions">
+        <form asp-controller="Interaction" asp-action="@(Model.IsLiked ? "Unlike" : "Like")" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
+            <button type="submit" class="btn-action btn-like@(Model.IsLiked ? " active" : "")" title="Like">♥ @Model.LikeCount</button>
+        </form>
+
+        <form asp-controller="Interaction" asp-action="@(Model.IsBoosted ? "Unboost" : "Boost")" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
+            <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost">↻ @Model.BoostCount</button>
+        </form>
+
+        <a href="#reply-@Model.ActivityId" class="btn-action btn-reply">💬 @Model.ReplyCount</a>
+
+        <form asp-controller="Compose" asp-action="Delete" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="activityId" value="@Model.ActivityId" />
+            <button type="submit" class="btn-action btn-delete" title="Delete">Delete</button>
+        </form>
+    </div>
+
+    <div id="reply-@Model.ActivityId" class="reply-form-container">
+        <form asp-controller="Interaction" asp-action="Reply" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
+            <textarea name="content" class="form-control reply-textarea" placeholder="Write a reply..." rows="2" maxlength="500"></textarea>
+            <div class="reply-actions">
+                <button type="submit" class="btn btn-primary">Reply</button>
+            </div>
+        </form>
+    </div>
+</div>

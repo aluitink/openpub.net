@@ -189,4 +189,18 @@ public interface IActivityPubRepository
     /// <param name="limit">Maximum number of items to return</param>
     /// <returns>Collection of liked activity IDs</returns>
     Task<ICollection<string>> GetLikedActivitiesAsync(string username, int skip, int limit);
+
+    Task<bool> IsLikedByActorAsync(string username, string targetActivityId);
+
+    Task<string?> GetLikeByActorAsync(string username, string targetActivityId);
+
+    Task<bool> IsBoostedByActorAsync(string username, string targetActivityId);
+
+    Task<string?> GetBoostByActorAsync(string username, string targetActivityId);
+
+    Task<int> GetLikeCountAsync(string activityId);
+
+    Task<int> GetBoostCountAsync(string activityId);
+
+    Task<int> GetReplyCountAsync(string activityId);
 }
