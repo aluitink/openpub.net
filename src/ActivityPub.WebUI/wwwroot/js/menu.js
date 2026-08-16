@@ -74,10 +74,12 @@
 
         if (hamburger) {
             var body = document.body;
+            var scrim = document.getElementById('nav-scrim');
 
             function openDrawer() {
                 menu.classList.add('open');
                 body.classList.add('nav-open');
+                if (scrim) scrim.classList.add('visible');
                 hamburger.setAttribute('aria-expanded', 'true');
                 hamburger.setAttribute('aria-label', 'Close menu');
                 var first = menu.querySelector('a[href], button');
@@ -87,8 +89,13 @@
             function closeDrawer() {
                 menu.classList.remove('open');
                 body.classList.remove('nav-open');
+                if (scrim) scrim.classList.remove('visible');
                 hamburger.setAttribute('aria-expanded', 'false');
                 hamburger.setAttribute('aria-label', 'Open menu');
+            }
+
+            if (scrim) {
+                scrim.addEventListener('click', closeDrawer);
             }
 
             hamburger.addEventListener('click', function () {

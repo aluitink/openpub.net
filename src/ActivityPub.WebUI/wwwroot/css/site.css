@@ -1059,6 +1059,21 @@ footer {
         transform: translateX(0);
     }
 
+    .nav-scrim {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+        z-index: 1050;
+    }
+
+    .nav-scrim.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
     .nav-menu .nav-item,
     .nav-menu .nav-group {
         width: 100%;
@@ -1668,13 +1683,13 @@ footer {
     background: #357abd;
 }
 
-.btn-block {
+.btn-blockuser {
     background: #dc3545;
     color: white;
     border-color: #dc3545;
 }
 
-.btn-block:hover {
+.btn-blockuser:hover {
     background: #c82333;
 }
 

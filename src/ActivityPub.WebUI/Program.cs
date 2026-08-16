@@ -79,6 +79,7 @@ public class Program
         app.UseRouting();
         app.UseResponseCaching();
         app.UseAuthorization();
+        app.MapStaticAssets();
 
         app.UseRateLimiting(options =>
         {

@@ -53,7 +53,7 @@
                         }
                         <form asp-action="ToggleBlock" method="post" style="display:inline">
                             <input type="hidden" name="userId" value="@user.Id" />
-                            <button type="submit" class="btn btn-small @(user.IsBlocked ? "btn-unblock" : "btn-block")">
+                            <button type="submit" class="btn btn-small @(user.IsBlocked ? "btn-unblock" : "btn-blockuser")">
                                 @(user.IsBlocked ? "Unblock" : "Block")
                             </button>
                         </form>
