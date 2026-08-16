@@ -530,6 +530,20 @@ footer {
     color: #888;
 }
 
+.empty-timeline-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem;
+}
+
+.empty-timeline-hint {
+    margin: 0 0 1.25rem;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .empty-timeline a {
     color: #6c63ff;
     text-decoration: none;
@@ -1502,6 +1516,31 @@ footer {
     text-align: center;
     padding: 2rem;
     color: #888;
+}
+
+.search-empty-prompt {
+    padding: 3rem 1rem;
+}
+
+.search-empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem;
+}
+
+.search-empty-hint {
+    margin: 0;
+    color: #888;
+}
+
+.search-empty-hint a {
+    color: #6c63ff;
+    text-decoration: none;
+}
+
+.search-empty-hint a:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {

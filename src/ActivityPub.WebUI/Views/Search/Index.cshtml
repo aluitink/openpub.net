@@ -13,7 +13,14 @@
     </form>
     <div id="search-loading" class="search-loading" style="display:none">Searching…</div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Query))
+    @if (string.IsNullOrWhiteSpace(Model.Query))
+    {
+        <div class="search-empty search-empty-prompt">
+            <p class="search-empty-title">Search the fediverse</p>
+            <p class="search-empty-hint">Try a hashtag like <a href="/hashtag/dotnet">#dotnet</a>, a username, or any keyword.</p>
+        </div>
+    }
+    else
     {
         <div class="search-tabs">
             <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=all" class="search-tab @(Model.Tab == "all" ? "active" : "")">All</a>

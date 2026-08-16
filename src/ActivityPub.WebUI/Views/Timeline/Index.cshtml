@@ -77,7 +77,9 @@
 else
 {
     <div class="empty-timeline">
-        <p>No posts yet. <a asp-controller="Compose" asp-action="Index">Write your first post!</a></p>
+        <p class="empty-timeline-title">No posts yet</p>
+        <p class="empty-timeline-hint">Share your first note with your followers, or follow some people to populate your timeline.</p>
+        <a asp-controller="Compose" asp-action="Index" class="btn btn-primary">Write your first post</a>
     </div>
 }
 
