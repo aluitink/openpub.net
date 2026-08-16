@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ActivityPub.Core.Models;
@@ -143,5 +144,5 @@ public class Actor
     /// Additional properties that may not be covered by the standard schema
     /// </summary>
     [JsonExtensionData]
-    public IDictionary<string, object>? AdditionalProperties { get; set; }
+    public IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
 }

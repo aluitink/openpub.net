@@ -72,9 +72,9 @@ public class InboxProcessorTests
     public async Task ProcessMoveActivity_SavesActivity()
     {
         var activity = CreateActivity("Move", "actor1", "obj789");
-        activity.AdditionalProperties = new Dictionary<string, object>
+        activity.AdditionalProperties = new Dictionary<string, JsonElement>
         {
-            ["target"] = "https://newserver/users/newuser"
+            ["target"] = JsonSerializer.SerializeToElement("https://newserver/users/newuser")
         };
 
         var repo = new Mock<IActivityPubRepository>();

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace ActivityPub.WebUI.Controllers;
 
@@ -124,8 +125,8 @@ public class AuthController : Controller
             };
 
             if (actor.AdditionalProperties == null)
-                actor.AdditionalProperties = new Dictionary<string, object>();
-            actor.AdditionalProperties["privateKeyPem"] = privateKeyPem;
+                actor.AdditionalProperties = new Dictionary<string, JsonElement>();
+            actor.AdditionalProperties["privateKeyPem"] = JsonSerializer.SerializeToElement(privateKeyPem);
 
             await _activityPubRepository.SaveUserActorAsync(actor);
             user.ActorId = actor.Id;

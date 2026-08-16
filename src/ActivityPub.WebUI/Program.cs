@@ -86,6 +86,8 @@ public class Program
             options.Paths = new[] { "/compose/post", "/follow/follow" };
         });
 
+        app.MapControllers();
+
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");

@@ -1526,3 +1526,42 @@ footer {
     min-width: 1.2rem;
     text-align: center;
 }
+
+.poll-widget {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    background: #f8f9fa;
+}
+
+.poll-question {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.poll-option {
+    margin: 4px 0;
+    position: relative;
+}
+
+.poll-bar {
+    background: #e9ecef;
+    border-radius: 4px;
+    padding: 4px 8px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.poll-votes {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-left: 8px;
+}
+
+.poll-timer {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 8px;
+}

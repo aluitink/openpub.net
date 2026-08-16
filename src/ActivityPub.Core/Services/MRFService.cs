@@ -82,11 +82,12 @@ public class MRFService : IMRFService
 
     private bool ContainsFilteredContent(string content)
     {
-        if (_options.MRFOptions?.ProhibitedWords == null)
+        var words = _options.MRFOptions?.ProhibitedWords;
+        if (words == null || !words.Any())
             return false;
 
         var lowerContent = content.ToLowerInvariant();
-        return _options.MRFOptions.ProhibitedWords.Any(word => lowerContent.Contains(word.ToLowerInvariant()));
+        return words.Any(word => word != null && lowerContent.Contains(word.ToLowerInvariant()));
     }
 
     private bool IsBlockedActor(string actorUrl)

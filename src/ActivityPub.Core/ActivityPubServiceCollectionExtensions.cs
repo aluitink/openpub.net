@@ -80,6 +80,9 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<ISharedInboxService, SharedInboxService>();
         services.AddScoped<IFederationCache, MemoryFederationCache>();
         services.AddScoped<CacheInvalidationService>();
+        services.AddScoped<Core.Services.IMRFService, Core.Services.MRFService>();
+        services.AddScoped<IFederationHealthService, FederationHealthService>();
+        services.AddScoped<InboxProcessor>();
         services.AddHostedService<SharedInboxBackgroundService>();
 
         return services;

@@ -1,0 +1,168 @@
+@model FederationHealthViewModel
+@{
+    ViewData["Title"] = "Federation Health";
+}
+
+<div class="federation-health">
+    <h1>Federation Health Monitor</h1>
+
+    <div class="admin-nav">
+        <a asp-controller="Admin" asp-action="Moderation" class="btn btn-secondary">Back to Moderation</a>
+    </div>
+
+    <div class="health-status-banner status-@Model.OverallStatus.ToLower()">
+        <h2>Overall Status: @Model.OverallStatus</h2>
+        <span class="last-checked">Last checked: @Model.LastChecked.ToString("yyyy-MM-dd HH:mm:ss UTC")</span>
+    </div>
+
+    <div class="health-grid">
+        <div class="health-card">
+            <h3>Delivery Queue</h3>
+            <table class="health-table">
+                <tr><td>Pending</td><td>@Model.DeliveryQueue!.PendingCount</td></tr>
+                <tr><td>Failed</td><td>@Model.DeliveryQueue.FailedCount</td></tr>
+                <tr><td>Max Retries Exceeded</td><td>@Model.DeliveryQueue.MaxRetriesExceededCount</td></tr>
+                <tr><td>Error Rate</td><td>@Model.DeliveryQueue.ErrorRate:F1%</td></tr>
+                <tr><td>Oldest Pending</td><td>@(Model.DeliveryQueue.OldestPending?.ToString("yyyy-MM-dd HH:mm") ?? "N/A")</td></tr>
+                <tr><td>Last Successful</td><td>@(Model.DeliveryQueue.LastSuccessfulDelivery?.ToString("yyyy-MM-dd HH:mm") ?? "N/A")</td></tr>
+            </table>
+        </div>
+
+        <div class="health-card">
+            <h3>Activity Processing</h3>
+            <table class="health-table">
+                <tr><td>Total Activities</td><td>@Model.ActivityProcessing!.TotalActivities</td></tr>
+                <tr><td>Last Hour</td><td>@Model.ActivityProcessing.ActivitiesLastHour</td></tr>
+                <tr><td>Last Day</td><td>@Model.ActivityProcessing.ActivitiesLastDay</td></tr>
+            </table>
+            @if (Model.ActivityProcessing.ActivityTypes.Any())
+            {
+                <h4>Activity Types</h4>
+                <table class="health-table">
+                    @foreach (var kv in Model.ActivityProcessing.ActivityTypes.OrderByDescending(x => x.Value).Take(10))
+                    {
+                        <tr><td>@kv.Key</td><td>@kv.Value</td></tr>
+                    }
+                </table>
+            }
+        </div>
+
+        <div class="health-card">
+            <h3>Database</h3>
+            <table class="health-table">
+                <tr><td>Actors</td><td>@Model.Database!.TotalActors</td></tr>
+                <tr><td>Activities</td><td>@Model.Database.TotalActivities</td></tr>
+                <tr><td>Deliveries</td><td>@Model.Database.TotalDeliveries</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <h3>Remote Server Probes</h3>
+    <form asp-action="ProbeServers" method="post" class="probe-form">
+        <div class="probe-input-row">
+            <input type="text" name="newDomain" placeholder="e.g. mastodon.social" class="form-control" />
+            <button type="submit" class="btn btn-primary">Probe</button>
+        </div>
+    </form>
+
+    @if (Model.ProbeResults != null && Model.ProbeResults.Any())
+    {
+        <table class="admin-table health-table">
+            <thead>
+                <tr>
+                    <th>Domain</th>
+                    <th>Reachable</th>
+                    <th>Response Time</th>
+                    <th>Error</th>
+                    <th>Probed At</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var result in Model.ProbeResults)
+                {
+                    <tr>
+                        <td>@result.Domain</td>
+                        <td>
+                            <span class="badge-status @(result.Reachable ? "delivered" : "failed")">
+                                @(result.Reachable ? "Yes" : "No")
+                            </span>
+                        </td>
+                        <td>@(result.Reachable ? $"{result.ResponseTimeMs}ms" : "-")</td>
+                        <td>@(result.ErrorMessage ?? "-")</td>
+                        <td>@result.ProbedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <h3>Recent Delivery Errors</h3>
+    @if (Model.RecentErrors.Any())
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Activity</th>
+                    <th>Target</th>
+                    <th>Error</th>
+                    <th>Retries</th>
+                    <th>Last Attempt</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var error in Model.RecentErrors)
+                {
+                    <tr>
+                        <td title="@error.ActivityId">@error.ActivityId[..Math.Min(12, error.ActivityId.Length)]...</td>
+                        <td title="@error.TargetActorId">@error.TargetActorId[..Math.Min(40, error.TargetActorId.Length)]...</td>
+                        <td>@error.FailureReason</td>
+                        <td>@error.RetryCount</td>
+                        <td>@error.LastAttempt.ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="no-data">No recent delivery errors.</p>
+    }
+</div>
+
+<style>
+.health-status-banner {
+    padding: 15px 20px;
+    border-radius: 6px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.status-healthy { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.status-degraded { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+.status-warning { background: #ffeaa7; color: #856404; border: 1px solid #fdcb6e; }
+.status-critical { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.last-checked { font-size: 0.85em; opacity: 0.8; }
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.health-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 16px;
+}
+.health-card h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+.health-card h4 { margin: 12px 0 6px; font-size: 0.95em; color: #666; }
+.health-table { width: 100%; border-collapse: collapse; }
+.health-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+.health-table td:first-child { color: #666; }
+.health-table td:last-child { font-weight: 600; text-align: right; }
+.probe-form { margin: 12px 0; }
+.probe-input-row { display: flex; gap: 8px; max-width: 500px; }
+.probe-input-row input { flex: 1; }
+.badge-status { padding: 2px 8px; border-radius: 3px; font-size: 0.85em; }
+</style>

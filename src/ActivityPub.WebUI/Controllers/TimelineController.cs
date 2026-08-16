@@ -63,7 +63,11 @@ public class TimelineController : Controller
                         ReplyCount = replyCount,
                         IsLiked = isLiked,
                         IsBoosted = isBoosted,
-                        ImageUrl = ExtractImageUrl(note)
+                        ImageUrl = ExtractImageUrl(note),
+                        PollQuestion = ExtractPollQuestion(note),
+                        PollOptions = ExtractPollOptions(note),
+                        PollEndTime = ExtractPollEndTime(note),
+                        PollId = ExtractPollId(note)
                     });
                 }
             }
@@ -115,6 +119,75 @@ public class TimelineController : Controller
         return null;
     }
 
+    static string? ExtractPollQuestion(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        {
+            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            {
+                var first = elem[0];
+                if (first.TryGetProperty("type", out var typeVal) && "Question".Equals(typeVal.GetString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    if (first.TryGetProperty("name", out var nameProp))
+                        return nameProp.GetString();
+                }
+            }
+        }
+        return null;
+    }
+
+    static List<PollOptionItem>? ExtractPollOptions(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        {
+            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            {
+                var first = elem[0];
+                if (first.TryGetProperty("type", out var typeVal) && "Question".Equals(typeVal.GetString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    if (first.TryGetProperty("options", out var optionsProp) && optionsProp.ValueKind == JsonValueKind.Array)
+                    {
+                        var options = new List<PollOptionItem>();
+                        foreach (var opt in optionsProp.EnumerateArray())
+                        {
+                            options.Add(new PollOptionItem { Text = opt.GetString() ?? "" });
+                        }
+                        return options;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    static DateTime? ExtractPollEndTime(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        {
+            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            {
+                var first = elem[0];
+                if (first.TryGetProperty("endTime", out var endTimeProp))
+                    return endTimeProp.GetDateTime();
+            }
+        }
+        return null;
+    }
+
+    static string? ExtractPollId(ActivityPub.Core.Models.Object obj)
+    {
+        if (obj.AdditionalProperties?.TryGetValue("attachment", out var attachment) == true && attachment is System.Text.Json.JsonElement elem)
+        {
+            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
+            {
+                var first = elem[0];
+                if (first.TryGetProperty("id", out var idProp))
+                    return idProp.GetString();
+            }
+        }
+        return null;
+    }
+
     async Task<Actor?> GetAuthorActor(Activity activity)
     {
         var actorId = activity.ActorId;
@@ -141,4 +214,15 @@ public class TimelineActivityItem
     public bool IsLiked { get; set; }
     public bool IsBoosted { get; set; }
     public string? ImageUrl { get; set; }
+    public string? PollQuestion { get; set; }
+    public List<PollOptionItem>? PollOptions { get; set; }
+    public DateTime? PollEndTime { get; set; }
+    public string? PollId { get; set; }
+}
+
+public class PollOptionItem
+{
+    public string Text { get; set; } = string.Empty;
+    public int? Votes { get; set; } = 0;
+    public int Percent => 0;
 }

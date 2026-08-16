@@ -39,6 +39,40 @@
         </div>
     }
 
+    @if (Model.PollQuestion != null)
+    {
+        <div class="poll-widget">
+            <div class="poll-question">@Html.Raw(Model.PollQuestion)</div>
+            @if (Model.PollOptions != null)
+            {
+                @foreach (var opt in Model.PollOptions)
+                {
+                    <div class="poll-option">
+                        <div class="poll-bar" style="width:@opt.Percent%">@opt.Text</div>
+                        <span class="poll-votes">@(opt.Votes ?? 0) votes</span>
+                    </div>
+                }
+            }
+            @if (Model.PollEndTime.HasValue)
+            {
+                <div class="poll-timer">
+                    @(Math.Max(0, (Model.PollEndTime.Value - DateTime.UtcNow).TotalMinutes) > 0
+                        ? $"{(int)Math.Max(0, (Model.PollEndTime.Value - DateTime.UtcNow).TotalMinutes)} minutes left"
+                        : "Expired")
+                </div>
+            }
+            @if (Model.ActivityId != null)
+            {
+                <form asp-controller="Poll" asp-action="Vote" method="post" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="pollId" value="@Model.PollId" />
+                    <input type="hidden" name="activityId" value="@Model.ActivityId" />
+                    <button type="submit" name="optionIndex" value="0" class="btn btn-sm btn-outline-primary">Vote</button>
+                </form>
+            }
+        </div>
+    }
+
     <div class="note-actions">
         <form asp-controller="Interaction" asp-action="@(Model.IsLiked ? "Unlike" : "Like")" method="post" style="display:inline;">
             @Html.AntiForgeryToken()

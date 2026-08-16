@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ActivityPub.Core.Models;
@@ -29,5 +30,5 @@ public class Note : Object
     /// Additional properties that are not explicitly defined
     /// </summary>
     [JsonExtensionData]
-    public new IDictionary<string, object?>? AdditionalProperties { get; set; }
+    public new IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
 }

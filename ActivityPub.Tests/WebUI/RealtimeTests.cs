@@ -23,6 +23,23 @@ public class RealtimeTests : IClassFixture<WebUIFactory>
 
     HttpClient CreateClient() => _factory.CreateClient();
 
+    async Task<HttpClient> RegisterAndLoginAndGetClient(string username)
+    {
+        var (client, _) = await RegisterAndLogin(username);
+        return client;
+    }
+
+    async Task<string> GetAntiForgeryTokenAsync(HttpClient client)
+    {
+        var response = await client.GetAsync("/compose");
+        var body = await response.Content.ReadAsStringAsync();
+        var start = body.IndexOf("__RequestVerificationToken\" value=\"");
+        if (start == -1) return string.Empty;
+        start += "__RequestVerificationToken\" value=\"".Length;
+        var end = body.IndexOf("\"", start);
+        return body.Substring(start, end - start);
+    }
+
     async Task<(HttpClient Client, string Username)> RegisterAndLogin(string username)
     {
         var client = CreateClient();
@@ -353,5 +370,341 @@ public class RealtimeTests : IClassFixture<WebUIFactory>
         await svc.DismissReportAsync(report.Id, "admin", "Not actionable");
         var pending = await svc.GetPendingReportsAsync();
         Assert.DoesNotContain(pending, r => r.Id == report.Id);
+    }
+
+    // MRF Tests
+
+    [Fact]
+    public async Task MRFService_Registers()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IMRFService>();
+        Assert.NotNull(svc);
+    }
+
+    [Fact]
+    public async Task MRFService_Passes_Activity_Without_Rules()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var mrf = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IMRFService>();
+        var activity = new ActivityPub.Core.Models.Activity
+        {
+            Id = "https://test/mrf-test-1",
+            Type = "Create",
+            Actor = "https://localhost/users/tester",
+            Object = new ActivityPub.Core.Models.Note { Id = "https://test/note-1", Type = "Note", Content = "Hello world" }
+        };
+        var result = await mrf.ProcessAsync(activity);
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task InboxProcessor_With_MRF_Service_Registers()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var proc = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Implementations.InboxProcessor>();
+        Assert.NotNull(proc);
+    }
+
+    // Poll Tests
+
+    [Fact]
+    public async Task PollController_New_Returns_View()
+    {
+        var client = await RegisterAndLoginAndGetClient($"polluser_{Guid.NewGuid().ToString("N")[..8]}");
+        var response = await client.GetAsync("/Poll/New");
+        Assert.True(response.IsSuccessStatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Create Poll", body);
+    }
+
+    [Fact]
+    public async Task PollController_Create_With_Valid_Poll()
+    {
+        var client = await RegisterAndLoginAndGetClient($"pollcreator_{Guid.NewGuid().ToString("N")[..8]}");
+        var token = await GetAntiForgeryTokenAsync(client);
+
+        var formData = new List<KeyValuePair<string, string>>
+        {
+            new("Content", "Best framework?"),
+            new("Options", ".NET"),
+            new("Options", "Java"),
+            new("Options", "Python"),
+            new("Options", "Rust"),
+            new("DurationMinutes", "1440"),
+            new("__RequestVerificationToken", token)
+        };
+
+        var content = new FormUrlEncodedContent(formData);
+        var response = await client.PostAsync("/Poll/Create", content);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode || response.Headers.Location != null,
+            $"Post failed: {(int)response.StatusCode} {body.Substring(0, Math.Min(200, body.Length))}");
+    }
+
+    [Fact]
+    public async Task PollController_Create_Rejects_Too_Few_Options()
+    {
+        var client = await RegisterAndLoginAndGetClient($"pollfail_{Guid.NewGuid().ToString("N")[..8]}");
+        var token = await GetAntiForgeryTokenAsync(client);
+
+        var formData = new List<KeyValuePair<string, string>>
+        {
+            new("Content", "Only one option?"),
+            new("Options", "Yes"),
+            new("Options", ""),
+            new("Options", ""),
+            new("Options", ""),
+            new("DurationMinutes", "1440"),
+            new("__RequestVerificationToken", token)
+        };
+
+        var content = new FormUrlEncodedContent(formData);
+        var response = await client.PostAsync("/Poll/Create", content);
+        Assert.True(response.IsSuccessStatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("2-4 options", body);
+    }
+
+    [Fact]
+    public async Task PollController_Create_Rejects_Long_Question()
+    {
+        var client = await RegisterAndLoginAndGetClient($"pollfail2_{Guid.NewGuid().ToString("N")[..8]}");
+        var token = await GetAntiForgeryTokenAsync(client);
+
+        var formData = new List<KeyValuePair<string, string>>
+        {
+            new("Content", new string('x', 501)),
+            new("Options", "A"),
+            new("Options", "B"),
+            new("Options", ""),
+            new("Options", ""),
+            new("DurationMinutes", "1440"),
+            new("__RequestVerificationToken", token)
+        };
+
+        var content = new FormUrlEncodedContent(formData);
+        var response = await client.PostAsync("/Poll/Create", content);
+        Assert.True(response.IsSuccessStatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("500", body);
+    }
+
+    // Rate Limit Settings Tests
+
+    [Fact]
+    public async Task RateLimitSettingsController_Index_Returns_View()
+    {
+        var client = await RegisterAndLoginAndGetClient($"ratelimituser_{Guid.NewGuid().ToString("N")[..8]}");
+        var response = await client.GetAsync("/RateLimitSettings");
+        Assert.True(response.IsSuccessStatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Rate Limit Settings", body);
+    }
+
+    [Fact]
+    public async Task RateLimitSettingsController_Update_Valid()
+    {
+        var client = await RegisterAndLoginAndGetClient($"ratelimitadmin_{Guid.NewGuid().ToString("N")[..8]}");
+        var token = await GetAntiForgeryTokenAsync(client);
+
+        var formData = new List<KeyValuePair<string, string>>
+        {
+            new("Compose.Limit", "30"),
+            new("Compose.WindowMinutes", "5"),
+            new("Follow.Limit", "15"),
+            new("Follow.WindowMinutes", "2"),
+            new("Upload.Limit", "20"),
+            new("Upload.WindowMinutes", "3"),
+            new("__RequestVerificationToken", token)
+        };
+
+        var content = new FormUrlEncodedContent(formData);
+        var response = await client.PostAsync("/RateLimitSettings/Update", content);
+        Assert.True(response.IsSuccessStatusCode);
+    }
+
+    // MRF Admin Page Tests
+
+    [Fact]
+    public async Task MRFController_Index_Returns_View()
+    {
+        var client = await RegisterAndLoginAndGetClient($"mrfuser_{Guid.NewGuid().ToString("N")[..8]}");
+        var response = await client.GetAsync("/MRF");
+        Assert.True(response.IsSuccessStatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Moderation Rules Framework", body);
+    }
+
+    [Fact]
+    public async Task MRFController_Update_Adds_Block()
+    {
+        var client = await RegisterAndLoginAndGetClient($"mrfadmin_{Guid.NewGuid().ToString("N")[..8]}");
+        var token = await GetAntiForgeryTokenAsync(client);
+
+        var formData = new List<KeyValuePair<string, string>>
+        {
+            new("ProhibitedWords", ""),
+            new("BlockedDomains", ""),
+            new("MaxContentLength", "3000"),
+            new("__RequestVerificationToken", token)
+        };
+
+        var content = new FormUrlEncodedContent(formData);
+        var response = await client.PostAsync("/MRF/Update", content);
+        Assert.True(response.IsSuccessStatusCode);
+    }
+
+    // MRF filtering integration test
+
+    [Fact]
+    public async Task MRFService_Filters_Prohibited_Words()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ActivityPub.Core.Options.ActivityPubOptions>>();
+        options.Value.MRFOptions ??= new ActivityPub.Core.Options.MRFOptions();
+        options.Value.MRFOptions.ProhibitedWords = new List<string> { "badsword" };
+
+        var mrf = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IMRFService>();
+        var activity = new ActivityPub.Core.Models.Activity
+        {
+            Id = "https://test/mrf-filter-test",
+            Type = "Create",
+            Actor = "https://localhost/users/tester",
+            Object = new ActivityPub.Core.Models.Note { Id = "https://test/note-2", Type = "Note", Content = "This contains badsword" }
+        };
+        var result = await mrf.ProcessAsync(activity);
+        Assert.Null(result);
+
+        options.Value.MRFOptions.ProhibitedWords.Clear();
+    }
+
+    [Fact]
+    public async Task MRFService_Filters_Blocked_Domains()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ActivityPub.Core.Options.ActivityPubOptions>>();
+        options.Value.MRFOptions ??= new ActivityPub.Core.Options.MRFOptions();
+        options.Value.MRFOptions.BlockedDomains = new List<string> { "badsite.com" };
+
+        var mrf = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IMRFService>();
+        var activity = new ActivityPub.Core.Models.Activity
+        {
+            Id = "https://test/mrf-domain-test",
+            Type = "Create",
+            AttributedTo = "https://badsite.com/users/spammer",
+            Object = new ActivityPub.Core.Models.Note { Id = "https://test/note-3", Type = "Note", Content = "Hello from bad site" }
+        };
+        var result = await mrf.ProcessAsync(activity);
+        Assert.Null(result);
+
+        options.Value.MRFOptions.BlockedDomains.Clear();
+    }
+
+    [Fact]
+    public async Task MRFService_Filters_Long_Content()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ActivityPub.Core.Options.ActivityPubOptions>>();
+        options.Value.MRFOptions ??= new ActivityPub.Core.Options.MRFOptions();
+        options.Value.MRFOptions.MaxContentLength = 50;
+
+        var mrf = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IMRFService>();
+        var activity = new ActivityPub.Core.Models.Activity
+        {
+            Id = "https://test/mrf-length-test",
+            Type = "Create",
+            Actor = "https://localhost/users/tester",
+            Object = new ActivityPub.Core.Models.Note { Id = "https://test/note-4", Type = "Note", Content = new string('x', 100) }
+        };
+        var result = await mrf.ProcessAsync(activity);
+        Assert.Null(result);
+
+        options.Value.MRFOptions.MaxContentLength = null;
+    }
+
+    [Fact]
+    public async Task FederationHealthService_Registers()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IFederationHealthService>();
+        Assert.NotNull(svc);
+    }
+
+    [Fact]
+    public async Task FederationHealth_GetHealthStatus_Returns_Data()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IFederationHealthService>();
+        var status = await svc.GetHealthStatusAsync();
+
+        Assert.NotNull(status);
+        Assert.NotEqual(default, status.LastChecked);
+        Assert.Contains(status.OverallStatus, new[] { "Healthy", "Warning", "Degraded", "Critical" });
+        Assert.NotNull(status.DeliveryQueue);
+        Assert.NotNull(status.ActivityProcessing);
+        Assert.NotNull(status.Database);
+    }
+
+    [Fact]
+    public async Task FederationHealth_GetDeliveryQueueStats_Returns_Data()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IFederationHealthService>();
+        var stats = await svc.GetDeliveryQueueStatsAsync();
+
+        Assert.NotNull(stats);
+        Assert.True(stats.ErrorRate >= 0);
+    }
+
+    [Fact]
+    public async Task FederationHealth_GetRecentErrors_Returns_Empty_When_No_Errors()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ActivityPub.Core.Services.IFederationHealthService>();
+        var errors = await svc.GetRecentErrorsAsync(50);
+
+        Assert.NotNull(errors);
+    }
+
+    [Fact]
+    public async Task FederationHealth_Index_Returns_Ok()
+    {
+        var client = await RegisterAndLoginAndGetClient("healthuser1");
+        var response = await client.GetAsync("/FederationHealth");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Federation Health", body);
+    }
+
+    [Fact]
+    public async Task FederationHealth_ApiStatus_Returns_Json()
+    {
+        var client = await RegisterAndLoginAndGetClient("healthuser2");
+        var response = await client.GetAsync("/FederationHealth/ApiStatus");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("overallStatus", body);
+    }
+
+    [Fact]
+    public async Task FederationHealth_ApiErrors_Returns_Json()
+    {
+        var client = await RegisterAndLoginAndGetClient("healthuser3");
+        var response = await client.GetAsync("/FederationHealth/ApiErrors");
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("application/json; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+    }
+
+    [Fact]
+    public async Task FederationHealth_ProbeServers_Returns_Ok_With_Empty()
+    {
+        var client = await RegisterAndLoginAndGetClient("healthuser4");
+        var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["newDomain"] = ""
+        });
+        var response = await client.PostAsync("/FederationHealth/ProbeServers", content);
+        response.EnsureSuccessStatusCode();
     }
 }

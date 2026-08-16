@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ActivityPub.Core.Models;
@@ -95,7 +96,7 @@ public class Object
     /// The attachment list
     /// </summary>
     [JsonPropertyName("attachment")]
-    public ICollection<string>? Attachment { get; set; }
+    public ICollection<object>? Attachment { get; set; }
 
     /// <summary>
     /// The to list
@@ -125,5 +126,5 @@ public class Object
     /// Additional properties that are not explicitly defined
     /// </summary>
     [JsonExtensionData]
-    public IDictionary<string, object?>? AdditionalProperties { get; set; }
+    public IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
 }

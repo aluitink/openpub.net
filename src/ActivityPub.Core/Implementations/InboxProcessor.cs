@@ -2,6 +2,7 @@ using System.Text.Json;
 using ActivityPub.Core.Events;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ActivityPub.Core.Implementations;
@@ -10,12 +11,14 @@ public class InboxProcessor : IActivityPubEventHandler
 {
     private readonly IActivityPubRepository _repository;
     private readonly ILogger<InboxProcessor> _logger;
+    private readonly IMRFService? _mrfService;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public InboxProcessor(IActivityPubRepository repository, ILogger<InboxProcessor> logger)
+    public InboxProcessor(IActivityPubRepository repository, ILogger<InboxProcessor> logger, IMRFService? mrfService = null)
     {
         _repository = repository;
         _logger = logger;
+        _mrfService = mrfService;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -41,6 +44,16 @@ public class InboxProcessor : IActivityPubEventHandler
 
         try
         {
+            if (_mrfService != null)
+            {
+                var filtered = await _mrfService.ProcessAsync(activity);
+                if (filtered == null)
+                {
+                    _logger.LogInformation("Activity filtered by MRF: {ActivityId}", activity.Id);
+                    return;
+                }
+            }
+
             await ProcessActivityAsync(activity);
         }
         catch (Exception ex)
@@ -261,7 +274,7 @@ public class InboxProcessor : IActivityPubEventHandler
         var actorId = activity.ActorId ?? GetActorIdFromObject(activity.Actor);
         var objectId = activity.ObjectId ?? GetActorIdFromObject(activity.Object);
 
-        var target = activity.AdditionalProperties?.TryGetValue("target", out var targetVal) == true ? targetVal?.ToString() : null;
+        var target = activity.AdditionalProperties?.TryGetValue("target", out var targetVal) == true ? (targetVal.ValueKind == JsonValueKind.String ? targetVal.GetString() : targetVal.ToString()) : null;
         _logger.LogInformation("Actor {ActorId} moved {ObjectId} to {Target}", actorId, objectId, target ?? "unknown");
 
         if (activity.Object is Models.Object obj)

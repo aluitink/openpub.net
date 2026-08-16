@@ -84,7 +84,7 @@ public class WebhookDeliveryService : IWebhookDeliveryService
 
     public async Task DeliverActivityToWebhooksAsync(Activity activity)
     {
-        var actorId = activity.ActorId ?? (activity.AdditionalProperties?.TryGetValue("attributedTo", out var attributedTo) == true ? attributedTo.ToString() : null) ?? string.Empty;
+        var actorId = activity.ActorId ?? (activity.AdditionalProperties?.TryGetValue("attributedTo", out var attributedTo) == true ? (attributedTo.ValueKind == JsonValueKind.String ? attributedTo.GetString() : attributedTo.ToString()) : null) ?? string.Empty;
 
         if (string.IsNullOrEmpty(actorId))
         {

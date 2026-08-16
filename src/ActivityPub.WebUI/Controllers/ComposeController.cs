@@ -95,8 +95,8 @@ public class ComposeController : Controller
         if (attachments != null)
         {
             if (note.AdditionalProperties == null)
-                note.AdditionalProperties = new Dictionary<string, object?>();
-            note.AdditionalProperties["attachment"] = attachments;
+                note.AdditionalProperties = new Dictionary<string, JsonElement>();
+            note.AdditionalProperties["attachment"] = JsonSerializer.SerializeToElement(attachments);
         }
 
         var activity = new Activity

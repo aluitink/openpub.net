@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 
@@ -134,5 +135,5 @@ public class Activity
     /// Additional properties that may not be covered by the standard schema
     /// </summary>
     [JsonExtensionData]
-    public IDictionary<string, object>? AdditionalProperties { get; set; }
+    public IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
 }
