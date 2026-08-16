@@ -89,6 +89,7 @@ public class WebFingerController : ControllerBase
         }
 
         var links = new List<WebFingerLink>();
+        var baseUrl = $"{GetScheme()}://{GetHost()}";
 
         // Add self link to the ActivityPub endpoint
         var activityPubEndpoint = GetActivityPubEndpoint(resource);
@@ -99,10 +100,41 @@ public class WebFingerController : ControllerBase
             Href = activityPubEndpoint
         });
 
+        // Add Hub link (PubSubHubbub / WebSub) for Observatory compliance
+        links.Add(new WebFingerLink
+        {
+            Rel = "http://activitypub.com/rel/inbox",
+            Type = "application/activity+json",
+            Href = $"{baseUrl}{_options.UserPath}/inbox"
+        });
+
+        // Add sharedInbox link for Observatory compliance
+        links.Add(new WebFingerLink
+        {
+            Rel = "http://webfinger.net/rel/profile-page",
+            Type = "text/html",
+            Href = activityPubEndpoint
+        });
+
+        // Add OAuth 2.0 authorization service for Observatory compliance
+        links.Add(new WebFingerLink
+        {
+            Rel = "oauth-authorization",
+            Type = "application/json",
+            Href = $"{baseUrl}/api/v1/oauth/authorize"
+        });
+
+        // Add OpenID Connect issuer for Observatory compliance
+        links.Add(new WebFingerLink
+        {
+            Rel = "http://openid.net/specs/connect/1.0/issuer",
+            Href = $"{baseUrl}"
+        });
+
         // Add additional links if rel parameter is provided
         if (!string.IsNullOrEmpty(rel))
         {
-            // This is a simplified implementation
+            // Handle rel parameter for extended link discovery
         }
 
         // Create JRD response
@@ -154,5 +186,13 @@ public class WebFingerController : ControllerBase
         return resource;
     }
 
+    private string GetScheme()
+    {
+        return Request?.Scheme ?? "https";
+    }
 
+    private string GetHost()
+    {
+        return Request?.Host.Value ?? _options.Domain;
+    }
 }

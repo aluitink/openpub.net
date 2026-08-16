@@ -26,7 +26,7 @@ public class WebFingerResolutionTests : IClassFixture<TestWebApplicationFactory>
         Assert.True(response.IsSuccessStatusCode, "WebFinger should return user info");
 
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Subject", content);
+        Assert.Contains("subject", content);
         Assert.Contains("acct:testuser@localhost", content);
     }
 

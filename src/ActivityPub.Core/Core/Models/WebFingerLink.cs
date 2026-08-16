@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ActivityPub.Core.Models;
 
 /// <summary>
@@ -5,7 +7,12 @@ namespace ActivityPub.Core.Models;
 /// </summary>
 public class WebFingerLink
 {
+    [JsonPropertyName("rel")]
     public string? Rel { get; set; }
+
+    [JsonPropertyName("type")]
     public string? Type { get; set; }
+
+    [JsonPropertyName("href")]
     public string? Href { get; set; }
 }

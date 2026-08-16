@@ -35,9 +35,9 @@
       "dryRun": false,
       "multi": false,
       "batch": 0,
-      "runCount": 2,
+      "runCount": 12,
       "failureCount": 0,
-      "lastRunAt": 1786832383915,
+      "lastRunAt": 1786843406484,
       "lastCompactAt": 0,
       "lastCompactRunCount": 0,
       "watchSnapshot": {},
@@ -51,7 +51,7 @@
         "modelID": "qwen36-mtp-27b"
       },
       "activeRecoveryMs": 45000,
-      "lastFinishedAt": 1786832564075
+      "lastFinishedAt": 1786843516732
     }
   ]
 }
