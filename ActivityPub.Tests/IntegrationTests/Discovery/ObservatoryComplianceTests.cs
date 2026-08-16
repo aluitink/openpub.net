@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml;
+using System.Linq;
 using Xunit;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Tests;
@@ -74,8 +75,8 @@ public class ObservatoryComplianceTests
 
             var versions = doc?["versions"]?.AsArray();
             Assert.NotNull(versions);
-            Assert.Contains("2.0", versions);
-            Assert.Contains("2.1", versions);
+            Assert.True(versions.Any(v => v?.ToString() == "2.0"));
+            Assert.True(versions.Any(v => v?.ToString() == "2.1"));
         }
         catch (InvalidOperationException ex)
         {
