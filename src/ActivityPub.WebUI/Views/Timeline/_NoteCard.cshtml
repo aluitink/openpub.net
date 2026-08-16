@@ -25,7 +25,7 @@
             }
             else
             {
-                <div class="avatar-placeholder avatar-sm">@((Model.AuthorDisplayName ?? Model.AuthorName).FirstOrDefault() != default ? (Model.AuthorDisplayName ?? Model.AuthorName).ToString()!.Substring(0, 1) : "?")</div>
+                <div class="avatar-placeholder">@((Model.AuthorDisplayName ?? Model.AuthorName).FirstOrDefault() != default ? (Model.AuthorDisplayName ?? Model.AuthorName).ToString()!.Substring(0, 1).ToUpperInvariant() : "?")</div>
             }
         </div>
         <div class="note-author">

@@ -50,7 +50,7 @@ public class SuggestionsController : Controller
                     Username = GetUsernameFromActorId(actor.Id ?? ""),
                     DisplayName = actor.Name ?? "",
                     Bio = actor.Summary ?? "",
-                    AvatarUrl = actor.Icon?.ToString() ?? "",
+                    AvatarUrl = actor.Icon?.Url ?? "",
                     Followers = await _repository.GetFollowerCountAsync(actor.Id ?? "")
                 });
             }

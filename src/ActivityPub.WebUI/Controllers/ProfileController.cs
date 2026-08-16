@@ -1,7 +1,9 @@
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.WebUI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ActivityPub.WebUI.Controllers;
@@ -10,11 +12,13 @@ namespace ActivityPub.WebUI.Controllers;
 public class ProfileController : Controller
 {
     private readonly IActivityPubRepository _repository;
+    private readonly ApplicationDbContext _identityDb;
     private readonly ILogger<ProfileController> _logger;
 
-    public ProfileController(IActivityPubRepository repository, ILogger<ProfileController> logger)
+    public ProfileController(IActivityPubRepository repository, ApplicationDbContext identityDb, ILogger<ProfileController> logger)
     {
         _repository = repository;
+        _identityDb = identityDb;
         _logger = logger;
     }
 
@@ -121,6 +125,17 @@ public class ProfileController : Controller
         actor.Updated = DateTime.UtcNow;
         await _repository.SaveUserActorAsync(actor);
 
+        // Keep the identity record in sync so Search shows the avatar/banner.
+        var identityUser = await _identityDb.Users.FirstOrDefaultAsync(u => u.UserName == username);
+        if (identityUser != null)
+        {
+            identityUser.DisplayName = model.DisplayName.Trim();
+            identityUser.Bio = string.IsNullOrWhiteSpace(model.Bio) ? "" : model.Bio.Trim();
+            identityUser.AvatarUrl = actor.Icon?.Url ?? "";
+            identityUser.BannerUrl = actor.Image?.Url;
+            await _identityDb.SaveChangesAsync();
+        }
+
         _logger.LogInformation("User {Username} updated profile", username);
         TempData["ProfileUpdated"] = true;
         return RedirectToAction("Index", "Profile");
@@ -143,7 +158,7 @@ public class ProfileViewModel
 public class EditProfileModel
 {
     public string DisplayName { get; set; } = string.Empty;
-    public string Bio { get; set; } = string.Empty;
-    public string IconUrl { get; set; } = string.Empty;
-    public string BannerUrl { get; set; } = string.Empty;
+    public string? Bio { get; set; }
+    public string? IconUrl { get; set; }
+    public string? BannerUrl { get; set; }
 }

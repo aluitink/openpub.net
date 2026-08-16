@@ -18,7 +18,14 @@
                 {
                     <div class="suggestion-card">
                         <div class="suggestion-avatar">
-                            <img src="@s.AvatarUrl" alt="@s.DisplayName" />
+                            @if (!string.IsNullOrEmpty(s.AvatarUrl))
+                            {
+                                <img src="@s.AvatarUrl" alt="@s.DisplayName" />
+                            }
+                            else
+                            {
+                                <div class="avatar-placeholder">@((s.DisplayName ?? s.Username).FirstOrDefault() != default ? (s.DisplayName ?? s.Username).ToString()!.Substring(0, 1).ToUpperInvariant() : "?")</div>
+                            }
                         </div>
                         <div class="suggestion-info">
                             <a href="/profile/@s.Username" class="display-name">@s.DisplayName</a>
@@ -79,7 +86,9 @@
     .section { margin: 24px 0; }
     .suggestions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
     .suggestion-card { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #eee; border-radius: 12px; }
+    .suggestion-avatar { flex-shrink: 0; }
     .suggestion-avatar img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+    .suggestion-avatar .avatar-placeholder { --avatar-size: 48px; }
     .suggestion-info { flex: 1; }
     .display-name { font-weight: 600; text-decoration: none; color: #333; }
     .username { color: #888; }

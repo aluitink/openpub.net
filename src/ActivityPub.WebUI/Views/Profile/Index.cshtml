@@ -26,7 +26,7 @@
             }
             else
             {
-                <div class="avatar-placeholder">@(Model.DisplayName.FirstOrDefault() != default ? Model.DisplayName.ToString().Substring(0, 1) : "?")</div>
+                <div class="avatar-placeholder avatar-placeholder-lg">@(Model.DisplayName.FirstOrDefault() != default ? Model.DisplayName.ToString().Substring(0, 1).ToUpperInvariant() : "?")</div>
             }
         </div>
 

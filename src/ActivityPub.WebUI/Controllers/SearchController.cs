@@ -63,14 +63,14 @@ public class SearchController : Controller
 
     async Task<List<SearchUserResult>> SearchUsersAsync(string query)
     {
-        var lowerQuery = query.ToLowerInvariant();
+        var likeQuery = $"%{query}%";
         try
         {
             var users = await _identityDb.Users
                 .Where(u =>
-                    (u.UserName != null && u.UserName.ToLowerInvariant().Contains(lowerQuery)) ||
-                    u.DisplayName.ToLowerInvariant().Contains(lowerQuery) ||
-                    (u.ActorId != null && u.ActorId.ToLowerInvariant().Contains(lowerQuery)))
+                    (u.UserName != null && EF.Functions.Like(u.UserName, likeQuery)) ||
+                    EF.Functions.Like(u.DisplayName, likeQuery) ||
+                    (u.ActorId != null && EF.Functions.Like(u.ActorId, likeQuery)))
                 .OrderBy(u => u.UserName)
                 .Take(20)
                 .Select(u => new SearchUserResult
