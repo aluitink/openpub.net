@@ -294,7 +294,8 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 4. ✅ **No favicon → `GET /favicon.ico` returns 404 on every page load** (visible as a console error on all pages). Add `wwwroot/favicon.ico` (or an SVG) + `<link rel="icon">` in `_Layout.cshtml`.
    - **Done:** Added `wwwroot/favicon.svg` (purple rounded square with white "F") and `<link rel="icon" type="image/svg+xml" href="~/favicon.svg" asp-append-version="true" />` in `_Layout.cshtml`. Verified `GET /favicon.svg` → 200 in production.
 
-5. **Header "Compose Post" button looks disabled on the Home page** (`Home/Index.cshtml` uses `.btn-secondary` for the secondary CTA, which is a transparent/grey style — indistinguishable from a disabled control). Consider a visible-outline secondary style so it reads as actionable.
+5. ✅ **Header "Compose Post" button looks disabled on the Home page** (`Home/Index.cshtml` uses `.btn-secondary` for the secondary CTA, which is a transparent/grey style — indistinguishable from a disabled control). Consider a visible-outline secondary style so it reads as actionable.
+   - **Done:** Restyled `.btn-secondary` from transparent/grey (`color:#ccc; border:#555; hover bg #333`) to a visible dark outline (`color:#333; border:#333; font-weight:500; hover bg #333 + white text`). Now reads as an actionable outline button on the light Home page and the navbar Login link (which was grey-on-dark).
 
 ### P2 — Polish / consistency (feeds Phase 43)
 
