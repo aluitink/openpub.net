@@ -1,0 +1,24 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="home-page">
+    @if (User.Identity?.IsAuthenticated ?? false)
+    {
+        <h1>Welcome back, @User.Identity.Name!</h1>
+        <p>Your fediverse microblog is ready.</p>
+        <div class="hero-actions">
+            <a asp-controller="Timeline" asp-action="Index" class="btn btn-primary">View Timeline</a>
+            <a asp-controller="Compose" asp-action="Index" class="btn btn-secondary">Compose Post</a>
+        </div>
+    }
+    else
+    {
+        <h1>Welcome to Fediblog</h1>
+        <p>A federated microblogging platform built on ActivityPub.</p>
+        <div class="hero-actions">
+            <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Create Account</a>
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-secondary">Login</a>
+        </div>
+    }
+</div>

@@ -454,4 +454,123 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<ICollection<string>> GetInboxActivitiesAsync(string username, int skip, int limit)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null)
+        {
+            return new List<string>();
+        }
+
+        var actorId = actor.Id;
+        var allActivities = await _context.Activities
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new { a.ActivityId, a.JsonData })
+            .ToListAsync();
+
+        var activityIds = new List<string>();
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("to", out var toElement))
+            {
+                var isTargeted = false;
+
+                if (toElement.ValueKind == JsonValueKind.String && toElement.GetString() == actorId)
+                {
+                    isTargeted = true;
+                }
+                else if (toElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var toItem in toElement.EnumerateArray())
+                    {
+                        if (toItem.ValueKind == JsonValueKind.String && toItem.GetString() == actorId)
+                        {
+                            isTargeted = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isTargeted)
+                {
+                    activityIds.Add(item.ActivityId);
+                }
+            }
+        }
+
+        return activityIds
+            .Skip(skip)
+            .Take(limit)
+            .ToList();
+    }
+
+    public async Task<ICollection<string>> GetLikedActivitiesAsync(string username, int skip, int limit)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null)
+        {
+            return new List<string>();
+        }
+
+        var actorId = actor.Id;
+        var allActivities = await _context.Activities
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new { a.ActivityId, a.JsonData })
+            .ToListAsync();
+
+        var likedIds = new List<string>();
+        foreach (var item in allActivities)
+        {
+            using var doc = JsonDocument.Parse(item.JsonData);
+            var root = doc.RootElement;
+
+            bool isLike = false;
+            if (root.TryGetProperty("type", out var typeElement) &&
+                typeElement.ValueKind == JsonValueKind.String &&
+                typeElement.GetString() == "Like")
+            {
+                isLike = true;
+            }
+
+            if (!isLike)
+            {
+                continue;
+            }
+
+            bool isByActor = false;
+            if (root.TryGetProperty("actor", out var actorElement))
+            {
+                if (actorElement.ValueKind == JsonValueKind.String && actorElement.GetString() == actorId)
+                {
+                    isByActor = true;
+                }
+            }
+
+            if (!isByActor)
+            {
+                continue;
+            }
+
+            if (root.TryGetProperty("object", out var objectElement))
+            {
+                var likedId = objectElement.ValueKind == JsonValueKind.String
+                    ? objectElement.GetString()!
+                    : objectElement.GetProperty("id").GetString();
+
+                if (!string.IsNullOrEmpty(likedId))
+                {
+                    likedIds.Add(likedId);
+                }
+            }
+        }
+
+        return likedIds
+            .Skip(skip)
+            .Take(limit)
+            .ToList();
+    }
 }

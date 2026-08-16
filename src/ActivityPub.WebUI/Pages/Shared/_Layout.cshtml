@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Fediblog</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <a asp-controller="Home" asp-action="Index" class="brand">Fediblog</a>
+                <div class="nav-links">
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <a asp-controller="Timeline" asp-action="Index" class="nav-link">Timeline</a>
+                        <a asp-controller="Compose" asp-action="Index" class="nav-link">Compose</a>
+                        <span class="user-greeting">Hello, @User.Identity.Name</span>
+                        <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
+                            <button type="submit" class="btn btn-secondary">Logout</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Auth" asp-action="Login" class="btn btn-secondary">Login</a>
+                        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Register</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="main-container">
+        <main>
+            @RenderBody()
+        </main>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <p>Fediblog - A federated microblogging platform powered by ActivityPub.NET</p>
+        </div>
+    </footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

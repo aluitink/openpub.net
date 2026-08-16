@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Timeline";
+}
+@model IEnumerable<TimelineActivityItem>
+
+@if (ViewBag.ComposeSuccess != null && (bool)ViewBag.ComposeSuccess)
+{
+    <div class="alert-success">Post published successfully!</div>
+}
+
+<div class="timeline-header">
+    <h2>Home Timeline</h2>
+    <a asp-controller="Compose" asp-action="Index" class="btn btn-primary">Compose</a>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <div class="timeline-feed">
+        @foreach (var item in Model)
+        {
+            <div class="note-card">
+                <div class="note-header">
+                    <div class="note-author">
+                        <span class="note-display-name">@Html.Raw(item.AuthorDisplayName)</span>
+                        <span class="note-username">@item.AuthorName</span>
+                    </div>
+                    <span class="note-timestamp">@TimeAgo(item.Published)</span>
+                </div>
+                <div class="note-content">@Html.Raw(item.Content)</div>
+                <div class="note-actions">
+                    <form asp-controller="Compose" asp-action="Delete" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="activityId" value="@item.ActivityId" />
+                        <button type="submit" class="btn-action btn-delete" title="Delete">Delete</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-timeline">
+        <p>No posts yet. <a asp-controller="Compose" asp-action="Index">Write your first post!</a></p>
+    </div>
+}
+
+@functions {
+    string TimeAgo(DateTime dateTime)
+    {
+        var diff = DateTime.UtcNow - dateTime;
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+        return $"{(int)diff.TotalDays}d ago";
+    }
+}

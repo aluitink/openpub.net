@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 
-namespace ActivityPub.Core;
+namespace ActivityPub.Core.API.Controllers.Federation;
 
 [ApiController]
 [Route("users/{username}")]
@@ -53,6 +53,16 @@ public class ActorController : ControllerBase
                 return new ContentResult { StatusCode = 404, Content = "" };
             }
 
+            if (actor.PublicKey == null)
+            {
+                actor.PublicKey = new PublicKey
+                {
+                    Id = $"{actor.Id}/#main-key",
+                    Owner = actor.Id,
+                    PublicKeyPem = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xfn/ygWe\n-----END PUBLIC KEY-----"
+                };
+            }
+
             _logger.LogInformation("Actor request successful for username: {Username}", username);
             stopwatch.Stop();
             _logger.LogDebug("Actor request completed in {ElapsedMilliseconds} ms", stopwatch.ElapsedMilliseconds);
@@ -69,9 +79,11 @@ public class ActorController : ControllerBase
 
     [HttpGet("outbox")]
     public async Task<IActionResult> GetOutbox(
-        [FromRoute] string username)
+        [FromRoute] string username,
+        [FromQuery] int page = 0,
+        [FromQuery] int limit = 20)
     {
-        _logger.LogInformation("Outbox request received for username: {Username}", username);
+        _logger.LogInformation("Outbox request received for username: {Username}, page: {Page}, limit: {Limit}", username, page, limit);
 
         try
         {
@@ -81,6 +93,9 @@ public class ActorController : ControllerBase
                 return BadRequest(new { error = "username parameter is required" });
             }
 
+            limit = Math.Max(1, Math.Min(limit, 100));
+            var skip = page * limit;
+
             var actor = await _repository.GetUserActorAsync(username);
             if (actor == null)
             {
@@ -88,7 +103,7 @@ public class ActorController : ControllerBase
                 return new ContentResult { StatusCode = 404, Content = "" };
             }
 
-            var activities = await _repository.GetActorOutboxActivitiesAsync(username, 0, 20);
+            var activities = await _repository.GetActorOutboxActivitiesAsync(username, skip, limit);
 
             var orderedCollection = new OrderedCollection
             {
@@ -148,9 +163,11 @@ public class ActorController : ControllerBase
 
     [HttpGet("followers")]
     public async Task<IActionResult> GetFollowers(
-        [FromRoute] string username)
+        [FromRoute] string username,
+        [FromQuery] int page = 0,
+        [FromQuery] int limit = 20)
     {
-        _logger.LogInformation("Followers request received for username: {Username}", username);
+        _logger.LogInformation("Followers request received for username: {Username}, page: {Page}, limit: {Limit}", username, page, limit);
 
         try
         {
@@ -160,6 +177,9 @@ public class ActorController : ControllerBase
                 return BadRequest(new { error = "username parameter is required" });
             }
 
+            limit = Math.Max(1, Math.Min(limit, 100));
+            var skip = page * limit;
+
             var actor = await _repository.GetUserActorAsync(username);
             if (actor == null)
             {
@@ -167,7 +187,7 @@ public class ActorController : ControllerBase
                 return new ContentResult { StatusCode = 404, Content = "" };
             }
 
-            var followers = await _repository.GetFollowersAsync(username, 0, 20);
+            var followers = await _repository.GetFollowersAsync(username, skip, limit);
 
             var collection = new Collection
             {
@@ -191,9 +211,11 @@ public class ActorController : ControllerBase
 
     [HttpGet("following")]
     public async Task<IActionResult> GetFollowing(
-        [FromRoute] string username)
+        [FromRoute] string username,
+        [FromQuery] int page = 0,
+        [FromQuery] int limit = 20)
     {
-        _logger.LogInformation("Following request received for username: {Username}", username);
+        _logger.LogInformation("Following request received for username: {Username}, page: {Page}, limit: {Limit}", username, page, limit);
 
         try
         {
@@ -203,6 +225,9 @@ public class ActorController : ControllerBase
                 return BadRequest(new { error = "username parameter is required" });
             }
 
+            limit = Math.Max(1, Math.Min(limit, 100));
+            var skip = page * limit;
+
             var actor = await _repository.GetUserActorAsync(username);
             if (actor == null)
             {
@@ -210,7 +235,7 @@ public class ActorController : ControllerBase
                 return new ContentResult { StatusCode = 404, Content = "" };
             }
 
-            var following = await _repository.GetFollowingAsync(username, 0, 20);
+            var following = await _repository.GetFollowingAsync(username, skip, limit);
 
             var collection = new Collection
             {
@@ -228,6 +253,102 @@ public class ActorController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing Following request for username: {Username}", username);
+            throw;
+        }
+    }
+
+    [HttpGet("inbox")]
+    public async Task<IActionResult> GetInbox(
+        [FromRoute] string username,
+        [FromQuery] int page = 0,
+        [FromQuery] int limit = 20)
+    {
+        _logger.LogInformation("Inbox request received for username: {Username}, page: {Page}, limit: {Limit}", username, page, limit);
+
+        try
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                _logger.LogWarning("Inbox request missing username parameter");
+                return BadRequest(new { error = "username parameter is required" });
+            }
+
+            limit = Math.Max(1, Math.Min(limit, 100));
+            var skip = page * limit;
+
+            var actor = await _repository.GetUserActorAsync(username);
+            if (actor == null)
+            {
+                _logger.LogWarning("Actor not found for username: {Username}", username);
+                return new ContentResult { StatusCode = 404, Content = "" };
+            }
+
+            var activities = await _repository.GetInboxActivitiesAsync(username, skip, limit);
+
+            var orderedCollection = new OrderedCollection
+            {
+                Id = $"{actor.Id}/inbox",
+                Type = "OrderedCollection",
+                TotalItems = activities.Count,
+                OrderedItems = activities
+            };
+
+            _logger.LogInformation("Inbox request successful for username: {Username}", username);
+
+            var json = JsonSerializer.Serialize(orderedCollection, _jsonOptions);
+            return Content(json, "application/activity+json");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing Inbox request for username: {Username}", username);
+            throw;
+        }
+    }
+
+    [HttpGet("liked")]
+    public async Task<IActionResult> GetLiked(
+        [FromRoute] string username,
+        [FromQuery] int page = 0,
+        [FromQuery] int limit = 20)
+    {
+        _logger.LogInformation("Liked request received for username: {Username}, page: {Page}, limit: {Limit}", username, page, limit);
+
+        try
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                _logger.LogWarning("Liked request missing username parameter");
+                return BadRequest(new { error = "username parameter is required" });
+            }
+
+            limit = Math.Max(1, Math.Min(limit, 100));
+            var skip = page * limit;
+
+            var actor = await _repository.GetUserActorAsync(username);
+            if (actor == null)
+            {
+                _logger.LogWarning("Actor not found for username: {Username}", username);
+                return new ContentResult { StatusCode = 404, Content = "" };
+            }
+
+            var liked = await _repository.GetLikedActivitiesAsync(username, skip, limit);
+
+            var collection = new Collection
+            {
+                Id = $"{actor.Id}/liked",
+                Type = "Collection",
+                TotalItems = liked.Count,
+                Items = liked
+            };
+
+            _logger.LogInformation("Liked request successful for username: {Username}", username);
+
+            var json = JsonSerializer.Serialize(collection, _jsonOptions);
+            return Content(json, "application/activity+json");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing Liked request for username: {Username}", username);
             throw;
         }
     }

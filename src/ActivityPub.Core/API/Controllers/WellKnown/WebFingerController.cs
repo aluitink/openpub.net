@@ -8,7 +8,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
 
-namespace ActivityPub.Core;
+namespace ActivityPub.Core.API.Controllers.WellKnown;
 
 /// <summary>
 /// WebFinger endpoint implementation for ActivityPub protocol

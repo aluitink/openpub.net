@@ -73,14 +73,33 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     /// <inheritdoc />
     public Task<ICollection<string>> GetFollowersAsync(string username, int skip, int limit)
     {
-        var followers = new List<string>();
+        var actorId = $"https://localhost/users/{username}";
+        var followers = _activities.Values
+            .Where(a => a.Type == "Follow" &&
+                       ((a.Object is string objStr && objStr == actorId) ||
+                        (a.Object is Models.Object obj && obj.Id == actorId)))
+            .OrderBy(a => a.Published ?? DateTime.MinValue)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.ActorId ?? a.Id ?? string.Empty)
+            .ToList();
+
         return Task.FromResult<ICollection<string>>(followers);
     }
 
     /// <inheritdoc />
     public Task<ICollection<string>> GetFollowingAsync(string username, int skip, int limit)
     {
-        var following = new List<string>();
+        var actorId = $"https://localhost/users/{username}";
+        var following = _activities.Values
+            .Where(a => a.Type == "Follow" &&
+                       (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)))
+            .OrderBy(a => a.Published ?? DateTime.MinValue)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.ObjectId ?? a.Object?.ToString() ?? string.Empty)
+            .ToList();
+
         return Task.FromResult<ICollection<string>>(following);
     }
 
@@ -150,7 +169,15 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     /// <inheritdoc />
     public Task<ICollection<string>> GetUniqueFollowerIdsAsync(string username)
     {
-        var followers = new List<string>();
+        var actorId = $"https://localhost/users/{username}";
+        var followers = _activities.Values
+            .Where(a => a.Type == "Follow" &&
+                       ((a.Object is string objStr && objStr == actorId) ||
+                        (a.Object is Models.Object obj && obj.Id == actorId)))
+            .Select(a => a.ActorId ?? a.Id ?? string.Empty)
+            .Distinct()
+            .ToList();
+
         return Task.FromResult<ICollection<string>>(followers);
     }
 
@@ -264,5 +291,35 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         history.Timestamp = DateTime.UtcNow;
         _webhookDeliveryHistories.Add(history);
         return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<string>> GetInboxActivitiesAsync(string username, int skip, int limit)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var activityIds = _activities.Values
+            .Where(a => a.To != null && a.To.Contains(actorId))
+            .OrderByDescending(a => a.Published ?? DateTime.MinValue)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.Id)
+            .ToList();
+
+        return Task.FromResult<ICollection<string>>(activityIds);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<string>> GetLikedActivitiesAsync(string username, int skip, int limit)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var activityIds = _activities.Values
+            .Where(a => a.Type == "Like" && (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)))
+            .OrderByDescending(a => a.Published ?? DateTime.MinValue)
+            .Skip(skip)
+            .Take(limit)
+            .Select(a => a.Object?.ToString() ?? a.Id)
+            .ToList();
+
+        return Task.FromResult<ICollection<string>>(activityIds);
     }
 }

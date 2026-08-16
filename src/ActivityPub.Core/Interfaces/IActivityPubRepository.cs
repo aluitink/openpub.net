@@ -171,4 +171,22 @@ public interface IActivityPubRepository
     /// <param name="history">The delivery history entity</param>
     /// <returns>True if saved successfully, false otherwise</returns>
     Task<bool> SaveWebhookDeliveryHistoryAsync(WebhookDeliveryHistoryEntity history);
+
+    /// <summary>
+    /// Gets inbox activities for an actor
+    /// </summary>
+    /// <param name="username">The username of the actor</param>
+    /// <param name="skip">Number of items to skip</param>
+    /// <param name="limit">Maximum number of items to return</param>
+    /// <returns>Collection of activity IDs</returns>
+    Task<ICollection<string>> GetInboxActivitiesAsync(string username, int skip, int limit);
+
+    /// <summary>
+    /// Gets liked activity IDs for an actor
+    /// </summary>
+    /// <param name="username">The username of the actor</param>
+    /// <param name="skip">Number of items to skip</param>
+    /// <param name="limit">Maximum number of items to return</param>
+    /// <returns>Collection of liked activity IDs</returns>
+    Task<ICollection<string>> GetLikedActivitiesAsync(string username, int skip, int limit);
 }

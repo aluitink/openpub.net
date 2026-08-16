@@ -27,6 +27,21 @@ public static class ActivityPubServiceCollectionExtensions
         this IServiceCollection services,
         Action<ActivityPubOptions>? configureOptions = null)
     {
+        return AddActivityPub(services, configureOptions, configureDbContext: null);
+    }
+
+    /// <summary>
+    /// Adds ActivityPub services to the DI container with custom DbContext configuration
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configureOptions">Action to configure ActivityPub options</param>
+    /// <param name="configureDbContext">Action to configure the ActivityPub DbContext. If null, uses InMemory.</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddActivityPub(
+        this IServiceCollection services,
+        Action<ActivityPubOptions>? configureOptions,
+        Action<DbContextOptionsBuilder>? configureDbContext)
+    {
         if (configureOptions != null)
         {
             services.Configure(configureOptions);
@@ -39,8 +54,17 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddHttpClient();
         services.AddMemoryCache();
         services.AddLogging();
-        services.AddDbContext<ActivityPubDbContext>(options =>
-            options.UseInMemoryDatabase("ActivityPubDb"));
+
+        if (configureDbContext != null)
+        {
+            services.AddDbContext<ActivityPubDbContext>(configureDbContext);
+        }
+        else
+        {
+            services.AddDbContext<ActivityPubDbContext>(options =>
+                options.UseInMemoryDatabase("ActivityPubDb"));
+        }
+
         services.AddScoped<IActivityPubRepository, EFCoreActivityPubRepository>();
         services.AddScoped<ActivityPubEventDispatcher>();
         services.AddScoped<IKeyFetchingService, KeyFetchingService>();

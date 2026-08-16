@@ -46,6 +46,8 @@ public class Activity
     {
         string id => id,
         Actor actor => actor.Id,
+        System.Text.Json.JsonElement je when je.ValueKind == System.Text.Json.JsonValueKind.String => je.GetString(),
+        System.Text.Json.JsonElement je when je.TryGetProperty("id", out var idEl) => idEl.GetString(),
         _ => null
     };
 
@@ -57,6 +59,8 @@ public class Activity
     {
         string id => id,
         Object obj => obj.Id,
+        System.Text.Json.JsonElement je when je.ValueKind == System.Text.Json.JsonValueKind.String => je.GetString(),
+        System.Text.Json.JsonElement je when je.TryGetProperty("id", out var idEl) => idEl.GetString(),
         _ => null
     };
 

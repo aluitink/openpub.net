@@ -1,176 +1,143 @@
-# ActivityPub.NET - Project Improvement Plan
+# ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-22 complete. Next: Phase 23.
+**Status:** Phases 1-22 complete. Next: Phase 25 (Social Platform).
+
+## Testing Guidelines
+
+- **Browser/UI tests using Playwright** should be executed in delegated agents rather than inline, to isolate browser state and avoid conflicts with the main session.
 
 ---
 
-## Completed Phases (1-16)
+## Completed Phases (1-22)
 
-| Phase | Title | Status |
-|-------|-------|--------|
-| 1 | Foundation - Directory structure | ✅ Complete |
-| 2 | Documentation - README, guides, templates | ✅ Complete |
-| 3 | Tooling - Build scripts, CI/CD, code quality | ✅ Complete |
-| 4 | Cleanup - Empty files, solution consolidation | ✅ Complete |
-| 5 | Source Migration - All files in new structure | ✅ Complete |
-| 6 | Project Structure Validation | ✅ Complete |
-| 7 | Full Test Suite with New Structure | ✅ Complete |
-| 8 | Migration Verification | ✅ Complete |
-| 9 | Documentation Updates - API reference, migration guide | ✅ Complete |
-| 10 | Production Readiness - Vulnerabilities, packages | ✅ Complete |
-| 11 | Identity Model - JWT support for DemoApp | ✅ Complete |
-| 12 | Code Quality - Nullable warnings, package cleanup | ✅ Complete |
-| 13 | Performance Optimization - Caching, batch processing | ✅ Complete |
-| 14 | Security Hardening - Headers, validation, middleware | ✅ Complete |
-| 15 | Deployment Documentation - Docker, K8s, scripts | ✅ Complete |
-| 16 | Final Cleanup - Stale files, nullable warnings, .gitignore | ✅ Complete |
-| 17 | CI/CD Pipeline Setup - GitHub Actions, CODEOWNERS | ✅ Complete |
-| 18 | Admin Dashboard Scaffolding - ActivityPub.Admin | ✅ Complete |
-| 19 | CLI Tool Scaffolding - ActivityPub.Cli | ✅ Complete |
-| 20 | Integration Test Expansion - 502 tests | ✅ Complete |
-| 21 | Benchmark Suite - BenchmarkDotNet | ✅ Complete |
-| 22 | Observatory Compliance - Federation endpoints + 32 compliance tests | ✅ Complete |
+| # | Title | # | | Title |
+|---|-------|---|---|-------|
+| 1 | Foundation - Directory structure | 12 | Code Quality - Nullable, packages |
+| 2 | Documentation - README, guides | 13 | Performance - Caching, batching |
+| 3 | Tooling - Build, CI/CD, quality | 14 | Security - Headers, validation |
+| 4 | Cleanup - Consolidation | 15 | Deployment - Docker, K8s |
+| 5 | Source Migration | 16 | Final Cleanup - .gitignore |
+| 6 | Structure Validation | 17 | CI/CD Pipeline - GitHub Actions |
+| 7 | Full Test Suite | 18 | Admin Dashboard - Razor Pages |
+| 8 | Migration Verification | 19 | CLI Tool - System.CommandLine |
+| 9 | Docs - API ref, migration | 20 | Integration Tests - 502 total |
+| 10 | Production Readiness | 21 | Benchmarks - BenchmarkDotNet |
+| 11 | Identity - JWT for DemoApp | 22 | Observatory Compliance - 32 tests |
 
----
-
-## Current Build State
+## Build State
 
 - **Build:** 0 errors, 0 warnings
-- **Tests:** 534 passing, 0 failed
-- **Format:** Clean (dotnet format --verify-no-changes passes)
-- **Benchmarks:** ActivityPub.Benchmarks project with 4 benchmark suites
-- **Target Framework:** .NET 10.0
+- **Tests:** 534 passing
+- **Format:** Clean
+- **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
----
+## Core Library Surface
 
-## Next Phases
+**Models:** Actor, Note, Create, Follow, Like, Announce, Article, Page, Video, Image, Collection, OrderedCollection, Activity, Accept, Reject, Undo, Delete, Tombstone, Update, Event, PublicKey, Endpoints + WebFinger/NodeInfo/HostMeta discovery types
 
-### Phase 17: CI/CD Pipeline Setup ✅ Complete
+**Repository (`IActivityPubRepository`):** Actor CRUD, Activity CRUD, Outbox/Followers/Following/Liked collections, deduplication, shared inbox delivery queue, webhook delivery queue
 
-**Goal:** Create proper GitHub Actions CI/CD workflow.
+**Services:** ActivityPubService (actor lookup, activity processing, cache invalidation), InboxProcessorService, OutboundActivityService, OutboundSigningService, FederationDiscoveryService, KeyFetching/Generation, SharedInboxService, WebhookDelivery, WebFingerCache, ActivityValidation, MRFService, ActivityCache, ActivityPubEventDispatcher
 
-**Tasks:**
-1. ✅ Create `.github/workflows/ci.yml` with build, test, and format check jobs
-2. ✅ Create `.github/workflows/release.yml` for automated NuGet publishing
-3. ✅ Add CODEOWNERS file
-4. ✅ Run dotnet format to fix whitespace inconsistencies across codebase
-5. ✅ Fix xUnit1031 and ASP0019 analyzer warnings
+**Middleware:** RateLimiting, SecurityHeaders, HttpSignature, SigningVerification
 
-### Phase 18: Admin Dashboard Scaffolding ✅ Complete
+**Infrastructure:** EFCoreActivityPubRepository (InMemory/SQLite), MemoryFederationCache, CacheInvalidation, Logging, Telemetry, Metrics, ResponseCaching, API Versioning, Monitoring
 
-**Goal:** Scaffold `ActivityPub.Admin` as a minimal admin dashboard project.
+**DI Extension:** `AddActivityPub(Action<ActivityPubOptions>?)` — registers all services, DbContext, hosted services
 
-**Tasks:**
-1. ✅ Create `src/ActivityPub.Admin/ActivityPub.Admin.csproj` (ASP.NET Core Razor Pages)
-2. ✅ Add basic admin pages: Activity feed viewer, Actor management, Outbox monitoring
-3. ✅ Add to solution file
-4. ✅ Ensure it references ActivityPub.Core
-5. ✅ Add layout, error page, and CSS styling
-
-### Phase 19: CLI Tool Scaffolding ✅ Complete
-
-**Goal:** Scaffold `ActivityPub.Cli` as a command-line administration tool.
-
-**Tasks:**
-1. ✅ Create `src/ActivityPub.Cli/ActivityPub.Cli.csproj` (Console app with System.CommandLine)
-2. ✅ Implement actor commands: list, get, follow, unfollow
-3. ✅ Implement activity commands: list, get, fetch, delete
-4. ✅ Implement inbox commands: monitor, pending, stats
-5. ✅ Implement webhook commands: list, pending, history, delete
-6. ✅ Add to solution file
-7. ✅ Ensure it references ActivityPub.Core
-
-### Phase 20: Integration Test Expansion ✅ Complete
-
-**Goal:** Expand integration test coverage for federation scenarios.
-
-**Tasks:**
-1. ✅ Add tests for WebFinger protocol exchange (12 tests)
-2. ✅ Add tests for OStatus HTTP Signature verification (25 tests)
-3. ✅ Add tests for inbox delivery (29 tests)
-4. ✅ Add tests for ActivityPub object type validation (20 tests)
-5. ✅ Target: 500+ total tests (achieved: 502)
-
-### Phase 21: Benchmark Suite ✅ Complete
-
-**Goal:** Add performance benchmarks using BenchmarkDotNet.
-
-**Tasks:**
-1. ✅ Create `ActivityPub.Benchmarks/` project
-2. ✅ Benchmark JSON serialization/deserialization for ActivityPub objects
-3. ✅ Benchmark cache lookup performance (MemoryFederationCache)
-4. ✅ Benchmark HTTP signature generation/verification
-5. ✅ Add baseline metrics to documentation
-
-### Phase 22: Observatory Compliance ✅ Complete
-
-**Goal:** Implement ActivityPub compliance checks per Mastodon Observatory spec.
-
-**Tasks:**
-1. ✅ WebFinger endpoint (already existed, fixed camelCase serialization for cached responses)
-2. ✅ NodeInfo discovery endpoint (2.0) at `/.well-known/nodeinfo`
-3. ✅ NodeInfo response endpoint (2.1) at `/nodeinfo/2.1`
-4. ✅ Host metadata endpoint at `/.well-known/host-meta`
-5. ✅ Created `ObservatoryController` with all discovery endpoints
-6. ✅ Created 32 compliance integration tests in `ObservatoryComplianceTests`
-7. ✅ Fixed `WebFingerResponse` and `WebFingerLink` with `[JsonPropertyName]` for camelCase JSON
-8. ✅ All 534 tests pass, 0 failures
-
-### Phase 23: Federation Actor Management
-
-**Goal:** Implement actor management endpoints for federation interoperability.
-
-**Tasks:**
-1. Implement actor profile page endpoint (`/users/{username}`) returning ActivityPub Person object
-2. Implement actor followers endpoint (`/users/{username}/followers`)
-3. Implement actor following endpoint (`/users/{username}/following`)
-4. Implement actor outbox endpoint (`/users/{username}/outbox`)
-5. Add integration tests for actor endpoints
-6. Verify federation interoperability with test servers
+**Discovery Endpoints:** WebFinger, NodeInfo 2.1, HostMeta, Health
 
 ---
 
-## Project Structure (Current)
+## Social Platform: Fediblog
 
-```
-/workspace/
-├── ActivityPub.sln
-├── src/
-│   ├── ActivityPub.Core/        # Core library (Controllers, Services, Models, Infrastructure)
-│   │   ├── API/Controllers/     # WebFinger, Observatory, Inbox, etc.
-│   │   ├── Core/Models/         # ActivityPub objects, WebFinger, NodeInfo, etc.
-│   │   ├── Infrastructure/      # Caching, signing, converters
-│   │   └── BackgroundServices/  # Inbox processing, etc.
-│   ├── ActivityPub.Admin/       # Admin dashboard (Razor Pages)
-│   └── ActivityPub.Cli/         # CLI administration tool (System.CommandLine)
-├── ActivityPub.Tests/           # Test suite (534 tests)
-│   ├── UnitTests/
-│   ├── IntegrationTests/        # Includes Discovery/, Scale/ subfolders
-│   ├── LoadTesting/
-│   └── Deferred/
-├── samples/
-│   ├── ConsoleClient/
-│   ├── FederationApp/
-│   ├── BotApp/
-│   └── DemoApp/
-├── docs/
-│   ├── overview.md
-│   ├── architecture.md
-│   ├── testing.md
-│   ├── directory-structure.md
-│   ├── migration-guide.md
-│   ├── contributing.md
-│   └── api-reference/
-├── scripts/
-│   ├── build.sh
-│   ├── test.sh
-│   ├── publish.sh
-│   ├── deploy.sh
-│   ├── backup.sh
-│   └── restore.sh
-├── DOCKER.md
-├── ENVIRONMENT.md
-└── kubernetes.yaml
-```
+A Mastodon-like microblogging application built on ActivityPub.NET.
+
+**Tech choices:** SQLite, username/password auth, minimal MVP (posting + federation)
+
+**Project location:** `src/ActivityPub.WebUI/`
+
+### Phase 25: WebUI Foundation & Auth
+
+**Goal:** Scaffold the web application with user authentication and registration.
+
+**Tasks:**
+1. Create `src/ActivityPub.WebUI/ActivityPub.WebUI.csproj` (ASP.NET Core MVC, .NET 10)
+2. Add to `ActivityPub.sln`, reference `ActivityPub.Core`
+3. Configure SQLite via `Microsoft.EntityFrameworkCore.Sqlite`
+4. Implement user registration page (username, password, display name, email)
+5. Implement login/logout with cookie authentication
+6. Create `ApplicationUser` entity and `ApplicationDbContext` (extends or alongside ActivityPubDbContext)
+7. Seed local Actor on account creation (generate keypair, register in repository)
+8. Basic layout: navbar with brand, login/register links, user menu
+9. Add integration tests for auth flow
+
+### Phase 26: Compose & Timeline
+
+**Goal:** Users can create notes and see a home timeline.
+
+**Tasks:**
+1. Compose controller/action with form (text area, 500-char limit)
+2. On submit: create Note, wrap in Create activity, save to outbox via `IActivityPubRepository`
+3. Distribute Create activity to followers via `OutboundActivityService`
+4. Home timeline: query `GetInboxActivitiesAsync` + local user's outbox, render chronological feed
+5. Public timeline: show all local public notes
+6. Note display card: author avatar/username, content, timestamp, like/boost/reply buttons
+7. Delete note action (tombstone via `DeleteActivityAsync`)
+8. Add integration tests for compose, timeline, delete
+
+### Phase 27: Follows & Federation
+
+**Goal:** Users can follow local and remote actors; remote content appears in timeline.
+
+**Tasks:**
+1. Follow form: accept username@domain, discover remote actor via `FederationDiscoveryService`
+2. Send Follow activity via `OutboundActivityService`, handle Accept/Reject
+3. Handle incoming Follow activities in inbox processor
+4. Unfollow: send Undo(Follow) activity
+5. Following/Followers pages: render lists from `GetFollowingAsync`/`GetFollowersAsync`
+6. Remote notes appearing in timeline via inbox processing of Create activities
+7. Add integration tests for follow/unfollow/federation flow
+
+### Phase 28: Interactions (Like, Reply, Boost)
+
+**Goal:** Users can like, reply to, and boost (repost) notes.
+
+**Tasks:**
+1. Like: create Like activity, save to liked collection, distribute to author
+2. Reply: create Note with `inReplyTo`, wrap in Create, distribute to conversation participants
+3. Boost (Announce): create Announce activity referencing original, distribute
+4. Reply threading in timeline view (show reply chains)
+5. Interaction counts on note cards (likes, replies, boosts)
+6. Add integration tests for each interaction type
+
+### Phase 29: Profiles & Actor Endpoints
+
+**Goal:** User profiles and federation-compatible actor endpoints.
+
+**Tasks:**
+1. Profile page: display name, bio, avatar, banner, stats (posts, followers, following)
+2. Edit profile: update display name, summary, icon, image
+3. Actor endpoint `/users/{username}` → ActivityPub Person JSON
+4. Outbox endpoint `/users/{username}/outbox` → OrderedCollection
+5. Followers/Following collection endpoints with pagination
+6. Liked collection endpoint
+7. Add integration tests for all actor endpoints
+
+### Phase 30: Polish & Production
+
+**Goal:** Polish the UI, add missing UX, and prepare for deployment.
+
+**Tasks:**
+1. Responsive CSS (mobile-friendly)
+2. Error pages (404, 500)
+3. Rate limiting on compose and follow endpoints
+4. Hashtag support: parse #tags in notes, hashtag page with filtered timeline
+5. Search: local user and note search
+6. Notifications page: follows, mentions, likes
+7. Dockerfile for ActivityPub.WebUI
+8. Update deployment docs with social platform config
+9. End-to-end smoke tests
+10. Update README with Fediblog showcase

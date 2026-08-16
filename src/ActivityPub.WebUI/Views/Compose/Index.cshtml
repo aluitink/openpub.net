@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Compose";
+}
+@model ComposeModel
+
+<div class="compose-container">
+    <h2>Compose New Post</h2>
+
+    <form asp-action="Post" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="compose-form">
+            <div class="form-group">
+                <label for="Content">What's on your mind?</label>
+                <textarea
+                    id="Content"
+                    name="Content"
+                    class="form-control compose-textarea"
+                    rows="5"
+                    maxlength="500"
+                    placeholder="Write your post... (max 500 characters)">@Model?.Content</textarea>
+                <span class="char-counter"><span id="charCount">0</span>/500</span>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-error">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary btn-block">Post</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    var textarea = document.getElementById('Content');
+    var counter = document.getElementById('charCount');
+    if (textarea && counter) {
+        counter.textContent = textarea.value.length;
+        textarea.addEventListener('input', function () {
+            counter.textContent = this.value.length;
+        });
+    }
+</script>

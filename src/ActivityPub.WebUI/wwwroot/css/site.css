@@ -1,0 +1,378 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    background-color: #f0f2f5;
+    color: #1a1a2e;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    background: #1a1a2e;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-container {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    color: #6c63ff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-greeting {
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: #6c63ff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #5a52d5;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: #ccc;
+    border: 1px solid #555;
+}
+
+.btn-secondary:hover {
+    background-color: #333;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.main-container {
+    flex: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    width: 100%;
+}
+
+.auth-form {
+    max-width: 420px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.auth-form h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #1a1a2e;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #6c63ff;
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+}
+
+.field-error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 0.3rem;
+}
+
+.validation-summary ul {
+    color: #e74c3c;
+    padding-left: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+    font-weight: 400;
+}
+
+.auth-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #666;
+}
+
+.auth-link a {
+    color: #6c63ff;
+    text-decoration: none;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
+}
+
+.home-page {
+    text-align: center;
+    padding: 4rem 1rem;
+}
+
+.home-page h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.home-page p {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+footer {
+    background: #1a1a2e;
+    color: #888;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.85rem;
+}
+
+.footer-container {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.alert-error {
+    background: #fdf0f0;
+    border: 1px solid #e74c3c;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: #c0392b;
+}
+
+.alert-error ul {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.alert-success {
+    background: #f0fdf0;
+    border: 1px solid #27ae60;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: #1e8449;
+}
+
+.nav-link {
+    color: #ccc;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+.compose-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.compose-container h2 {
+    margin-bottom: 1.5rem;
+    color: #1a1a2e;
+}
+
+.compose-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.compose-textarea {
+    resize: vertical;
+    font-family: inherit;
+    min-height: 120px;
+}
+
+.char-counter {
+    display: block;
+    text-align: right;
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 0.3rem;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-header h2 {
+    color: #1a1a2e;
+}
+
+.timeline-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.note-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.note-display-name {
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-right: 0.4rem;
+}
+
+.note-username {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.note-timestamp {
+    color: #999;
+    font-size: 0.85rem;
+}
+
+.note-content {
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 0.75rem;
+    word-wrap: break-word;
+}
+
+.note-actions {
+    display: flex;
+    gap: 0.5rem;
+    border-top: 1px solid #eee;
+    padding-top: 0.75rem;
+}
+
+.btn-action {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.btn-action:hover {
+    background-color: #f0f2f5;
+}
+
+.btn-delete {
+    color: #e74c3c;
+}
+
+.btn-delete:hover {
+    background-color: #fdf0f0;
+    color: #c0392b;
+}
+
+.empty-timeline {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #888;
+}
+
+.empty-timeline a {
+    color: #6c63ff;
+    text-decoration: none;
+}
+
+.empty-timeline a:hover {
+    text-decoration: underline;
+}
