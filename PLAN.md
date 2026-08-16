@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Improvement Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-21 complete. Next: Phase 22.
+**Status:** Phases 1-22 complete. Next: Phase 23.
 
 ---
 
@@ -30,13 +30,14 @@
 | 19 | CLI Tool Scaffolding - ActivityPub.Cli | ✅ Complete |
 | 20 | Integration Test Expansion - 502 tests | ✅ Complete |
 | 21 | Benchmark Suite - BenchmarkDotNet | ✅ Complete |
+| 22 | Observatory Compliance - Federation endpoints + 32 compliance tests | ✅ Complete |
 
 ---
 
 ## Current Build State
 
 - **Build:** 0 errors, 0 warnings
-- **Tests:** 502 passing, 0 failed
+- **Tests:** 534 passing, 0 failed
 - **Format:** Clean (dotnet format --verify-no-changes passes)
 - **Benchmarks:** ActivityPub.Benchmarks project with 4 benchmark suites
 - **Target Framework:** .NET 10.0
@@ -103,15 +104,31 @@
 4. ✅ Benchmark HTTP signature generation/verification
 5. ✅ Add baseline metrics to documentation
 
-### Phase 22: Observatory Compliance
+### Phase 22: Observatory Compliance ✅ Complete
 
-**Goal:** Implement ActivityPub compliance checks.
+**Goal:** Implement ActivityPub compliance checks per Mastodon Observatory spec.
 
 **Tasks:**
-1. Implement WebFinger endpoint per Mastodon Observatory spec
-2. Implement nodeinfo endpoint (2.0 and 2.1)
-3. Implement well-known host metadata
-4. Add compliance test suite
+1. ✅ WebFinger endpoint (already existed, fixed camelCase serialization for cached responses)
+2. ✅ NodeInfo discovery endpoint (2.0) at `/.well-known/nodeinfo`
+3. ✅ NodeInfo response endpoint (2.1) at `/nodeinfo/2.1`
+4. ✅ Host metadata endpoint at `/.well-known/host-meta`
+5. ✅ Created `ObservatoryController` with all discovery endpoints
+6. ✅ Created 32 compliance integration tests in `ObservatoryComplianceTests`
+7. ✅ Fixed `WebFingerResponse` and `WebFingerLink` with `[JsonPropertyName]` for camelCase JSON
+8. ✅ All 534 tests pass, 0 failures
+
+### Phase 23: Federation Actor Management
+
+**Goal:** Implement actor management endpoints for federation interoperability.
+
+**Tasks:**
+1. Implement actor profile page endpoint (`/users/{username}`) returning ActivityPub Person object
+2. Implement actor followers endpoint (`/users/{username}/followers`)
+3. Implement actor following endpoint (`/users/{username}/following`)
+4. Implement actor outbox endpoint (`/users/{username}/outbox`)
+5. Add integration tests for actor endpoints
+6. Verify federation interoperability with test servers
 
 ---
 
@@ -122,11 +139,15 @@
 ├── ActivityPub.sln
 ├── src/
 │   ├── ActivityPub.Core/        # Core library (Controllers, Services, Models, Infrastructure)
+│   │   ├── API/Controllers/     # WebFinger, Observatory, Inbox, etc.
+│   │   ├── Core/Models/         # ActivityPub objects, WebFinger, NodeInfo, etc.
+│   │   ├── Infrastructure/      # Caching, signing, converters
+│   │   └── BackgroundServices/  # Inbox processing, etc.
 │   ├── ActivityPub.Admin/       # Admin dashboard (Razor Pages)
 │   └── ActivityPub.Cli/         # CLI administration tool (System.CommandLine)
-├── ActivityPub.Tests/           # Test suite (386 tests)
+├── ActivityPub.Tests/           # Test suite (534 tests)
 │   ├── UnitTests/
-│   ├── IntegrationTests/        # Includes Scale/ subfolder
+│   ├── IntegrationTests/        # Includes Discovery/, Scale/ subfolders
 │   ├── LoadTesting/
 │   └── Deferred/
 ├── samples/
