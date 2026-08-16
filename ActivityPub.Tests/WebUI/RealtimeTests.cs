@@ -288,7 +288,7 @@ public class RealtimeTests : IClassFixture<WebUIFactory>
         var response = await client.GetAsync("/timeline");
         Assert.True(response.IsSuccessStatusCode, $"Timeline failed: {(int)response.StatusCode}");
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("btn-report", body);
+        Assert.Contains("Report note", body);
     }
 
     [Fact]

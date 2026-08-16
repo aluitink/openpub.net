@@ -675,38 +675,38 @@ footer {
 }
 
 .btn-like {
-    color: #e74c3c;
+    color: #888;
 }
 
 .btn-like.active {
-    color: #c0392b;
+    color: #333;
     font-weight: 700;
 }
 
 .btn-like:hover {
-    background-color: #fdf0f0;
+    background-color: #f0f2f5;
 }
 
 .btn-boost {
-    color: #27ae60;
+    color: #888;
 }
 
 .btn-boost.active {
-    color: #1e8449;
+    color: #333;
     font-weight: 700;
 }
 
 .btn-boost:hover {
-    background-color: #f0fdf0;
+    background-color: #f0f2f5;
 }
 
 .btn-reply {
-    color: #2980b9;
+    color: #888;
 }
 
 .btn-reply:hover {
-    background-color: #f0f4ff;
-    color: #1a5276;
+    background-color: #f0f2f5;
+    color: #333;
 }
 
 .boost-banner {
@@ -2221,6 +2221,14 @@ footer {
 
 .note-more-item:hover {
     background: #f5f5f5;
+}
+
+.note-more-item.note-more-danger {
+    color: #c0392b;
+}
+
+.note-more-item.note-more-danger:hover {
+    background: #fdf0f0;
 }
 
 .note-more-item + .note-more-item {
