@@ -48,12 +48,22 @@
 </div>
 
 <script>
-    var textarea = document.getElementById('Content');
-    var counter = document.getElementById('charCount');
-    if (textarea && counter) {
-        counter.textContent = textarea.value.length;
-        textarea.addEventListener('input', function () {
-            counter.textContent = this.value.length;
-        });
-    }
+    (function() {
+        var textarea = document.getElementById('Content');
+        var counter = document.getElementById('charCount');
+        var max = 500;
+        if (!textarea || !counter) return;
+        function update() {
+            var len = textarea.value.length;
+            counter.textContent = len;
+            var parent = counter.closest('.char-counter');
+            if (!parent) return;
+            parent.classList.remove('char-ok', 'char-near', 'char-over');
+            if (len > max) parent.classList.add('char-over');
+            else if (len > max * 0.9) parent.classList.add('char-near');
+            else parent.classList.add('char-ok');
+        }
+        update();
+        textarea.addEventListener('input', update);
+    })();
 </script>

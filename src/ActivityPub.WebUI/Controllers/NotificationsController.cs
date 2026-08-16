@@ -147,6 +147,14 @@ public class NotificationsController : Controller
         return text.Length <= maxLength ? text : text.Substring(0, maxLength) + "...";
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult MarkAllRead()
+    {
+        TempData["NotificationSuccess"] = "All notifications marked as read.";
+        return RedirectToAction(nameof(Index));
+    }
+
     static string GetNotificationTitle(string type, string displayName)
     {
         return type switch

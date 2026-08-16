@@ -22,7 +22,7 @@
             <span class="note-display-name">@Html.Raw(Model.AuthorDisplayName)</span>
             <span class="note-username">@Model.AuthorName</span>
         </div>
-        <span class="note-timestamp">@TimeAgo(Model.Published)</span>
+        <span class="note-timestamp" title="@Model.Published.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss") + " UTC" data-published="@Model.Published.ToUniversalTime().ToString("o")">@TimeAgo(Model.Published)</span>
     </div>
 
     @if (Model.InReplyTo != null)

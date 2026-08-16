@@ -4,7 +4,16 @@
 @model NotificationsViewModel
 
 <div class="notifications-container">
-    <h2 class="notifications-header">Notifications</h2>
+    <div class="notifications-header-row">
+        <h2 class="notifications-header">Notifications</h2>
+        @if (Model.Items.Count > 0)
+        {
+            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post" class="inline-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
+            </form>
+        }
+    </div>
 
     @if (Model.Items.Count == 0)
     {
@@ -14,40 +23,61 @@
     }
     else
     {
-        <div class="notifications-list">
-            @foreach (var item in Model.Items)
+        var grouped = Model.Items
+            .GroupBy(i => i.NotificationType)
+            .OrderByDescending(g => g.First().Published)
+            .ToList();
+
+        @foreach (var group in grouped)
+        {
+            var typeLabel = group.Key switch
             {
-                <div class="notification-item @(item.NotificationType)">
-                    <div class="notification-icon">
-                        @{
-                            var icon = item.NotificationType switch
-                            {
-                                "follow" => "&#10133;",
-                                "follow_accept" => "&#10003;",
-                                "like" => "&#10084;",
-                                "boost" => "&#128264;",
-                                "reply" => "&#10148;",
-                                _ => "&#9889;"
-                            };
-                        }
-                        <span>@icon</span>
-                    </div>
-                    <div class="notification-content">
-                        <p class="notification-title">
-                            <a asp-controller="Profile" asp-action="Index" asp-route-username="@item.ActorName">@item.ActorDisplayName</a>
-                            @item.Title.Replace(item.ActorDisplayName, "")
-                        </p>
-                        @if (!string.IsNullOrEmpty(item.TargetNote))
-                        {
-                            <p class="notification-note">@item.TargetNote</p>
-                        }
-                    </div>
-                    <div class="notification-time">
-                        <span>@TimeAgo(item.Published)</span>
-                    </div>
+                "follow" => "Follows",
+                "follow_accept" => "Follow Accepts",
+                "like" => "Likes",
+                "boost" => "Boosts",
+                "reply" => "Replies",
+                _ => "Other"
+            };
+
+            <div class="notification-group">
+                <h3 class="notification-group-header">@typeLabel <span class="notification-group-count">@group.Count()</span></h3>
+                <div class="notifications-list">
+                    @foreach (var item in group)
+                    {
+                        <div class="notification-item @(item.NotificationType)">
+                            <div class="notification-icon">
+                                @{
+                                    var icon = item.NotificationType switch
+                                    {
+                                        "follow" => "&#10133;",
+                                        "follow_accept" => "&#10003;",
+                                        "like" => "&#10084;",
+                                        "boost" => "&#128264;",
+                                        "reply" => "&#10148;",
+                                        _ => "&#9889;"
+                                    };
+                                }
+                                <span>@icon</span>
+                            </div>
+                            <div class="notification-content">
+                                <p class="notification-title">
+                                    <a asp-controller="Profile" asp-action="Index" asp-route-username="@item.ActorName">@item.ActorDisplayName</a>
+                                    @item.Title.Replace(item.ActorDisplayName, "")
+                                </p>
+                                @if (!string.IsNullOrEmpty(item.TargetNote))
+                                {
+                                    <p class="notification-note">@item.TargetNote</p>
+                                }
+                            </div>
+                            <div class="notification-time">
+                                <span>@TimeAgo(item.Published)</span>
+                            </div>
+                        </div>
+                    }
                 </div>
-            }
-        </div>
+            </div>
+        }
 
         @if (Model.HasMore)
         {

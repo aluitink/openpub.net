@@ -53,6 +53,11 @@ public class SearchController : Controller
             model.Notes = notes;
         }
 
+        if (tab == "hashtags" || tab == "all")
+        {
+            model.Hashtags = ExtractHashtagsFromNotes(model.Notes);
+        }
+
         return View(model);
     }
 
@@ -162,6 +167,26 @@ public class SearchController : Controller
         return null;
     }
 
+    static List<SearchHashtagResult> ExtractHashtagsFromNotes(List<SearchNoteResult> notes)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var note in notes)
+        {
+            if (!note.HasTag) continue;
+            var regex = new System.Text.RegularExpressions.Regex(@"#(\w+)");
+            var matches = regex.Matches(note.Content);
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                var tag = match.Groups[1].Value;
+                counts[tag] = counts.TryGetValue(tag, out var c) ? c + 1 : 1;
+            }
+        }
+        return counts.Select(kv => new SearchHashtagResult { Tag = kv.Key, Count = kv.Value })
+            .OrderByDescending(h => h.Count)
+            .Take(20)
+            .ToList();
+    }
+
     static string Truncate(string text, int maxLength)
     {
         if (string.IsNullOrEmpty(text)) return "";
@@ -175,6 +200,7 @@ public class SearchViewModel
     public string Tab { get; set; } = "notes";
     public List<SearchNoteResult> Notes { get; set; } = new();
     public List<SearchUserResult> Users { get; set; } = new();
+    public List<SearchHashtagResult> Hashtags { get; set; } = new();
 }
 
 public class SearchNoteResult
@@ -194,4 +220,10 @@ public class SearchUserResult
     public string Bio { get; set; } = "";
     public string AvatarUrl { get; set; } = "";
     public string? ActorId { get; set; }
+}
+
+public class SearchHashtagResult
+{
+    public string Tag { get; set; } = "";
+    public int Count { get; set; }
 }

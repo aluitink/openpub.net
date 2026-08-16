@@ -4,10 +4,11 @@
 @model SearchViewModel
 
 <div class="search-container">
-    <form method="get" class="search-form">
-        <input type="text" name="q" value="@Html.Encode(Model.Query)" placeholder="Search notes and users..." class="search-input" autofocus />
+    <form method="get" class="search-form" id="search-form">
+        <input type="text" name="q" id="search-input" value="@Html.Encode(Model.Query)" placeholder="Search notes and users..." class="search-input" autofocus />
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
+    <div id="search-loading" class="search-loading" style="display:none">Searching…</div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Query))
     {
@@ -15,6 +16,7 @@
             <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=all" class="search-tab @(Model.Tab == "all" ? "active" : "")">All</a>
             <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=notes" class="search-tab @(Model.Tab == "notes" ? "active" : "")">Notes (@Model.Notes.Count)</a>
             <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=users" class="search-tab @(Model.Tab == "users" ? "active" : "")">Users (@Model.Users.Count)</a>
+            <a href="/search?q=@Uri.EscapeDataString(Model.Query)&amp;tab=hashtags" class="search-tab @(Model.Tab == "hashtags" ? "active" : "")">Hashtags (@Model.Hashtags.Count)</a>
         </div>
 
         @if ((Model.Tab == "all" || Model.Tab == "notes") && Model.Notes.Any())
@@ -76,8 +78,55 @@
                 <p>No users found matching "@Model.Query"</p>
             </div>
         }
+
+        @if ((Model.Tab == "all" || Model.Tab == "hashtags") && Model.Hashtags.Any())
+        {
+            <div class="search-results">
+                <h3 class="search-section-header">Hashtags</h3>
+                @foreach (var tag in Model.Hashtags)
+                {
+                    <a href="/hashtag/@Uri.EscapeDataString(tag.Tag)" class="search-hashtag-card">
+                        <span class="search-hashtag-tag">#@tag.Tag</span>
+                        <span class="search-hashtag-count">@tag.Count note@(tag.Count == 1 ? "" : "s")</span>
+                    </a>
+                }
+            </div>
+        }
+        else if (Model.Tab == "hashtags" && !Model.Hashtags.Any())
+        {
+            <div class="search-empty">
+                <p>No hashtags found matching "@Model.Query"</p>
+            </div>
+        }
     }
 </div>
+
+@section Scripts {
+<script>
+(function() {
+    var input = document.getElementById('search-input');
+    var form = document.getElementById('search-form');
+    var loading = document.getElementById('search-loading');
+    if (!input || !form) return;
+    var timer = null;
+    var currentTab = new URLSearchParams(window.location.search).get('tab') || 'all';
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        var q = this.value.trim();
+        if (q.length < 2) return;
+        loading.style.display = 'block';
+        timer = setTimeout(function() {
+            var url = '/search?q=' + encodeURIComponent(q) + '&tab=' + encodeURIComponent(currentTab);
+            window.location.href = url;
+        }, 400);
+    });
+    form.addEventListener('submit', function() {
+        clearTimeout(timer);
+        loading.style.display = 'none';
+    });
+})();
+</script>
+}
 
 @functions {
     string TimeAgo(DateTime dateTime)

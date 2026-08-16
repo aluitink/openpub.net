@@ -25,6 +25,12 @@
                         <span class="hamburger-bar"></span>
                     </button>
                     <a asp-controller="Home" asp-action="Index" class="brand">Fediblog</a>
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <form asp-controller="Search" asp-action="Index" method="get" class="nav-search-form" role="search">
+                            <input type="text" name="q" id="nav-search-input" class="nav-search-input" placeholder="Search… (press /)" aria-label="Search" />
+                        </form>
+                    }
                 </div>
                 <ul class="nav-menu" id="nav-menu">
                     @if (User.Identity?.IsAuthenticated ?? false)
@@ -182,5 +188,22 @@
         </script>
     }
     @await RenderSectionAsync("Scripts", required: false)
+    @if (User.Identity?.IsAuthenticated ?? false)
+    {
+        <script>
+            document.addEventListener('keydown', function(e) {
+                var tag = (document.activeElement && document.activeElement.tagName) || '';
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) return;
+                if (e.key === '/') {
+                    e.preventDefault();
+                    var s = document.getElementById('nav-search-input');
+                    if (s) s.focus();
+                } else if (e.key === 'n') {
+                    e.preventDefault();
+                    window.location.href = '/Compose/Index';
+                }
+            });
+        </script>
+    }
 </body>
 </html>

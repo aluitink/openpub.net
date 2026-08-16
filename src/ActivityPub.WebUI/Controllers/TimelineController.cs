@@ -75,6 +75,8 @@ public class TimelineController : Controller
         }
 
         activities.Sort((a, b) => b.Published.CompareTo(a.Published));
+        ViewBag.Page = page;
+        ViewBag.HasMore = activities.Count == pageSize;
         ViewBag.ComposeSuccess = TempData["ComposeSuccess"];
         ViewBag.InteractionSuccess = TempData["InteractionSuccess"];
         ViewBag.InteractionError = TempData["InteractionError"];
