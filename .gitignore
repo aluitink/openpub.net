@@ -44,6 +44,11 @@ coverage.xml
 *.dbg
 *.debug
 
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+
 # Local settings
 local.settings.json
 appsettings.Development.json
