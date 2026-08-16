@@ -1,0 +1,63 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="admin-dashboard">
+    <h1>Admin Dashboard</h1>
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-value">@Model.TotalUsers</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">@Model.TotalActivities</div>
+            <div class="stat-label">Activities</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">@Model.TotalActors</div>
+            <div class="stat-label">Actors</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">@Model.BlockedUsers</div>
+            <div class="stat-label">Blocked Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">@Model.PendingDeliveries</div>
+            <div class="stat-label">Pending Deliveries</div>
+        </div>
+    </div>
+
+    <div class="admin-nav">
+        <a asp-action="Users" class="btn btn-secondary">Manage Users</a>
+        <a asp-action="Moderation" class="btn btn-secondary">Moderation</a>
+    </div>
+
+    <h2>Recent Users</h2>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Display Name</th>
+                <th>Email</th>
+                <th>Created</th>
+                <th>Admin</th>
+                <th>Blocked</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.RecentUsers)
+            {
+                <tr>
+                    <td>@user.Username</td>
+                    <td>@user.DisplayName</td>
+                    <td>@user.Email</td>
+                    <td>@user.CreatedAt</td>
+                    <td>@(user.IsAdmin ? "Yes" : "No")</td>
+                    <td>@(user.IsBlocked ? "Yes" : "No")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

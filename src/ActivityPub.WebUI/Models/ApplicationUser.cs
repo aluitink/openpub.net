@@ -11,4 +11,6 @@ public class ApplicationUser : IdentityUser
     public string? BannerUrl { get; set; }
     public string? ActorId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public bool IsAdmin { get; set; }
+    public bool IsBlocked { get; set; }
 }

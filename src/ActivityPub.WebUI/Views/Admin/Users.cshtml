@@ -1,0 +1,65 @@
+@model IEnumerable<AdminUserItem>
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<div class="admin-users">
+    <h1>Manage Users</h1>
+
+    <div class="admin-nav">
+        <a asp-action="Dashboard" class="btn btn-secondary">Dashboard</a>
+        <a asp-action="Moderation" class="btn btn-secondary">Moderation</a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error">@TempData["Error"]</div>
+    }
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Display Name</th>
+                <th>Email</th>
+                <th>Created</th>
+                <th>Admin</th>
+                <th>Blocked</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr class="@(user.IsBlocked ? "blocked-row" : "")">
+                    <td>@user.Username</td>
+                    <td>@user.DisplayName</td>
+                    <td>@user.Email</td>
+                    <td>@user.CreatedAt</td>
+                    <td>@(user.IsAdmin ? "Yes" : "No")</td>
+                    <td>@(user.IsBlocked ? "Yes" : "No")</td>
+                    <td class="action-cell">
+                        @if (!user.IsAdmin)
+                        {
+                            <form asp-action="SetAdmin" method="post" style="display:inline">
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <input type="hidden" name="isAdmin" value="true" />
+                                <button type="submit" class="btn btn-small btn-admin">Make Admin</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="badge-admin">Admin</span>
+                        }
+                        <form asp-action="ToggleBlock" method="post" style="display:inline">
+                            <input type="hidden" name="userId" value="@user.Id" />
+                            <button type="submit" class="btn btn-small @(user.IsBlocked ? "btn-unblock" : "btn-block")">
+                                @(user.IsBlocked ? "Unblock" : "Block")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,90 @@
+@model AdminModerationViewModel
+@{
+    ViewData["Title"] = "Moderation";
+}
+
+<div class="admin-moderation">
+    <h1>Moderation</h1>
+
+    <div class="admin-nav">
+        <a asp-action="Dashboard" class="btn btn-secondary">Dashboard</a>
+        <a asp-action="Users" class="btn btn-secondary">Manage Users</a>
+    </div>
+
+    <h2>Recent Activities</h2>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Activity ID</th>
+                <th>Type</th>
+                <th>Actor</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var activity in Model.Activities)
+            {
+                <tr>
+                    <td title="@activity.ActivityId">@activity.ActivityId[..Math.Min(12, activity.ActivityId.Length)]...</td>
+                    <td><span class="badge-type">@activity.Type</span></td>
+                    <td>@activity.Actor</td>
+                    <td>@activity.CreatedAt</td>
+                    <td>
+                        <form asp-action="DeleteActivity" method="post" style="display:inline">
+                            <input type="hidden" name="activityId" value="@activity.ActivityId" />
+                            <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Delete this activity?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>Pending Deliveries</h2>
+    @if (Model.PendingDeliveries.Any())
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Activity</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Retries</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var delivery in Model.PendingDeliveries)
+                {
+                    <tr>
+                        <td>@delivery.ActivityId[..Math.Min(12, delivery.ActivityId.Length)]...</td>
+                        <td>@delivery.TargetActorId</td>
+                        <td><span class="badge-status @delivery.Status.ToLower()">@delivery.Status</span></td>
+                        <td>@delivery.RetryCount</td>
+                        <td>@delivery.CreatedAt</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="no-data">No pending deliveries.</p>
+    }
+
+    <h2>Blocked Domains</h2>
+    @if (Model.BlockedDomains.Any())
+    {
+        <ul class="blocked-domains">
+            @foreach (var domain in Model.BlockedDomains)
+            {
+                <li>@domain</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="no-data">No domains are currently blocked.</p>
+    }
+</div>
