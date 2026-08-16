@@ -27,24 +27,47 @@ public class SharedInboxBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("SharedInboxBackgroundService starting");
+        SafeLogInformation("SharedInboxBackgroundService starting");
 
         _timer.Start();
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(1000, stoppingToken);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000, stoppingToken);
+            }
         }
+        finally
+        {
+            try
+            {
+                _timer.Stop();
+            }
+            catch
+            {
+                // Timer may already be disposed; ignore.
+            }
+            SafeLogInformation("SharedInboxBackgroundService stopping");
+        }
+    }
 
-        _timer.Stop();
-        _logger.LogInformation("SharedInboxBackgroundService stopping");
+    private void SafeLogInformation(string message)
+    {
+        try
+        {
+            _logger?.LogInformation(message);
+        }
+        catch
+        {
+            // Logger may already be disposed during shutdown; ignore.
+        }
     }
 
     private async void OnTimerElapsed(object? sender, ElapsedEventArgs e)
     {
         if (_isProcessing)
         {
-            _logger.LogDebug("Previous processing still in progress, skipping this interval");
             return;
         }
 
@@ -55,13 +78,20 @@ public class SharedInboxBackgroundService : BackgroundService
             using var scope = _serviceProvider.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<ISharedInboxService>();
 
-            _logger.LogInformation("Processing shared inbox queue");
+            SafeLogInformation("Processing shared inbox queue");
             await service.ProcessQueueAsync();
-            _logger.LogInformation("Shared inbox queue processing completed");
+            SafeLogInformation("Shared inbox queue processing completed");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing shared inbox queue");
+            try
+            {
+                _logger?.LogError(ex, "Error processing shared inbox queue");
+            }
+            catch
+            {
+                // Logger may already be disposed; ignore.
+            }
         }
         finally
         {
@@ -71,8 +101,24 @@ public class SharedInboxBackgroundService : BackgroundService
 
     public override async Task StopAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("SharedInboxBackgroundService stopping");
-        _timer.Stop();
+        try
+        {
+            _logger?.LogInformation("SharedInboxBackgroundService stopping");
+        }
+        catch
+        {
+            // Logger may already be disposed during test/host shutdown; ignore.
+        }
+
+        try
+        {
+            _timer?.Stop();
+        }
+        catch
+        {
+            // Timer may already be disposed; ignore.
+        }
+
         await base.StopAsync(stoppingToken);
     }
 }
