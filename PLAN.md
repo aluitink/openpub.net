@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-22 complete. Next: Phase 25 (Social Platform).
+**Status:** Phases 1-26 complete. Next: Phase 27 (Follows & Federation).
 
 ## Testing Guidelines
 
@@ -24,11 +24,12 @@
 | 9 | Docs - API ref, migration | 20 | Integration Tests - 502 total |
 | 10 | Production Readiness | 21 | Benchmarks - BenchmarkDotNet |
 | 11 | Identity - JWT for DemoApp | 22 | Observatory Compliance - 32 tests |
+| 25 | WebUI Foundation & Auth | 26 | Compose & Timeline |
 
 ## Build State
 
 - **Build:** 0 errors, 0 warnings
-- **Tests:** 534 passing
+- **Tests:** 556 passing (1 pre-existing failure)
 - **Format:** Clean
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
