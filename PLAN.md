@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 30-34 complete. Phase 32.9 (Federation Health Monitoring) complete.
+**Status:** Phases 1-34 complete. All core features implemented. 696/696 tests passing.
 
 ## Testing Guidelines
 
@@ -9,10 +9,10 @@
 
 ---
 
-## Completed Phases (1-22)
+## Completed Phases (1-34)
 
-| # | Title | # | | Title |
-|---|-------|---|---|-------|
+| # | Title | # | Title |
+|---|-------|---|-------|
 | 1 | Foundation - Directory structure | 12 | Code Quality - Nullable, packages |
 | 2 | Documentation - README, guides | 13 | Performance - Caching, batching |
 | 3 | Tooling - Build, CI/CD, quality | 14 | Security - Headers, validation |
@@ -26,12 +26,14 @@
 | 11 | Identity - JWT for DemoApp | 22 | Observatory Compliance - 32 tests |
 | 25 | WebUI Foundation & Auth | 26 | Compose & Timeline |
 | 27 | Follows & Federation | 28 | Interactions (Like, Reply, Boost) |
+| 29 | Profiles & Actor Endpoints | 30 | Polish & Production |
+| 31 | Performance & Scalability | 32 | Admin & Moderation |
+| 33 | Extended Federation | 34 | Real-time & Notifications |
 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 695 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 696
+- **Tests:** 696 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -41,7 +43,7 @@
 
 **Repository (`IActivityPubRepository`):** Actor CRUD, Activity CRUD, Outbox/Followers/Following/Liked collections, deduplication, shared inbox delivery queue, webhook delivery queue
 
-**Services:** ActivityPubService (actor lookup, activity processing, cache invalidation), InboxProcessorService, OutboundActivityService, OutboundSigningService, FederationDiscoveryService, KeyFetching/Generation, SharedInboxService, WebhookDelivery, WebFingerCache, ActivityValidation, MRFService, ActivityCache, ActivityPubEventDispatcher, FederationHealthService
+**Services:** ActivityPubService, InboxProcessorService, OutboundActivityService, OutboundSigningService, FederationDiscoveryService, KeyFetching/Generation, SharedInboxService, WebhookDelivery, WebFingerCache, ActivityValidation, MRFService, ActivityCache, ActivityPubEventDispatcher, FederationHealthService
 
 **Middleware:** RateLimiting, SecurityHeaders, HttpSignature, SigningVerification
 
@@ -61,151 +63,74 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 
 **Project location:** `src/ActivityPub.WebUI/`
 
-### Phase 25: WebUI Foundation & Auth
+### Completed Phases Summary
 
-**Goal:** Scaffold the web application with user authentication and registration.
+- **Phase 25:** WebUI Foundation & Auth — Registration, login, actor seeding, layout
+- **Phase 26:** Compose & Timeline — Note creation, home/public timelines, delete
+- **Phase 27:** Follows & Federation — Follow/unfollow, remote actor discovery
+- **Phase 28:** Interactions — Like, Reply, Boost with threading and counts
+- **Phase 29:** Profiles & Actor Endpoints — Profile pages, outbox, followers/following, liked
+- **Phase 30:** Polish & Production — Responsive CSS, error pages, rate limiting, hashtags, search, notifications, Docker
+- **Phase 31:** Performance — DB indexes, response caching, query optimization, count methods
+- **Phase 32:** Admin & Moderation — Dashboard, user roles, MRF, audit log, reports, rate limit config, federation health
+- **Phase 33:** Extended Federation — Inbox processor, outbox pagination, articles, image uploads, polls, editable notes, Block activity
+- **Phase 34:** Real-time & Notifications — SignalR hub, SSE, push notifications, desktop alerts, polling config
 
-**Tasks:**
-1. Create `src/ActivityPub.WebUI/ActivityPub.WebUI.csproj` (ASP.NET Core MVC, .NET 10)
-2. Add to `ActivityPub.sln`, reference `ActivityPub.Core`
-3. Configure SQLite via `Microsoft.EntityFrameworkCore.Sqlite`
-4. Implement user registration page (username, password, display name, email)
-5. Implement login/logout with cookie authentication
-6. Create `ApplicationUser` entity and `ApplicationDbContext` (extends or alongside ActivityPubDbContext)
-7. Seed local Actor on account creation (generate keypair, register in repository)
-8. Basic layout: navbar with brand, login/register links, user menu
-9. Add integration tests for auth flow
+### Future Phases
 
-### Phase 26: Compose & Timeline
+### Phase 35: Content Discovery & Communities
 
-**Goal:** Users can create notes and see a home timeline.
-
-**Tasks:**
-1. Compose controller/action with form (text area, 500-char limit)
-2. On submit: create Note, wrap in Create activity, save to outbox via `IActivityPubRepository`
-3. Distribute Create activity to followers via `OutboundActivityService`
-4. Home timeline: query `GetInboxActivitiesAsync` + local user's outbox, render chronological feed
-5. Public timeline: show all local public notes
-6. Note display card: author avatar/username, content, timestamp, like/boost/reply buttons
-7. Delete note action (tombstone via `DeleteActivityAsync`)
-8. Add integration tests for compose, timeline, delete
-
-### Phase 27: Follows & Federation
-
-**Goal:** Users can follow local and remote actors; remote content appears in timeline.
+**Goal:** Improve content discovery and add community/group support.
 
 **Tasks:**
-1. Follow form: accept username@domain, discover remote actor via `FederationDiscoveryService`
-2. Send Follow activity via `OutboundActivityService`, handle Accept/Reject
-3. Handle incoming Follow activities in inbox processor
-4. Unfollow: send Undo(Follow) activity
-5. Following/Followers pages: render lists from `GetFollowingAsync`/`GetFollowersAsync`
-6. Remote notes appearing in timeline via inbox processing of Create activities
-7. Add integration tests for follow/unfollow/federation flow
+1. ⬜ Follower suggestions: recommend users based on mutual follows
+2. ⬜ Trending hashtags page with hourly/daily/weekly feeds
+3. ⬜ Content filtering preferences: mute keywords, filter media
+4. ⬜ Group/Community support: create communities, join/leave, community timelines
+5. ⬜ Integration tests for discovery features
 
-### Phase 28: Interactions (Like, Reply, Boost) — COMPLETE
+### Phase 36: Media & Rich Content
 
-**Goal:** Users can like, reply to, and boost (repost) notes.
+**Goal:** Enhanced media handling and rich content support.
 
 **Tasks:**
-1. ✅ Like: create Like activity, save to liked collection, distribute to author
-2. ✅ Reply: create Note with `inReplyTo`, wrap in Create, distribute to conversation participants
-3. ✅ Boost (Announce): create Announce activity referencing original, distribute
-4. ✅ Reply threading in timeline view (show reply chains)
-5. ✅ Interaction counts on note cards (likes, replies, boosts)
-6. ✅ Add integration tests for each interaction type (13 tests)
+1. ⬜ Video uploads with thumbnail generation
+2. ⬜ Audio attachment support
+3. ⬜ Document/file attachment support (PDF, etc.)
+4. ⬜ Rich text editor (markdown preview, link previews)
+5. ⬜ OEmbed support for external media embedding
+6. ⬜ Content moderation for uploads (virus scan, size limits)
 
-### Phase 29: Profiles & Actor Endpoints
+### Phase 37: API & Developer Experience
 
-**Goal:** User profiles and federation-compatible actor endpoints.
-
-**Tasks:**
-1. ✅ Profile page: display name, bio, avatar, banner, stats (posts, followers, following)
-2. ✅ Edit profile: update display name, summary, icon, image
-3. ✅ Actor endpoint `/users/{username}` → ActivityPub Person JSON
-4. ✅ Outbox endpoint `/users/{username}/outbox` → OrderedCollection
-5. ✅ Followers/Following collection endpoints with pagination
-6. ✅ Liked collection endpoint
-7. ✅ Add integration tests for all actor endpoints (17 tests)
-
-### Phase 30: Polish & Production — COMPLETE
-
-**Goal:** Polish the UI, add missing UX, and prepare for deployment.
+**Goal:** Provide a local REST API for third-party clients and improve developer tooling.
 
 **Tasks:**
-1. ✅ Responsive CSS (mobile-friendly)
-2. ✅ Error pages (404, 500)
-3. ✅ Rate limiting on compose and follow endpoints (path-scoped, 20 req/min, 3 tests)
-4. ✅ Hashtag support: word-boundary matching, paginated feed (HashtagController, 5 tests)
-5. ✅ Search: local user and note search (SearchController, 7 tests)
-6. ✅ Notifications page: follows, mentions, likes (NotificationsController, 5 tests)
-7. ✅ Dockerfile for ActivityPub.WebUI + docker-compose.yml
-8. ✅ Deployment docs (docs/deployment.md)
-9. ✅ Integration tests: 625 passing
-10. ✅ README with Fediblog showcase
+1. ⬜ Local REST API: `/api/v1/statuses`, `/api/v1/accounts`, `/api/v1/timelines`
+2. ⬜ Application registration flow (ClientID/ClientSecret)
+3. ⬜ OAuth 2.0 PKCE for API authentication
+4. ⬜ API rate limiting with configurable limits per application
+5. ⬜ API documentation (Swagger/OpenAPI)
+6. ⬜ Webhook support for external integrations
 
-### Phase 31: Performance & Scalability — COMPLETE
+### Phase 38: Federation Hardening
 
-**Goal:** Optimize data access, add caching, and improve response times for large-scale usage.
+**Goal:** Production-grade federation reliability.
 
 **Tasks:**
-1. ✅ Database indexes: CreatedAt on ActivityEntity, composite (ActivityId, CreatedAt), unique ActorId on ApplicationUser
-2. ✅ Response caching: TimelineController (3s), ProfileController (5s), ActorsController (5s), UseResponseCaching middleware
-3. ✅ Repository JSON query optimization: Replaced full-table scans with SQL LIKE queries for outbox, inbox, likes, boosts, replies
-4. ✅ New count methods: GetFollowerCountAsync, GetFollowingCountAsync on interface + both implementations
-5. ✅ ProfileController: Uses count methods instead of loading all follow activities
-6. ✅ ActorsController: OrderedCollectionPage with first/last/prev/next/partOf pagination links
-7. ✅ Performance benchmarks: 5 integration tests (timeline/profile/hashtag speed, outbox format, follow scaling)
-8. ⬜ Redis-backed distributed cache (future)
-9. ⬜ Memory profiling and leak detection (future)
-10. ⬜ Load testing with 100+ concurrent users (future)
+1. ⬜ HTTP Signature verification for incoming activities
+2. ⬜ Delivery retry with exponential backoff
+3. ⬜ Federation peer health tracking (auto-block unreliable servers)
+4. ⬜ Server-to-server federation testing with remote ActivityPub servers
+5. ⬜ Inbox processing error handling and dead letter queue
 
-### Phase 32: Admin & Moderation **✅ Complete** — All 9 tasks done
+### Phase 39: Scalability
 
-**Goal:** Provide tools for site administrators and content moderation.
+**Goal:** Prepare for large-scale deployment.
 
 **Tasks:**
-1. ✅ Admin dashboard: user management, activity overview, server stats
-2. ✅ User roles: IsAdmin/IsBlocked flags on ApplicationUser
-3. ✅ Content moderation: block users, delete activities, view deliveries
-4. ✅ MRF (Moderation Rules Framework) integration: domain blocklist, keyword filters
-5. ✅ ActivityPub moderation extensions: Block, Reject activities
-6. ✅ Audit log: track admin actions
-7. ✅ Report system: users can flag inappropriate content
-8. ✅ Rate limit configuration from admin panel
-9. ✅ Federation health monitoring: delivery queue status, error rates, remote probes, JSON API
-
-### Phase 33: Extended Federation **✅ 8/9 Complete**
-
-**Goal:** Improve federation compatibility and add missing ActivityPub features.
-
-**Tasks:**
-1. ✅ Inbox processor: handle all ActivityPub activity types (Create, Delete, Update, Move)
-2. ✅ Outbox: proper OrderedCollectionPage with pagination (first/next/prev/last)
-3. ✅ Followers/Following: full OrderedCollectionPage endpoints
-4. ✅ Article support: long-form content (extended description, HTML body)
-5. ✅ Image uploads: attachment support with local hosting
-6. ✅ Poll support in notes: Poll model, PollController, timeline rendering, vote UI
-7. ✅ Editable notes: Update activity for existing notes
-8. ✅ Block activity: ActivityPub Block activity support
-9. ⬜ Server-to-server federation testing with remote ActivityPub servers
-
-### Phase 34: Real-time & Notifications **✅ Complete**
-
-**Goal:** Add real-time updates and push notification support.
-
-**Tasks:**
-1. ✅ SignalR hub at `/notifications/ws` for live timeline updates (join/leave user groups, auto-reconnect)
-2. ✅ SSE fallback at `/sse/stream` for notification streaming (heartbeat, type extraction)
-3. ✅ INotificationService with SignalRNotificationService (broadcast to all, broadcast to user group)
-4. ✅ Real-time notification badge on navbar (red counter, SignalR-driven)
-5. ✅ SignalR script in layout (CDN, DOMContentLoaded connection)
-6. ✅ ComposeController integration: broadcasts on note post and article post
-7. ✅ 7 integration tests: SSE endpoint, SSE stream, SignalR hub registered, notification service registered, compose broadcast, badge in layout, signalr script in layout
-8. ✅ IPushNotificationService with PushNotificationService (Web Push API subscription storage)
-9. ✅ PushController: `/push/register` and `/push/test` endpoints
-10. ✅ Notification sound (inline WAV data URI) and desktop alerts (Notification API)
-11. ✅ Polling interval configuration: RealtimeSettingsController (`/RealtimeSettings/get`, `/RealtimeSettings/update`) with clamping (5s-5m)
-12. ✅ Rate limiting for real-time connections: per-connection message limit (50/min) in NotificationHub
-13. ⬜ WebSocket scaling: sticky sessions, Redis backplane (future)
-14. ✅ 13 integration tests total (6 added: push service, push register, settings get/update, desktop notification code, notification sound code)
+1. ⬜ Redis-backed distributed cache
+2. ⬜ WebSocket scaling: sticky sessions, Redis backplane
+3. ⬜ PostgreSQL migration path from SQLite
+4. ⬜ Memory profiling and leak detection
+5. ⬜ Load testing with 100+ concurrent users
