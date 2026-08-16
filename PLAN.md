@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phases 1-34 complete. All core features implemented. 696/696 tests passing.
+**Status:** Phases 1-35 complete. All core features implemented. 720/720 tests passing.
 
 ## Testing Guidelines
 
@@ -9,7 +9,7 @@
 
 ---
 
-## Completed Phases (1-34)
+## Completed Phases (1-35)
 
 | # | Title | # | Title |
 |---|-------|---|-------|
@@ -29,11 +29,12 @@
 | 29 | Profiles & Actor Endpoints | 30 | Polish & Production |
 | 31 | Performance & Scalability | 32 | Admin & Moderation |
 | 33 | Extended Federation | 34 | Real-time & Notifications |
+| 35 | Content Discovery & Communities |  |  |
 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 696 passing, 0 failures
+- **Tests:** 720 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -75,19 +76,9 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 - **Phase 32:** Admin & Moderation — Dashboard, user roles, MRF, audit log, reports, rate limit config, federation health
 - **Phase 33:** Extended Federation — Inbox processor, outbox pagination, articles, image uploads, polls, editable notes, Block activity
 - **Phase 34:** Real-time & Notifications — SignalR hub, SSE, push notifications, desktop alerts, polling config
+- **Phase 35:** Content Discovery & Communities — follower suggestions, trending hashtags (hourly/daily/weekly), content filtering (mute users, keyword filters), communities (create/join/leave/search, member management), 24 new tests
 
 ### Future Phases
-
-### Phase 35: Content Discovery & Communities
-
-**Goal:** Improve content discovery and add community/group support.
-
-**Tasks:**
-1. ⬜ Follower suggestions: recommend users based on mutual follows
-2. ⬜ Trending hashtags page with hourly/daily/weekly feeds
-3. ⬜ Content filtering preferences: mute keywords, filter media
-4. ⬜ Group/Community support: create communities, join/leave, community timelines
-5. ⬜ Integration tests for discovery features
 
 ### Phase 36: Media & Rich Content
 
