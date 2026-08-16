@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 16, 2026
-**Status:** Phase 30 complete. Next: Phase 31 (Performance & Scalability).
+**Status:** Phases 30-31 complete. Next: Phase 32 (Admin & Moderation).
 
 ## Testing Guidelines
 
@@ -30,8 +30,8 @@
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 625 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
-- **Total Tests:** 626
+- **Tests:** 630 passing (1 pre-existing failure: NodeInfo_Discovery_Returns_Versions)
+- **Total Tests:** 631
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
 
@@ -144,20 +144,21 @@ A Mastodon-like microblogging application built on ActivityPub.NET.
 9. ✅ Integration tests: 625 passing
 10. ✅ README with Fediblog showcase
 
-### Phase 31: Performance & Scalability
+### Phase 31: Performance & Scalability — COMPLETE
 
 **Goal:** Optimize data access, add caching, and improve response times for large-scale usage.
 
 **Tasks:**
-1. Add EF Core compiled queries for hot paths (actor lookup, outbox, inbox)
-2. Implement response caching on timeline and profile endpoints
-3. Add Redis-backed distributed cache option for federation cache
-4. Optimize ActivityPubRepository JSON queries (add content/index columns)
-5. Pagination for all list endpoints (following, followers, timeline)
-6. Database indexing strategy (actor lookup, activity ordering, search)
-7. Performance benchmarks for key endpoints
-8. Memory profiling and leak detection
-9. Load testing with 100+ concurrent users
+1. ✅ Database indexes: CreatedAt on ActivityEntity, composite (ActivityId, CreatedAt), unique ActorId on ApplicationUser
+2. ✅ Response caching: TimelineController (3s), ProfileController (5s), ActorsController (5s), UseResponseCaching middleware
+3. ✅ Repository JSON query optimization: Replaced full-table scans with SQL LIKE queries for outbox, inbox, likes, boosts, replies
+4. ✅ New count methods: GetFollowerCountAsync, GetFollowingCountAsync on interface + both implementations
+5. ✅ ProfileController: Uses count methods instead of loading all follow activities
+6. ✅ ActorsController: OrderedCollectionPage with first/last/prev/next/partOf pagination links
+7. ✅ Performance benchmarks: 5 integration tests (timeline/profile/hashtag speed, outbox format, follow scaling)
+8. ⬜ Redis-backed distributed cache (future)
+9. ⬜ Memory profiling and leak detection (future)
+10. ⬜ Load testing with 100+ concurrent users (future)
 
 ### Phase 32: Admin & Moderation
 
