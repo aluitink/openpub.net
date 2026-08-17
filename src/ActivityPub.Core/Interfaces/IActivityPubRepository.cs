@@ -213,4 +213,14 @@ public interface IActivityPubRepository
     /// Gets the following count for an actor
     /// </summary>
     Task<int> GetFollowingCountAsync(string username);
+
+    /// <summary>
+    /// Gets the number of notes (Create activities of type Note) authored by an actor.
+    /// </summary>
+    Task<int> GetNoteCountAsync(string username);
+
+    /// <summary>
+    /// Gets whether one actor currently follows another (an active Follow, not undone).
+    /// </summary>
+    Task<bool> IsFollowingAsync(string followerUsername, string targetActorId);
 }

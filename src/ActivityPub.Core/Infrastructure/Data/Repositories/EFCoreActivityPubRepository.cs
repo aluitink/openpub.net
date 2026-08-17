@@ -382,6 +382,36 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             .CountAsync();
     }
 
+    public async Task<int> GetNoteCountAsync(string username)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null) return 0;
+
+        return await _context.Activities
+            .Where(a => a.JsonData.Contains("\"type\":\"Create\"")
+                && a.JsonData.Contains($"\"actor\":\"{actor.Id}\"")
+                && a.JsonData.Contains("\"type\":\"Note\""))
+            .CountAsync();
+    }
+
+    public async Task<bool> IsFollowingAsync(string followerUsername, string targetActorId)
+    {
+        var follower = await GetUserActorAsync(followerUsername);
+        if (follower == null || string.IsNullOrEmpty(targetActorId)) return false;
+
+        var followerId = follower.Id;
+
+        // A genuine follow is a top-level Follow activity authored by this user
+        // whose object is exactly the target actor. An Undo's JSON also contains
+        // the target (in its embedded Follow) plus the text "type":"Follow", so
+        // we exclude any activity whose top-level type is "Undo".
+        return await _context.Activities
+            .AnyAsync(a => a.JsonData.Contains("\"type\":\"Follow\"")
+                && a.JsonData.Contains($"\"actor\":\"{followerId}\"")
+                && a.JsonData.Contains($"\"object\":\"{targetActorId}\"")
+                && !a.JsonData.Contains("\"type\":\"Undo\""));
+    }
+
     public async Task<bool> SaveWebhookConfigAsync(WebhookConfigEntity config)
     {
         var existing = await _context.WebhookConfigs

@@ -396,4 +396,42 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)));
         return Task.FromResult(count);
     }
+
+    public Task<int> GetNoteCountAsync(string username)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var count = _activities.Values.Count(a =>
+            a.Type == "Create" &&
+            (a.ActorId == actorId || (a.Actor is string actorStr && actorStr == actorId)) &&
+            a.Object is Models.Object obj && obj.Type == "Note");
+        return Task.FromResult(count);
+    }
+
+    public Task<bool> IsFollowingAsync(string followerUsername, string targetActorId)
+    {
+        var followerId = $"https://localhost/users/{followerUsername}";
+
+        var activeFollows = _activities.Values
+            .Where(a => a.Type == "Follow"
+                && (a.ActorId == followerId || (a.Actor is string actorStr && actorStr == followerId))
+                && ((a.Object is string objStr && objStr == targetActorId)
+                    || (a.Object is Models.Object obj && obj.Id == targetActorId)))
+            .ToList();
+
+        if (activeFollows.Count == 0) return Task.FromResult(false);
+
+        // An Undo(Follow) by the follower that embeds a follow's ID supersedes it.
+        var undoneIds = new HashSet<string>();
+        foreach (var undo in _activities.Values.Where(a => a.Type == "Undo"
+            && (a.ActorId == followerId || (a.Actor is string actorStr && actorStr == followerId))))
+        {
+            var undoneFollow = undo.Object as Models.Activity;
+            if (undoneFollow != null && undoneFollow.Type == "Follow" && !string.IsNullOrEmpty(undoneFollow.Id))
+            {
+                undoneIds.Add(undoneFollow.Id);
+            }
+        }
+
+        return Task.FromResult(activeFollows.Any(f => !undoneIds.Contains(f.Id ?? string.Empty)));
+    }
 }

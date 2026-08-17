@@ -17,6 +17,10 @@ COPY --from=build /app .
 ENV ASPNETCORE_URLS=https://+:443;http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sqlite3 sqlite3-tools \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /data
 VOLUME [ "/data" ]
 

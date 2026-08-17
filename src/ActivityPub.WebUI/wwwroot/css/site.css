@@ -994,6 +994,28 @@ footer {
     color: var(--color-text);
 }
 
+.profile-joined {
+    display: block;
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.profile-actions {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2.5rem;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.btn-follow-state {
+    min-width: 110px;
+}
+
 .profile-edit-container {
     max-width: 600px;
     margin: 0 auto;
@@ -1313,6 +1335,15 @@ footer {
     .profile-stats {
         justify-content: center;
         flex-wrap: wrap;
+    }
+
+    .profile-actions {
+        margin-top: 1rem;
+        width: 100%;
+    }
+
+    .profile-actions .btn {
+        width: 100%;
     }
 
     .timeline-feed {

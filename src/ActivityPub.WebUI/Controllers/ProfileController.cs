@@ -23,8 +23,9 @@ public class ProfileController : Controller
     }
 
     [HttpGet]
+    [Route("Profile")]
     [ResponseCache(Duration = 5, VaryByHeader = "Cookie", Location = ResponseCacheLocation.Client)]
-    public async Task<IActionResult> Index(string? username = null)
+    public async Task<IActionResult> Index(string? username = null, string? returnUrl = null)
     {
         var targetUsername = username ?? User.Identity!.Name!;
         var actor = await _repository.GetUserActorAsync(targetUsername);
@@ -35,8 +36,11 @@ public class ProfileController : Controller
 
         var followingCount = await _repository.GetFollowingCountAsync(targetUsername);
         var followerCount = await _repository.GetFollowerCountAsync(targetUsername);
+        var noteCount = await _repository.GetNoteCountAsync(targetUsername);
 
-        var isOwnProfile = targetUsername == User.Identity.Name;
+        var currentUsername = User.Identity!.Name!;
+        var isOwnProfile = targetUsername == currentUsername;
+        var isFollowing = !isOwnProfile && await _repository.IsFollowingAsync(currentUsername, actor.Id);
 
         var viewModel = new ProfileViewModel
         {
@@ -45,16 +49,137 @@ public class ProfileController : Controller
             Bio = actor.Summary ?? "",
             IconUrl = actor.Icon?.Url ?? "",
             BannerUrl = actor.Image?.Url ?? "",
+            NoteCount = noteCount,
             FollowingCount = followingCount,
             FollowerCount = followerCount,
             IsOwnProfile = isOwnProfile,
+            IsFollowing = isFollowing,
+            TargetActorId = actor.Id,
+            ReturnUrl = returnUrl ?? (isOwnProfile ? null : $"/Profile?username={targetUsername}"),
             JoinedDate = actor.Published?.ToString("MMMM yyyy") ?? "Recently"
         };
 
         return View(viewModel);
     }
 
+    [HttpPost]
+    [Route("Profile/Follow")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Follow(string? actorId, string? returnUrl = null)
+    {
+        var username = User.Identity!.Name!;
+        var localActor = await _repository.GetUserActorAsync(username);
+        if (localActor == null || string.IsNullOrEmpty(actorId))
+        {
+            return RedirectToAction("Index", "Profile");
+        }
+
+        if (actorId == localActor.Id)
+        {
+            TempData["ProfileError"] = "You cannot follow yourself.";
+            return Redirect(ResolveProfileUrl(returnUrl));
+        }
+
+        var already = await _repository.IsFollowingAsync(username, actorId);
+        if (already)
+        {
+            return Redirect(ResolveProfileUrl(returnUrl));
+        }
+
+        var now = DateTime.UtcNow;
+        var followId = $"https://localhost/users/{username}/activities/{Guid.NewGuid()}";
+        var followActivity = new Follow
+        {
+            Id = followId,
+            Type = "Follow",
+            Actor = localActor.Id,
+            Object = actorId,
+            Published = now,
+            To = new List<string> { actorId }
+        };
+        await _repository.SaveActivityAsync(followActivity);
+
+        _logger.LogInformation("User {Username} followed {TargetActorId} from profile page", username, actorId);
+        TempData["FollowSuccess"] = true;
+        return Redirect(ResolveProfileUrl(returnUrl));
+    }
+
+    [HttpPost]
+    [Route("Profile/Unfollow")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Unfollow(string? actorId, string? returnUrl = null)
+    {
+        var username = User.Identity!.Name!;
+        var localActor = await _repository.GetUserActorAsync(username);
+        if (localActor == null || string.IsNullOrEmpty(actorId))
+        {
+            return Redirect(ResolveProfileUrl(returnUrl));
+        }
+
+        if (!await _repository.IsFollowingAsync(username, actorId))
+        {
+            return Redirect(ResolveProfileUrl(returnUrl));
+        }
+
+        // Find the active Follow activity authored by this user toward the target.
+        string? followActivityId = null;
+        var outboxActivities = await _repository.GetActorOutboxActivitiesAsync(username, 0, 200);
+        foreach (var outboxId in outboxActivities)
+        {
+            var activity = await _repository.GetActivityAsync(outboxId);
+            if (activity?.Type == "Follow" && activity.ObjectId == actorId)
+            {
+                followActivityId = outboxId;
+                break;
+            }
+        }
+
+        if (followActivityId != null)
+        {
+            var now = DateTime.UtcNow;
+            var undoId = $"https://localhost/users/{username}/activities/{Guid.NewGuid()}";
+            var undoActivity = new Activity
+            {
+                Id = undoId,
+                Type = "Undo",
+                Actor = localActor.Id,
+                Object = new Activity
+                {
+                    Id = followActivityId,
+                    Type = "Follow",
+                    Actor = localActor.Id,
+                    Object = actorId,
+                    Published = now
+                },
+                Published = now,
+                To = new List<string> { actorId }
+            };
+            await _repository.SaveActivityAsync(undoActivity);
+            await _repository.DeleteActivityAsync(followActivityId);
+            _logger.LogInformation("User {Username} unfollowed {TargetActorId} from profile page", username, actorId);
+        }
+
+        TempData["UnfollowSuccess"] = true;
+        return Redirect(ResolveProfileUrl(returnUrl));
+    }
+
+    /// <summary>
+    /// Resolves the profile URL to return to after a follow/unfollow action.
+    /// Falls back to the viewer's own profile when no valid return URL is provided.
+    /// </summary>
+    private string ResolveProfileUrl(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) &&
+            Url.IsLocalUrl(returnUrl) &&
+            returnUrl.StartsWith("/Profile", StringComparison.OrdinalIgnoreCase))
+        {
+            return returnUrl;
+        }
+        return Url.Action("Index", "Profile")!;
+    }
+
     [HttpGet]
+    [Route("Profile/Edit")]
     public async Task<IActionResult> Edit()
     {
         var username = User.Identity!.Name!;
@@ -76,6 +201,7 @@ public class ProfileController : Controller
     }
 
     [HttpPost]
+    [Route("Profile/Edit")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EditProfileModel model)
     {
@@ -149,9 +275,13 @@ public class ProfileViewModel
     public string Bio { get; set; } = string.Empty;
     public string IconUrl { get; set; } = string.Empty;
     public string BannerUrl { get; set; } = string.Empty;
+    public int NoteCount { get; set; }
     public int FollowingCount { get; set; }
     public int FollowerCount { get; set; }
     public bool IsOwnProfile { get; set; }
+    public bool IsFollowing { get; set; }
+    public string? TargetActorId { get; set; }
+    public string? ReturnUrl { get; set; }
     public string JoinedDate { get; set; } = string.Empty;
 }
 

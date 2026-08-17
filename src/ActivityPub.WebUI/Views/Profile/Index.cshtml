@@ -40,15 +40,37 @@
             }
 
             <div class="profile-stats">
+                <span class="stat"><strong>@Model.NoteCount</strong> Notes</span>
                 <span class="stat"><strong>@Model.FollowerCount</strong> Followers</span>
                 <span class="stat"><strong>@Model.FollowingCount</strong> Following</span>
-                <span class="stat">Joined @Model.JoinedDate</span>
             </div>
+            <span class="profile-joined">Joined @Model.JoinedDate</span>
         </div>
 
-        @if (Model.IsOwnProfile)
-        {
-            <a asp-action="Edit" class="btn btn-secondary">Edit Profile</a>
-        }
+        <div class="profile-actions">
+            @if (Model.IsOwnProfile)
+            {
+                <a asp-action="Edit" class="btn btn-secondary">Edit Profile</a>
+            }
+            else
+            {
+                @if (Model.IsFollowing)
+                {
+                    <form asp-action="Unfollow" method="post" class="inline-form">
+                        <input type="hidden" name="actorId" value="@Model.TargetActorId" />
+                        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                        <button type="submit" class="btn btn-secondary btn-follow-state">Following</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Follow" method="post" class="inline-form">
+                        <input type="hidden" name="actorId" value="@Model.TargetActorId" />
+                        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                        <button type="submit" class="btn btn-primary btn-follow-state">Follow</button>
+                    </form>
+                }
+            }
+        </div>
     </div>
 </div>
