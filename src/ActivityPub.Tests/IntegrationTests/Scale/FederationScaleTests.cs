@@ -39,7 +39,7 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var followings = await repository.GetFollowingAsync(source.PreferredUsername, 0, 100);
+        var followings = await repository.GetFollowingAsync(source.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(10, followings.Count());
     }
@@ -61,7 +61,7 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var followers = await repository.GetFollowersAsync(target.PreferredUsername, 0, 100);
+        var followers = await repository.GetFollowersAsync(target.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(20, followers.Count());
     }
@@ -79,8 +79,8 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var following1 = await repository.GetFollowingAsync(actor1.PreferredUsername, 0, 100);
-        var following2 = await repository.GetFollowingAsync(actor2.PreferredUsername, 0, 100);
+        var following1 = await repository.GetFollowingAsync(actor1.PreferredUsername ?? string.Empty, 0, 100);
+        var following2 = await repository.GetFollowingAsync(actor2.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Single(following1);
         Assert.Single(following2);
@@ -106,8 +106,8 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var circle1Followers = await repository.GetFollowersAsync(circle1Target.PreferredUsername, 0, 100);
-        var circle2Followers = await repository.GetFollowersAsync(circle2Target.PreferredUsername, 0, 100);
+        var circle1Followers = await repository.GetFollowersAsync(circle1Target.PreferredUsername ?? string.Empty, 0, 100);
+        var circle2Followers = await repository.GetFollowersAsync(circle2Target.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(10, circle1Followers.Count());
         Assert.Equal(10, circle2Followers.Count());
@@ -131,7 +131,7 @@ public class FederationScaleTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var followers = await repository.GetFollowersAsync(target.PreferredUsername, 0, 100);
+        var followers = await repository.GetFollowersAsync(target.PreferredUsername ?? string.Empty, 0, 100);
         var followerCount = followers.Count();
 
         Assert.Equal(15, followerCount);

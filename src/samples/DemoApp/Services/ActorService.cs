@@ -11,7 +11,7 @@ namespace DemoApp.Services;
 
 public interface IActorService
 {
-    Task<List<ActorEntity>> GetAllActorsAsync();
+    Task<List<ActorEntity>?> GetAllActorsAsync();
     Task<ActorEntity?> GetActorByIdAsync(int id);
     Task<ActorEntity?> GetActorByUsernameAsync(string username);
     Task<ActorEntity> CreateActorAsync(string username, string publicKey);
@@ -34,7 +34,7 @@ public class ActorService : IActorService
         _cache = cache;
     }
 
-    public async Task<List<ActorEntity>> GetAllActorsAsync()
+    public async Task<List<ActorEntity>?> GetAllActorsAsync()
     {
         return await _cache.GetOrCreateAsync(AllActorsCacheKey, async entry =>
         {

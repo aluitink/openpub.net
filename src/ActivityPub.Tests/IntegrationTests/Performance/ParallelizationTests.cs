@@ -30,16 +30,16 @@ public class ParallelizationTests : IClassFixture<TestWebApplicationFactory>
 
         var tasks = new List<Task>
         {
-            PostActivityAsync(actor1.PreferredUsername, "parallel-1"),
-            PostActivityAsync(actor2.PreferredUsername, "parallel-2"),
-            PostActivityAsync(actor3.PreferredUsername, "parallel-3")
+            PostActivityAsync(actor1.PreferredUsername ?? string.Empty, "parallel-1"),
+            PostActivityAsync(actor2.PreferredUsername ?? string.Empty, "parallel-2"),
+            PostActivityAsync(actor3.PreferredUsername ?? string.Empty, "parallel-3")
         };
 
         await Task.WhenAll(tasks);
 
-        var activities1 = await GetActorActivitiesAsync(actor1.PreferredUsername);
-        var activities2 = await GetActorActivitiesAsync(actor2.PreferredUsername);
-        var activities3 = await GetActorActivitiesAsync(actor3.PreferredUsername);
+        var activities1 = await GetActorActivitiesAsync(actor1.PreferredUsername ?? string.Empty);
+        var activities2 = await GetActorActivitiesAsync(actor2.PreferredUsername ?? string.Empty);
+        var activities3 = await GetActorActivitiesAsync(actor3.PreferredUsername ?? string.Empty);
 
         Assert.Single(activities1);
         Assert.Single(activities2);
@@ -63,7 +63,7 @@ public class ParallelizationTests : IClassFixture<TestWebApplicationFactory>
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var followers = await repository.GetFollowersAsync(target.PreferredUsername, 0, 100);
+        var followers = await repository.GetFollowersAsync(target.PreferredUsername ?? string.Empty, 0, 100);
         Assert.True(followers.Count() >= 15);
     }
 
@@ -75,12 +75,12 @@ public class ParallelizationTests : IClassFixture<TestWebApplicationFactory>
 
         for (int i = 0; i < 10; i++)
         {
-            await PostActivityAsync(actor.PreferredUsername, $"parallel-retrieve-{i}");
+            await PostActivityAsync(actor.PreferredUsername ?? string.Empty, $"parallel-retrieve-{i}");
         }
 
         var tasks = Enumerable.Range(0, 8).Select(async _ =>
         {
-            return await GetActorActivitiesAsync(actor.PreferredUsername);
+            return await GetActorActivitiesAsync(actor.PreferredUsername ?? string.Empty);
         });
 
         var results = await Task.WhenAll(tasks);
@@ -106,13 +106,13 @@ public class ParallelizationTests : IClassFixture<TestWebApplicationFactory>
         {
             for (int i = 0; i < ActivitiesPerBatch; i++)
             {
-                allTasks.Add(PostActivityAsync(actor.PreferredUsername, $"batch{batch}-item{i}"));
+                allTasks.Add(PostActivityAsync(actor.PreferredUsername ?? string.Empty, $"batch{batch}-item{i}"));
             }
         }
 
         await Task.WhenAll(allTasks);
 
-        var activities = await GetActorActivitiesAsync(actor.PreferredUsername);
+        var activities = await GetActorActivitiesAsync(actor.PreferredUsername ?? string.Empty);
         Assert.Equal(ConcurrentBatches * ActivitiesPerBatch, activities.Count);
     }
 

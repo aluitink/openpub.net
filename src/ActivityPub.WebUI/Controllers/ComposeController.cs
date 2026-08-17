@@ -282,7 +282,7 @@ public class ComposeController : Controller
             return RedirectToAction("Index", "Timeline");
         }
 
-        var originalActivity = await _repository.GetActivityAsync(model.ActivityId);
+        var originalActivity = await _repository.GetActivityAsync(model.ActivityId ?? string.Empty);
         if (originalActivity == null || originalActivity.ActorId != actor.Id)
         {
             _logger.LogWarning("Cannot edit activity {ActivityId}: not found or not owned by {Username}", model.ActivityId, username);
@@ -292,7 +292,7 @@ public class ComposeController : Controller
         var now = DateTime.UtcNow;
         var updatedNote = new Note
         {
-            Id = originalActivity.ObjectId ?? originalActivity.Id,
+            Id = originalActivity.ObjectId ?? originalActivity.Id ?? string.Empty,
             Type = "Note",
             Content = System.Net.WebUtility.HtmlEncode(model.Content),
             AttributedTo = actor.Id,
@@ -346,7 +346,7 @@ public class ComposeController : Controller
             Actor = actor.Id,
             Object = new ActivityPub.Core.Models.Object
             {
-                Id = activity.ObjectId ?? activity.Id,
+                Id = activity.ObjectId ?? activity.Id ?? string.Empty,
                 Type = "Tombstone"
             },
             Published = DateTime.UtcNow,

@@ -11,8 +11,8 @@ namespace DemoApp.Services;
 
 public interface IActivityService
 {
-    Task<List<ActivityEntity>> GetAllActivitiesAsync();
-    Task<List<ActivityEntity>> GetPaginatedActivitiesAsync(int page, int pageSize);
+    Task<List<ActivityEntity>?> GetAllActivitiesAsync();
+    Task<List<ActivityEntity>?> GetPaginatedActivitiesAsync(int page, int pageSize);
     Task<int> GetTotalActivitiesCountAsync();
     Task<ActivityEntity?> GetActivityByIdAsync(int id);
     Task<ActivityEntity?> GetActivityByActivityIdAsync(string activityId);
@@ -39,7 +39,7 @@ public class ActivityService : IActivityService
         _cache = cache;
     }
 
-    public async Task<List<ActivityEntity>> GetAllActivitiesAsync()
+    public async Task<List<ActivityEntity>?> GetAllActivitiesAsync()
     {
         return await _cache.GetOrCreateAsync(AllActivitiesCacheKey, async entry =>
         {
@@ -53,7 +53,7 @@ public class ActivityService : IActivityService
         });
     }
 
-    public async Task<List<ActivityEntity>> GetPaginatedActivitiesAsync(int page, int pageSize)
+    public async Task<List<ActivityEntity>?> GetPaginatedActivitiesAsync(int page, int pageSize)
     {
         var cacheKey = $"paginated_activities_{page}_{pageSize}";
         return await _cache.GetOrCreateAsync(cacheKey, async entry =>

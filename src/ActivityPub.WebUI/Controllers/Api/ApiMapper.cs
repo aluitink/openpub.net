@@ -68,20 +68,21 @@ public static class ApiMapper
 
         var author = await GetAuthorActorAsync(repository, activity);
         var account = ToAccount(author);
+        var activityId = activity.Id ?? string.Empty;
 
-        var likeCount = await repository.GetLikeCountAsync(activity.Id);
-        var boostCount = await repository.GetBoostCountAsync(activity.Id);
-        var replyCount = await repository.GetReplyCountAsync(activity.Id);
-        var isLiked = viewerUsername != null && await repository.IsLikedByActorAsync(viewerUsername, activity.Id);
-        var isBoosted = viewerUsername != null && await repository.IsBoostedByActorAsync(viewerUsername, activity.Id);
+        var likeCount = await repository.GetLikeCountAsync(activityId);
+        var boostCount = await repository.GetBoostCountAsync(activityId);
+        var replyCount = await repository.GetReplyCountAsync(activityId);
+        var isLiked = viewerUsername != null && await repository.IsLikedByActorAsync(viewerUsername, activityId);
+        var isBoosted = viewerUsername != null && await repository.IsBoostedByActorAsync(viewerUsername, activityId);
 
         var isAnnounce = (activity.Type ?? "Create").Equals("Announce", StringComparison.OrdinalIgnoreCase);
 
         return new ApiStatus
         {
-            Id = ToApiStatusId(activity.Id ?? string.Empty),
-            Uri = activity.Id,
-            Url = note.Url ?? activity.Id,
+            Id = ToApiStatusId(activityId),
+            Uri = activityId,
+            Url = note.Url ?? activityId,
             Account = account,
             MediaAttachments = ExtractMediaAttachments(note),
             SpoilerText = ExtractContentWarning(note) ?? string.Empty,

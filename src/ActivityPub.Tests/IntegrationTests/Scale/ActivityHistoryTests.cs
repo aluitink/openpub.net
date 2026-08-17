@@ -30,12 +30,12 @@ public class ActivityHistoryTests : IClassFixture<TestWebApplicationFactory>
 
         for (int i = 0; i < 50; i++)
         {
-            await PostActivityAsync(actor.PreferredUsername, $"history-activity-{i}");
+            await PostActivityAsync(actor.PreferredUsername ?? string.Empty,$"history-activity-{i}");
         }
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var activities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, 0, 100);
+        var activities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(50, activities.Count());
     }
@@ -48,12 +48,12 @@ public class ActivityHistoryTests : IClassFixture<TestWebApplicationFactory>
 
         for (int i = 0; i < 30; i++)
         {
-            await PostActivityAsync(actor.PreferredUsername, $"range-activity-{i}");
+            await PostActivityAsync(actor.PreferredUsername ?? string.Empty,$"range-activity-{i}");
         }
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var activities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, 0, 100);
+        var activities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(30, activities.Count());
     }
@@ -66,16 +66,16 @@ public class ActivityHistoryTests : IClassFixture<TestWebApplicationFactory>
 
         for (int i = 0; i < 80; i++)
         {
-            await PostActivityAsync(actor.PreferredUsername, $"paginate-activity-{i}");
+            await PostActivityAsync(actor.PreferredUsername ?? string.Empty,$"paginate-activity-{i}");
         }
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var page1 = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, 0, 25);
+        var page1 = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, 0, 25);
         Assert.Equal(25, page1.Count());
 
-        var page2 = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, 25, 25);
+        var page2 = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, 25, 25);
         Assert.Equal(25, page2.Count());
     }
 
@@ -88,13 +88,13 @@ public class ActivityHistoryTests : IClassFixture<TestWebApplicationFactory>
         var expectedIds = new List<string>();
         for (int i = 0; i < 20; i++)
         {
-            var id = await PostActivityAsync(actor.PreferredUsername, $"sequence-activity-{i}");
+            var id = await PostActivityAsync(actor.PreferredUsername ?? string.Empty,$"sequence-activity-{i}");
             expectedIds.Add(id);
         }
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var storedIds = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, 0, 100);
+        var storedIds = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(expectedIds.Count, storedIds.Count());
     }
@@ -107,12 +107,12 @@ public class ActivityHistoryTests : IClassFixture<TestWebApplicationFactory>
 
         for (int i = 0; i < 40; i++)
         {
-            await PostActivityAsync(actor.PreferredUsername, $"latest-activity-{i}");
+            await PostActivityAsync(actor.PreferredUsername ?? string.Empty,$"latest-activity-{i}");
         }
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var activities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, 0, 100);
+        var activities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(40, activities.Count());
     }

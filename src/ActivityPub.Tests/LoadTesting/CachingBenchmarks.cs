@@ -205,7 +205,7 @@ public class CachingBenchmarks
             await _cache!.SetActorAsync(_actorKeys[i], variantActor);
         }
         // Now benchmark the invalidation
-        await _cache.InvalidateActorsByDomainAsync("example.com");
+        await _cache!.InvalidateActorsByDomainAsync("example.com");
     }
 
     [Benchmark]
@@ -217,7 +217,7 @@ public class CachingBenchmarks
             var variantActor = new Actor { Id = _actorKeys[i], Type = "Person", Name = $"User {i}" };
             await _cache!.SetActorAsync(_actorKeys[i], variantActor);
         }
-        await _cache.SetActivityAsync(_activityKeys[0], _activity!);
+        await _cache!.SetActivityAsync(_activityKeys[0], _activity!);
         await _cache.SetWebFingerResponseAsync(_webFingerKeys[0], _webFingerResponse!);
         await _cache.SetInboxResponseAsync(_inboxKeys[0], _inboxResponse!);
 

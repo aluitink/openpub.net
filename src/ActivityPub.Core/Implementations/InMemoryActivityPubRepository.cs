@@ -42,6 +42,9 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     /// <inheritdoc />
     public Task<bool> SaveActivityAsync(Activity activity)
     {
+        if (string.IsNullOrEmpty(activity.Id))
+            return Task.FromResult(false);
+
         _activities[activity.Id] = activity;
         return Task.FromResult(true);
     }
@@ -71,7 +74,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .OrderBy(a => a.Published ?? DateTime.MinValue)
             .Skip(skip)
             .Take(limit)
-            .Select(a => a.Id)
+            .Select(a => a.Id ?? string.Empty)
             .ToList();
 
         return Task.FromResult<ICollection<string>>(activityIds);
@@ -391,7 +394,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .OrderByDescending(a => a.Published ?? DateTime.MinValue)
             .Skip(skip)
             .Take(limit)
-            .Select(a => a.Id)
+            .Select(a => a.Id ?? string.Empty)
             .ToList();
 
         return Task.FromResult<ICollection<string>>(activityIds);
@@ -406,7 +409,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .OrderByDescending(a => a.Published ?? DateTime.MinValue)
             .Skip(skip)
             .Take(limit)
-            .Select(a => a.Object?.ToString() ?? a.Id)
+            .Select(a => a.Object?.ToString() ?? a.Id ?? string.Empty)
             .ToList();
 
         return Task.FromResult<ICollection<string>>(activityIds);

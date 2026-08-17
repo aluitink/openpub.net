@@ -46,15 +46,16 @@ public class TimelineController : Controller
                 if (note != null)
                 {
                     var authorActor = await GetAuthorActor(activity);
-                    var likeCount = await _repository.GetLikeCountAsync(activity.Id);
-                    var boostCount = await _repository.GetBoostCountAsync(activity.Id);
-                    var replyCount = await _repository.GetReplyCountAsync(activity.Id);
-                    var isLiked = await _repository.IsLikedByActorAsync(username, activity.Id);
-                    var isBoosted = await _repository.IsBoostedByActorAsync(username, activity.Id);
+                    var activityId = activity.Id ?? string.Empty;
+                    var likeCount = await _repository.GetLikeCountAsync(activityId);
+                    var boostCount = await _repository.GetBoostCountAsync(activityId);
+                    var replyCount = await _repository.GetReplyCountAsync(activityId);
+                    var isLiked = await _repository.IsLikedByActorAsync(username, activityId);
+                    var isBoosted = await _repository.IsBoostedByActorAsync(username, activityId);
 
                     activities.Add(new TimelineActivityItem
                     {
-                        ActivityId = activity.Id!,
+                        ActivityId = activityId,
                         AuthorName = authorActor?.PreferredUsername ?? activity.ActorId?.Split('/').Last() ?? "unknown",
                         AuthorDisplayName = authorActor?.Name ?? "",
                         AuthorAvatarUrl = authorActor?.Icon?.Url,

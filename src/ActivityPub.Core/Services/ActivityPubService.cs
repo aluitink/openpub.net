@@ -48,7 +48,7 @@ public class ActivityPubService
 
             var actor = await _repository.GetUserActorAsync(username);
 
-            if (actor != null)
+            if (actor != null && !string.IsNullOrEmpty(actor.Id))
             {
                 await _cache.SetActorAsync(actor.Id, actor);
                 _logger.LogInformation("Actor cached for username: {Username}", username);

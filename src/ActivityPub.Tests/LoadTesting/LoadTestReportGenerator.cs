@@ -73,7 +73,7 @@ public static class LoadTestReportGenerator
         return sb.ToString();
     }
 
-    public static async Task SaveReportToFile(string report, string filename = null)
+    public static async Task SaveReportToFile(string report, string? filename = null)
     {
         filename ??= $"loadtest-report-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.txt";
         var path = Path.Combine(Directory.GetCurrentDirectory(), filename);

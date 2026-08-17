@@ -47,7 +47,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        var activities = await GetActorActivitiesAsync(actor.PreferredUsername);
+        var activities = await GetActorActivitiesAsync(actor.PreferredUsername ?? string.Empty);
         Assert.Equal(50, activities.Count);
     }
 
@@ -75,7 +75,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        var followers = await GetFollowersAsync(actor.PreferredUsername);
+        var followers = await GetFollowersAsync(actor.PreferredUsername ?? string.Empty);
         Assert.True(followers.Count >= 30);
     }
 
@@ -106,7 +106,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
             await client.PostAsync($"/users/{actor.PreferredUsername}/inbox", content);
         }
 
-        var activities = await GetActorActivitiesAsync(actor.PreferredUsername);
+        var activities = await GetActorActivitiesAsync(actor.PreferredUsername ?? string.Empty);
         Assert.Equal(25, activities.Count);
     }
 
@@ -139,7 +139,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
 
         var tasks = Enumerable.Range(0, 10).Select(async _ =>
         {
-            return await GetActorActivitiesAsync(actor.PreferredUsername);
+            return await GetActorActivitiesAsync(actor.PreferredUsername ?? string.Empty);
         });
 
         var results = await Task.WhenAll(tasks);
@@ -176,7 +176,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
         var response = await client.PostAsync($"/users/{actor.PreferredUsername}/inbox", content);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var activities = await GetActorActivitiesAsync(actor.PreferredUsername);
+        var activities = await GetActorActivitiesAsync(actor.PreferredUsername ?? string.Empty);
         Assert.Single(activities);
     }
 

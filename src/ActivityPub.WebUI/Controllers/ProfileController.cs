@@ -40,7 +40,7 @@ public class ProfileController : Controller
 
         var currentUsername = User.Identity!.Name!;
         var isOwnProfile = targetUsername == currentUsername;
-        var isFollowing = !isOwnProfile && await _repository.IsFollowingAsync(currentUsername, actor.Id);
+        var isFollowing = !isOwnProfile && await _repository.IsFollowingAsync(currentUsername, actor.Id ?? string.Empty);
 
         var viewModel = new ProfileViewModel
         {

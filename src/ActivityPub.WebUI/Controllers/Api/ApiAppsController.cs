@@ -106,7 +106,7 @@ public class ApiAppsController : ControllerBase
         if (actor == null)
             return Unauthorized();
 
-        var mine = (await _applications.GetByOwnerAsync(actor.Id)).ToList();
+        var mine = (await _applications.GetByOwnerAsync(actor.Id ?? string.Empty)).ToList();
 
         return Ok(mine.Select(a => new ApiApp
         {

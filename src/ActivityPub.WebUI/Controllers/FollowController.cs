@@ -59,7 +59,7 @@ public class FollowController : Controller
         }
 
         var existingFollows = await _repository.GetFollowingAsync(username, 0, 100);
-        if (existingFollows.Contains(targetActor.Id))
+        if (targetActor.Id != null && existingFollows.Contains(targetActor.Id))
         {
             model.Error = $"You are already following {handle}.";
             return View("Index", model);
@@ -82,7 +82,7 @@ public class FollowController : Controller
             Actor = localActor.Id,
             Object = targetActor.Id,
             Published = now,
-            To = new List<string> { targetActor.Id }
+            To = new List<string> { targetActor.Id ?? string.Empty }
         };
 
         await _repository.SaveActivityAsync(followActivity);
@@ -169,15 +169,16 @@ public class FollowController : Controller
         foreach (var followedActorId in followingIds)
         {
             var actor = await TryGetActorFromId(followedActorId);
-            if (actor != null)
+            if (actor != null && actor.Id != null)
             {
+                var actorId = actor.Id;
                 items.Add(new FollowingItem
                 {
-                    ActorId = actor.Id,
-                    DisplayName = actor.Name ?? ExtractUsername(actor.Id),
-                    Username = actor.PreferredUsername ?? ExtractUsername(actor.Id),
+                    ActorId = actorId,
+                    DisplayName = actor.Name ?? ExtractUsername(actorId),
+                    Username = actor.PreferredUsername ?? ExtractUsername(actorId),
                     Inbox = actor.Inbox,
-                    Domain = ExtractDomain(actor.Id)
+                    Domain = ExtractDomain(actorId)
                 });
             }
         }
@@ -195,15 +196,16 @@ public class FollowController : Controller
         foreach (var followerActorId in followerIds)
         {
             var actor = await TryGetActorFromId(followerActorId);
-            if (actor != null)
+            if (actor != null && actor.Id != null)
             {
+                var actorId = actor.Id;
                 items.Add(new FollowingItem
                 {
-                    ActorId = actor.Id,
-                    DisplayName = actor.Name ?? ExtractUsername(actor.Id),
-                    Username = actor.PreferredUsername ?? ExtractUsername(actor.Id),
+                    ActorId = actorId,
+                    DisplayName = actor.Name ?? ExtractUsername(actorId),
+                    Username = actor.PreferredUsername ?? ExtractUsername(actorId),
                     Inbox = actor.Inbox,
-                    Domain = ExtractDomain(actor.Id)
+                    Domain = ExtractDomain(actorId)
                 });
             }
         }

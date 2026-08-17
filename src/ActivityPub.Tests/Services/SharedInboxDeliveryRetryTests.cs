@@ -74,10 +74,10 @@ public class SharedInboxDeliveryRetryTests
     /// instance in place, the returned reference is a stable handle to the row's
     /// final state.
     /// </summary>
-    private static SharedInboxDeliveryEntity QueueAndCapture(InMemoryActivityPubRepository repo, string activityId)
+    private static async Task<SharedInboxDeliveryEntity> QueueAndCapture(InMemoryActivityPubRepository repo, string activityId)
     {
-        Assert.True(repo.QueueSharedInboxDeliveryAsync(activityId, ActivityJson, Target).Result);
-        var pending = repo.GetPendingSharedInboxDeliveriesAsync(10, 10).Result;
+        Assert.True(await repo.QueueSharedInboxDeliveryAsync(activityId, ActivityJson, Target));
+        var pending = await repo.GetPendingSharedInboxDeliveriesAsync(10, 10);
         var item = Assert.Single(pending, d => d.ActivityId == activityId);
         return item;
     }
@@ -87,7 +87,7 @@ public class SharedInboxDeliveryRetryTests
     {
         var repo = new InMemoryActivityPubRepository();
         await SeedSenderActorAsync(repo);
-        var item = QueueAndCapture(repo, "act-1");
+        var item = await QueueAndCapture(repo, "act-1");
         var service = CreateService(OutboundThat(true), repo, new DeliveryRetryOptions());
 
         await service.ProcessQueueAsync();
@@ -102,7 +102,7 @@ public class SharedInboxDeliveryRetryTests
     {
         var repo = new InMemoryActivityPubRepository();
         await SeedSenderActorAsync(repo);
-        var item = QueueAndCapture(repo, "act-2");
+        var item = await QueueAndCapture(repo, "act-2");
         var before = DateTime.UtcNow;
         var service = CreateService(OutboundThat(false), repo, new DeliveryRetryOptions { BaseRetryDelaySeconds = 30 });
 
@@ -122,7 +122,7 @@ public class SharedInboxDeliveryRetryTests
     {
         var repo = new InMemoryActivityPubRepository();
         await SeedSenderActorAsync(repo);
-        var item = QueueAndCapture(repo, "act-3");
+        var item = await QueueAndCapture(repo, "act-3");
         var retryOptions = new DeliveryRetryOptions
         {
             MaxRetries = 3,
@@ -165,7 +165,7 @@ public class SharedInboxDeliveryRetryTests
     {
         var repo = new InMemoryActivityPubRepository();
         await SeedSenderActorAsync(repo);
-        var item = QueueAndCapture(repo, "act-4");
+        var item = await QueueAndCapture(repo, "act-4");
         var before = DateTime.UtcNow;
         var service = CreateService(
             OutboundThat(false),
@@ -183,7 +183,7 @@ public class SharedInboxDeliveryRetryTests
     {
         var repo = new InMemoryActivityPubRepository();
         await SeedSenderActorAsync(repo);
-        var item = QueueAndCapture(repo, "act-5");
+        var item = await QueueAndCapture(repo, "act-5");
         var before = DateTime.UtcNow;
         var service = CreateService(
             OutboundThat(false),
@@ -220,7 +220,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task PendingQuery_ExcludesFailedItem_WhoseBackoffHasNotElapsed()
     {
         var repo = new InMemoryActivityPubRepository();
-        var item = QueueAndCapture(repo, "act-6");
+        var item = await QueueAndCapture(repo, "act-6");
 
         // Put the row in a Failed state with a future NextRetryAt.
         item.Status = DeliveryStatus.Failed;
@@ -229,13 +229,13 @@ public class SharedInboxDeliveryRetryTests
         await repo.UpdateSharedInboxDeliveryAsync(item);
 
         // Not eligible yet.
-        var notYet = repo.GetPendingSharedInboxDeliveriesAsync(10, 5).Result;
+        var notYet = await repo.GetPendingSharedInboxDeliveriesAsync(10, 5);
         Assert.DoesNotContain(notYet, d => d.ActivityId == "act-6");
 
         // Eligible once the backoff window has passed.
         item.NextRetryAt = DateTime.UtcNow.AddSeconds(-1);
         await repo.UpdateSharedInboxDeliveryAsync(item);
-        var now = repo.GetPendingSharedInboxDeliveriesAsync(10, 5).Result;
+        var now = await repo.GetPendingSharedInboxDeliveriesAsync(10, 5);
         Assert.Contains(now, d => d.ActivityId == "act-6");
     }
 
@@ -243,7 +243,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task PendingQuery_ExcludesItem_ThatExhaustedMaxRetries()
     {
         var repo = new InMemoryActivityPubRepository();
-        var item = QueueAndCapture(repo, "act-7");
+        var item = await QueueAndCapture(repo, "act-7");
 
         // Exhaust the retry cap.
         item.Status = DeliveryStatus.Failed;
@@ -251,7 +251,7 @@ public class SharedInboxDeliveryRetryTests
         item.NextRetryAt = null;
         await repo.UpdateSharedInboxDeliveryAsync(item);
 
-        var pending = repo.GetPendingSharedInboxDeliveriesAsync(10, 5).Result;
+        var pending = await repo.GetPendingSharedInboxDeliveriesAsync(10, 5);
         Assert.DoesNotContain(pending, d => d.ActivityId == "act-7");
     }
 }

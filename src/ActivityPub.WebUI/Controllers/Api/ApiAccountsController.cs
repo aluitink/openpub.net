@@ -61,7 +61,7 @@ public class ApiAccountsController : ControllerBase
         if (actor == null)
             return NotFound(new { error = "Account not found." });
 
-        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last();
+        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last() ?? string.Empty;
         var account = ApiMapper.ToAccount(actor);
         if (account == null)
             return NotFound(new { error = "Account not found." });
@@ -87,7 +87,7 @@ public class ApiAccountsController : ControllerBase
         if (actor == null)
             return NotFound(new { error = "Account not found." });
 
-        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last();
+        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last() ?? string.Empty;
         limit = Math.Clamp(limit, 1, 40);
 
         var ids = await _repository.GetActorOutboxActivitiesAsync(username, 0, limit);
@@ -120,7 +120,7 @@ public class ApiAccountsController : ControllerBase
         if (actor == null)
             return NotFound(new { error = "Account not found." });
 
-        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last();
+        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last() ?? string.Empty;
         limit = Math.Clamp(limit, 1, 40);
 
         var followerIds = await _repository.GetFollowersAsync(username, 0, limit);
@@ -153,7 +153,7 @@ public class ApiAccountsController : ControllerBase
         if (actor == null)
             return NotFound(new { error = "Account not found." });
 
-        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last();
+        var username = actor.PreferredUsername ?? actor.Id?.Split('/').Last() ?? string.Empty;
         limit = Math.Clamp(limit, 1, 40);
 
         var followingIds = await _repository.GetFollowingAsync(username, 0, limit);

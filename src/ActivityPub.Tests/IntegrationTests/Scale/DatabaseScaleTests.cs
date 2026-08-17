@@ -86,7 +86,7 @@ public class DatabaseScaleTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var followers = await repository.GetFollowersAsync(target.PreferredUsername, 0, 1000);
+        var followers = await repository.GetFollowersAsync(target.PreferredUsername ?? string.Empty, 0, 1000);
 
         Assert.True(followers.Count() >= FollowerCount);
     }

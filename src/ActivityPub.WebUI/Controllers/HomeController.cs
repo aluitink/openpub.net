@@ -29,7 +29,7 @@ public class HomeController : Controller
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult NotFound()
+    public new IActionResult NotFound()
     {
         return View(new ErrorViewModel
         {

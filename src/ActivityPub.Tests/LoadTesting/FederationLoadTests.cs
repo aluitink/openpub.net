@@ -183,7 +183,7 @@ public class FederationLoadTests : LoadTestBase
     public async Task<LoadTestResult> TestDeleteOperations(int concurrentUsers, int iterations)
     {
         var user = await CreateTestActorAsync($"delete-user-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
-        await CreateTestActivityAsync(user.PreferredUsername, "To be deleted");
+        await CreateTestActivityAsync(user.PreferredUsername ?? string.Empty, "To be deleted");
 
         return await RunLoadTestAsync(
             async () =>
@@ -191,7 +191,7 @@ public class FederationLoadTests : LoadTestBase
                 using var scope = _factory.Services.CreateScope();
                 var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-                var activities = await repository.GetActorOutboxActivitiesAsync(user.PreferredUsername, 0, 1);
+                var activities = await repository.GetActorOutboxActivitiesAsync(user.PreferredUsername ?? string.Empty, 0, 1);
                 if (activities.Count > 0)
                 {
                     var activityToDelete = activities.First();

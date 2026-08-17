@@ -753,7 +753,7 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
         // Assert
         foreach (var activity in activities)
         {
-            var stored = await repository.GetActivityAsync(activity.Id);
+            var stored = await repository.GetActivityAsync(activity.Id ?? string.Empty);
             Assert.NotNull(stored);
             Assert.Equal(activity.Id, stored?.Id);
         }

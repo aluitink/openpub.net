@@ -247,9 +247,9 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(key))
             return null;
 
-        if (_cache.TryGetValue(key, out string response))
+        if (_cache.TryGetValue(key, out object? response) && response is string responseValue)
         {
-            return response;
+            return responseValue;
         }
 
         return null;

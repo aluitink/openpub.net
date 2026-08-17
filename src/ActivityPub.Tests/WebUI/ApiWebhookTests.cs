@@ -68,7 +68,7 @@ public class ApiWebhookTests : IClassFixture<WebUIFactory>
     // ---------------------------------------------------------------------
 
     [Fact]
-    public void VerifyWebhookSignature_MatchingSecret_ReturnsTrue()
+    public async Task VerifyWebhookSignature_MatchingSecret_ReturnsTrue()
     {
         using var scope = _factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<IWebhookDeliveryService>();
@@ -79,14 +79,14 @@ public class ApiWebhookTests : IClassFixture<WebUIFactory>
         // Compute the expected HMAC-SHA256 the same way the delivery service does.
         var expected = ComputeHmacSha256Base64(secret, payload);
 
-        var valid = service.VerifyWebhookSignatureAsync(secret, payload, expected).GetAwaiter().GetResult();
+        var valid = await service.VerifyWebhookSignatureAsync(secret, payload, expected);
         Assert.True(valid, "A correctly signed payload should verify.");
 
         // A tampered payload or wrong secret must not verify.
-        var tampered = service.VerifyWebhookSignatureAsync(secret, payload + "x", expected).GetAwaiter().GetResult();
+        var tampered = await service.VerifyWebhookSignatureAsync(secret, payload + "x", expected);
         Assert.False(tampered, "A tampered payload must not verify.");
 
-        var wrongSecret = service.VerifyWebhookSignatureAsync("other-secret", payload, expected).GetAwaiter().GetResult();
+        var wrongSecret = await service.VerifyWebhookSignatureAsync("other-secret", payload, expected);
         Assert.False(wrongSecret, "A wrong secret must not verify.");
     }
 

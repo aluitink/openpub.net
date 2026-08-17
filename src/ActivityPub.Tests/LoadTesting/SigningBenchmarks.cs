@@ -66,7 +66,7 @@ public class SigningBenchmarks
             PublicKey = new PublicKey
             {
                 Id = _keyId,
-                Owner = _actorPayload.Id,
+                Owner = _actorPayload!.Id,
                 PublicKeyPem = _publicKeyPem,
             },
         };

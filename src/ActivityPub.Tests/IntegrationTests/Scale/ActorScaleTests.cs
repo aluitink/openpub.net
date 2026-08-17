@@ -57,7 +57,7 @@ public class ActorScaleTests : IClassFixture<TestWebApplicationFactory>
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var followers = await repository.GetFollowersAsync(target.PreferredUsername, 0, 100);
+        var followers = await repository.GetFollowersAsync(target.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(30, followers.Count());
     }
@@ -79,7 +79,7 @@ public class ActorScaleTests : IClassFixture<TestWebApplicationFactory>
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
-        var followings = await repository.GetFollowingAsync(source.PreferredUsername, 0, 100);
+        var followings = await repository.GetFollowingAsync(source.PreferredUsername ?? string.Empty, 0, 100);
 
         Assert.Equal(25, followings.Count());
     }
@@ -102,7 +102,7 @@ public class ActorScaleTests : IClassFixture<TestWebApplicationFactory>
 
         foreach (var actor in actors)
         {
-            var storedActor = await repository.GetUserActorAsync(actor.PreferredUsername);
+            var storedActor = await repository.GetUserActorAsync(actor.PreferredUsername ?? string.Empty);
             Assert.NotNull(storedActor);
             Assert.Equal(actor.Id, storedActor.Id);
         }

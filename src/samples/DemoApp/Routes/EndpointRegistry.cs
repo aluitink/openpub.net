@@ -120,7 +120,7 @@ public static class EndpointRegistry
             });
         });
 
-        app.MapGet("/demo/activities/paginated", async (ActivityPubDbContext db, int page = 1, int pageSize = 10, IMemoryCache cache = null) =>
+        app.MapGet("/demo/activities/paginated", async (ActivityPubDbContext db, int page = 1, int pageSize = 10, IMemoryCache cache = default!) =>
         {
             var cacheKey = $"paginated_activities_{page}_{pageSize}";
             var activities = page <= 10 ? await cache.GetOrCreateAsync(cacheKey, async entry =>
@@ -1077,7 +1077,7 @@ public static class EndpointRegistry
         app.MapGet(OAuth2Constants.UserInfoEndpoint, async (HttpContext context, IOAuth2Service oauthService) =>
         {
             var authHeader = context.Request.Headers["Authorization"].ToString();
-            string accessToken = null;
+            string? accessToken = null;
 
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
             {

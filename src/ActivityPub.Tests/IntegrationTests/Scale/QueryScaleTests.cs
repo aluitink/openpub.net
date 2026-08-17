@@ -127,7 +127,7 @@ public class QueryScaleTests : IClassFixture<TestWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
 
-        var followers = await repository.GetFollowersAsync(target.PreferredUsername, 0, 1000);
+        var followers = await repository.GetFollowersAsync(target.PreferredUsername ?? string.Empty, 0, 1000);
 
         Assert.True(followers.Count() >= ActorCount);
     }
@@ -147,7 +147,7 @@ public class QueryScaleTests : IClassFixture<TestWebApplicationFactory>
         var activityTasks = new List<Task<string>>();
         for (int i = 0; i < TotalActivities; i++)
         {
-            activityTasks.Add(PostActivityAsync(actor.PreferredUsername, $"query-paginate-activity-{testRunId}-{i}"));
+            activityTasks.Add(PostActivityAsync(actor.PreferredUsername ?? string.Empty, $"query-paginate-activity-{testRunId}-{i}"));
         }
 
         await Task.WhenAll(activityTasks);
@@ -155,7 +155,7 @@ public class QueryScaleTests : IClassFixture<TestWebApplicationFactory>
         var allActivities = new List<string>();
         for (int page = 0; page < (TotalActivities + PageSize - 1) / PageSize; page++)
         {
-            var pageActivities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername, page * PageSize, PageSize);
+            var pageActivities = await repository.GetActorOutboxActivitiesAsync(actor.PreferredUsername ?? string.Empty, page * PageSize, PageSize);
             allActivities.AddRange(pageActivities);
         }
 

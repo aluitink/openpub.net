@@ -86,7 +86,7 @@ public class AdminClaimHelperTests
         var result = AdminClaimHelper.AddAdminClaim(principal, false);
 
         Assert.False(AdminClaimHelper.IsAdmin(result));
-        Assert.Empty(result.Claims.Where(c => c.Type == AdminClaimHelper.ClaimType));
+        Assert.DoesNotContain(result.Claims, c => c.Type == AdminClaimHelper.ClaimType);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class AdminClaimHelperTests
 
         var result = AdminClaimHelper.AddAdminClaim(principal, false);
 
-        Assert.Empty(result.Claims.Where(c => c.Type == AdminClaimHelper.ClaimType));
+        Assert.DoesNotContain(result.Claims, c => c.Type == AdminClaimHelper.ClaimType);
     }
 
     [Fact]

@@ -77,14 +77,14 @@ public class ApiWebhooksController : ControllerBase
             : request!.SecretKey.Trim();
 
         var saved = await _webhooks.ConfigureWebhookAsync(
-            actor.Id, eventType, endpointUrl, httpMethod, enabled,
+            actor.Id ?? string.Empty, eventType, endpointUrl, httpMethod, enabled,
             secretKey, maxRetries, retryDelaySeconds, useExponentialBackoff: true);
 
         if (!saved)
             return Problem("Could not save the webhook subscription.", statusCode: StatusCodes.Status500InternalServerError);
 
         // Re-fetch to obtain the generated id + timestamp.
-        var configs = (await _webhooks.GetWebhookConfigsAsync(actor.Id, eventType)).ToList();
+        var configs = (await _webhooks.GetWebhookConfigsAsync(actor.Id ?? string.Empty, eventType)).ToList();
         var config = configs.FirstOrDefault(c => c.EndpointUrl == endpointUrl) ?? configs.FirstOrDefault();
         if (config == null)
             return Problem("Could not save the webhook subscription.", statusCode: StatusCodes.Status500InternalServerError);
@@ -115,7 +115,7 @@ public class ApiWebhooksController : ControllerBase
         if (actor == null)
             return Unauthorized(new { error = "Authentication is required." });
 
-        var configs = (await _webhooks.GetWebhookConfigsAsync(actor.Id)).ToList();
+        var configs = (await _webhooks.GetWebhookConfigsAsync(actor.Id ?? string.Empty)).ToList();
 
         return Ok(configs.Select(c => ToDto(c, includeSecret: false)));
     }

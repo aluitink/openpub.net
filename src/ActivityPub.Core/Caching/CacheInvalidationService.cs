@@ -35,6 +35,8 @@ public class CacheInvalidationService
             return;
 
         var domain = ExtractDomain(actor.Id);
+        if (string.IsNullOrEmpty(domain))
+            return;
 
         _logger.LogInformation("Invalidating actor cache for domain: {Domain}", domain);
 
@@ -58,6 +60,9 @@ public class CacheInvalidationService
 
         _logger.LogInformation("Invalidating activity cache for activity: {ActivityId}", activity.Id);
 
+        if (string.IsNullOrEmpty(activity.Id))
+            return;
+
         await _cache.RemoveActivityAsync(activity.Id);
 
         var actorId = ExtractActorId(activity.Actor);
@@ -78,6 +83,8 @@ public class CacheInvalidationService
             return;
 
         var domain = ExtractDomain(actor.Id);
+        if (string.IsNullOrEmpty(domain))
+            return;
 
         _logger.LogInformation("Invalidating WebFinger cache for domain: {Domain}", domain);
 
@@ -128,6 +135,8 @@ public class CacheInvalidationService
         _logger.LogInformation("Invalidating all caches for actor: {ActorId}", actorId);
 
         var domain = ExtractDomain(actorId);
+        if (string.IsNullOrEmpty(domain))
+            return;
 
         await _cache.InvalidateActorsByDomainAsync(domain);
         await _cache.InvalidateActivitiesByActorAsync(actorId);

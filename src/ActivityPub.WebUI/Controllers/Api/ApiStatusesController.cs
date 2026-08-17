@@ -106,7 +106,7 @@ public class ApiStatusesController : ControllerBase
         if (activity == null)
             return NotFound(new { error = "Status not found." });
 
-        var deleted = await _repository.DeleteActivityAsync(activity.Id);
+        var deleted = await _repository.DeleteActivityAsync(activity.Id ?? string.Empty);
         if (!deleted)
             return NotFound(new { error = "Status not found." });
 

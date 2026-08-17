@@ -75,8 +75,8 @@ public class ObservatoryComplianceTests
 
             var versions = doc?["versions"]?.AsArray();
             Assert.NotNull(versions);
-            Assert.True(versions.Any(v => v?.ToString() == "2.0"));
-            Assert.True(versions.Any(v => v?.ToString() == "2.1"));
+            Assert.Contains(versions, v => v?.ToString() == "2.0");
+            Assert.Contains(versions, v => v?.ToString() == "2.1");
         }
         catch (InvalidOperationException ex)
         {

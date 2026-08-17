@@ -185,7 +185,7 @@ public static class LoadTestRunner
     private static async Task TestRetrievalEndpoint(List<LoadTestResult> results)
     {
         var actor = await CreateTestActorAsync("perf-retrieval");
-        await CreateTestActivityAsync(actor.PreferredUsername);
+        await CreateTestActivityAsync(actor.PreferredUsername ?? string.Empty);
 
         var result = await RunLoadTestAsync(
             async () => await _client.GetAsync($"/users/{actor.PreferredUsername}/outbox"),

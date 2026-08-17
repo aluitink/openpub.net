@@ -42,7 +42,7 @@ public class PeerHealthServiceTests
         Assert.NotNull(peer);
         Assert.True(peer!.IsBlocked);
         Assert.Equal(3, peer.ConsecutiveFailures);
-        Assert.NotEqual(null, peer.BlockedAt);
+        Assert.NotNull(peer.BlockedAt);
     }
 
     [Fact]

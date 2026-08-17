@@ -64,7 +64,7 @@ public class ApiPerformanceTests : LoadTestBase
     public async Task<LoadTestResult> TestRetrievalEndpoint(int concurrentUsers, int iterations)
     {
         var actor = await CreateTestActorAsync($"retrieval-user-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
-        await CreateTestActivityAsync(actor.PreferredUsername, "Retrieval test");
+        await CreateTestActivityAsync(actor.PreferredUsername ?? string.Empty, "Retrieval test");
 
         return await RunLoadTestAsync(
             async () =>

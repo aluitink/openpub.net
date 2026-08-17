@@ -22,7 +22,7 @@ public class AutoResponder
     {
         lock (_lock)
         {
-            if (!_processedActivities.Add(activity.Id))
+            if (activity.Id == null || !_processedActivities.Add(activity.Id))
             {
                 return;
             }

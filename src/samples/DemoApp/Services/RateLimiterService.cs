@@ -55,10 +55,7 @@ public class RateLimiterService
 
     public (bool allowed, int remaining, DateTime ResetTimeVal) TryAcquire(string clientKey, string endpoint = "")
     {
-        if (!_cache.TryGetValue("default_rate_limit", out RateLimitOptions defaultOptions))
-        {
-            defaultOptions = new RateLimitOptions();
-        }
+        var defaultOptions = _cache.GetOrCreate<RateLimitOptions>("default_rate_limit", _ => new RateLimitOptions()) ?? new RateLimitOptions();
 
         var now = DateTime.UtcNow;
         var state = _clientStates.GetOrAdd(clientKey, _ => new RateLimitState());

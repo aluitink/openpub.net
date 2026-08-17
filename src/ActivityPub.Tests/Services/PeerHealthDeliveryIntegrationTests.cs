@@ -92,12 +92,12 @@ public class PeerHealthDeliveryIntegrationTests
 
         var service = CreateService(outbound, repo, peerHealth, new PeerHealthOptions());
 
-        Assert.True(repo.QueueSharedInboxDeliveryAsync("act-blocked", ActivityJson, Target).Result);
+        Assert.True(await repo.QueueSharedInboxDeliveryAsync("act-blocked", ActivityJson, Target));
         // Capture the entity reference the repository holds; because
         // UpdateSharedInboxDeliveryAsync mutates the same instance, this is a
         // stable handle to the row's final state even when the item is
         // backoff-gated out of the pending query.
-        var item = Assert.Single(repo.GetPendingSharedInboxDeliveriesAsync(10, 10).Result, d => d.ActivityId == "act-blocked");
+        var item = Assert.Single(await repo.GetPendingSharedInboxDeliveriesAsync(10, 10), d => d.ActivityId == "act-blocked");
         await service.ProcessQueueAsync();
 
         // The delivery was NOT sent to the outbound service.
@@ -127,7 +127,7 @@ public class PeerHealthDeliveryIntegrationTests
 
         var service = CreateService(outbound, repo, peerHealth, new PeerHealthOptions { AutoBlockThreshold = 2 });
 
-        Assert.True(repo.QueueSharedInboxDeliveryAsync("act-fail", ActivityJson, Target).Result);
+        Assert.True(await repo.QueueSharedInboxDeliveryAsync("act-fail", ActivityJson, Target));
 
         // First failure: not yet blocked (threshold is 2).
         await service.ProcessQueueAsync();

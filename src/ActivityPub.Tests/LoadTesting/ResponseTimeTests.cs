@@ -48,7 +48,7 @@ public class ResponseTimeTests : LoadTestBase
     public async Task<LoadTestResult> TestActivityDeliveryResponseTime(int concurrentUsers, int iterations)
     {
         var actor = await CreateTestActorAsync($"del-user-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
-        var activity = await CreateTestActivityAsync(actor.PreferredUsername, "Delivery test");
+        var activity = await CreateTestActivityAsync(actor.PreferredUsername ?? string.Empty, "Delivery test");
 
         return await RunLoadTestAsync(
             async () =>
@@ -65,7 +65,7 @@ public class ResponseTimeTests : LoadTestBase
     public async Task<LoadTestResult> TestActivityRetrievalResponseTime(int concurrentUsers, int iterations)
     {
         var actor = await CreateTestActorAsync($"ret-user-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
-        await CreateTestActivityAsync(actor.PreferredUsername, "Retrieval test");
+        await CreateTestActivityAsync(actor.PreferredUsername ?? string.Empty, "Retrieval test");
 
         return await RunLoadTestAsync(
             async () =>

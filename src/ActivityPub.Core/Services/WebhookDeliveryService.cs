@@ -104,7 +104,7 @@ public class WebhookDeliveryService : IWebhookDeliveryService
                 var delivery = new WebhookDeliveryEntity
                 {
                     ConfigId = config.Id.ToString(),
-                    ActivityId = activity.Id,
+                    ActivityId = activity.Id ?? string.Empty,
                     ActivityJson = JsonSerializer.Serialize(activity, _jsonOptions),
                     ActorId = actorId,
                     Status = WebhookDeliveryStatus.Queued

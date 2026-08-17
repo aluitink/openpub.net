@@ -86,7 +86,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         {
             var entity = new ActivityEntity
             {
-                ActivityId = activity.Id,
+                ActivityId = activity.Id ?? string.Empty,
                 JsonData = jsonData,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
