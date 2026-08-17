@@ -20,7 +20,7 @@
                         <div class="suggestion-avatar">
                             @if (!string.IsNullOrEmpty(s.AvatarUrl))
                             {
-                                <img src="@s.AvatarUrl" alt="@s.DisplayName" />
+                                <img src="@s.AvatarUrl" alt="@s.DisplayName" loading="lazy" width="40" height="40" />
                             }
                             else
                             {

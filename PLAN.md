@@ -23,7 +23,7 @@
 ### Phase 46: UI Performance & Perceived Speed
 Make the timeline and interactions feel instant.
 1. ✅ Client-side "load more" + IntersectionObserver infinite scroll on Timeline **and** Search (`?page=` cursor, `data-next`, de-dupe by `data-activity-id`, skeleton loader, cursor hidden on the last page, `&amp;`-decoded cursor URLs).
-2. ⬜ Defer non-critical note cards; audit `fetchpriority`/`loading="lazy"` on images.
+2. ✅ Defer non-critical note cards; audit `fetchpriority`/`loading="lazy"` on images — every `<img>` now has an explicit loading/fetchpriority strategy + dimensions; note images reserve a stable box (aspect-ratio + min-height) so lazy loads cause no layout shift.
 3. ✅ `prefers-reduced-motion: reduce` block in `site.css` zeroes animation/transition durations and scroll-behavior.
 4. ⬜ Measure LCP/TTI on home timeline via delegated subagent (before/after screenshots + JS perf snapshot).
 5. ⬜ Consolidate the 3 JS files + inline scripts into a small module loader (no framework); dedupe SignalR bootstrap.

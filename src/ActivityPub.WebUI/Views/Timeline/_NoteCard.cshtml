@@ -21,7 +21,7 @@
         <div class="note-avatar">
             @if (!string.IsNullOrEmpty(Model.AuthorAvatarUrl))
             {
-                <img src="@Model.AuthorAvatarUrl" alt="@Model.AuthorName" loading="lazy" />
+                <img src="@Model.AuthorAvatarUrl" alt="@Model.AuthorName" loading="lazy" decoding="async" width="40" height="40" />
             }
             else
             {
@@ -53,7 +53,7 @@
     @if (!string.IsNullOrEmpty(Model.ImageUrl))
     {
         <div class="note-attachment@(Model.Sensitive ? " note-attachment-blurred" : "")"@((Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning)) ? " data-cw-content" : "")>
-            <img src="@Model.ImageUrl" alt="Attached image" class="note-image" loading="lazy" />
+            <img src="@Model.ImageUrl" alt="Attached image" class="note-image" loading="lazy" decoding="async" />
         </div>
     }
 

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
@@ -232,5 +233,104 @@ public class Phase46PerformanceTests : IClassFixture<WebUIFactory>
             "Like/boost/delete should prevent full form navigation (fetch-based) for perceived speed.");
         Assert.True(body.Contains("fetch(form.action"),
             "Interactions should use fetch so the page does not reload.");
+    }
+
+    /// <summary>Seeds one note carrying an Image attachment (for .note-image assertions).</summary>
+    async Task SeedNoteWithImageAsync(string username, string marker)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<IActivityPubRepository>();
+        var actor = await repo.GetUserActorAsync(username);
+        Assert.NotNull(actor);
+
+        var noteId = $"https://localhost/users/{username}/notes/{Guid.NewGuid():N}";
+        var activityId = $"https://localhost/users/{username}/activities/{Guid.NewGuid():N}";
+        var note = new Note
+        {
+            Id = noteId,
+            Type = "Note",
+            Content = $"{marker}_with_image",
+            AttributedTo = actor!.Id,
+            Published = DateTime.UtcNow,
+            To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" },
+            Attachment = new List<object>
+            {
+                JsonSerializer.SerializeToElement(new Dictionary<string, string>
+                {
+                    { "type", "Image" },
+                    { "url", $"https://localhost/media/{Guid.NewGuid():N}.jpg" },
+                    { "mediaType", "image/jpeg" },
+                }),
+            }
+        };
+        var activity = new Activity
+        {
+            Id = activityId,
+            Type = "Create",
+            Actor = actor.Id,
+            Object = note,
+            Published = DateTime.UtcNow,
+            To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
+        };
+        await repo.SaveActivityAsync(activity);
+    }
+
+    [Fact]
+    public async Task NoteImages_LazyLoadWithReservedBox_NoLayoutShift()
+    {
+        var (client, username) = await GetAuthenticatedUser();
+        await SeedNotesAsync(username, 3, "p46img");
+        await SeedNoteWithImageAsync(username, "p46img");
+
+        var body = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        // Note avatars and attached images should be lazy + async-decoded and
+        // carry explicit dimensions so the browser reserves space (no CLS).
+        // (Attribute order in the emitted tag is not guaranteed, so assert per-tag.)
+        // Attached images should be lazy + async-decoded so they don't block
+        // the initial paint; explicit dimensions let the browser reserve space.
+        var noteImageTag = Regex.Matches(body, "<img[^>]*>")
+            .Cast<Match>().Select(m => m.Value)
+            .FirstOrDefault(t => t.Contains("class=\"note-image\""));
+        Assert.False(string.IsNullOrEmpty(noteImageTag),
+            "Expected the seeded note's image to render as a .note-image <img>.");
+        Assert.True(noteImageTag!.Contains("loading=\"lazy\""), "Note images should lazy-load.");
+        Assert.True(noteImageTag.Contains("decoding=\"async\""), "Note images should decode async.");
+
+        // The stylesheet should reserve a stable box for attached images so the
+        // lazy load never shifts the layout below it.
+        var css = await (await client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+        var block = Regex.Match(css, @"\.note-attachment\s*\{[^}]*\}", RegexOptions.Singleline);
+        Assert.True(block.Success, "Expected a .note-attachment rule in site.css.");
+        Assert.Contains("min-height", block.Groups[0].Value);
+        var imgBlock = Regex.Match(css, @"\.note-image\s*\{[^}]*\}", RegexOptions.Singleline);
+        Assert.True(imgBlock.Success, "Expected a .note-image rule in site.css.");
+        Assert.Contains("aspect-ratio", imgBlock.Groups[0].Value);
+    }
+
+    [Fact]
+    public async Task HeaderImages_UseFetchPriorityHigh()
+    {
+        var (client, username) = await GetAuthenticatedUser();
+
+        // Give the actor an icon so the profile renders an <img> (not the placeholder).
+        var editPage = await (await client.GetAsync("/Profile/Edit")).Content.ReadAsStringAsync();
+        var token = Regex.Match(editPage, @"name=""__RequestVerificationToken""[^>]*value=""([^""]*)""").Groups[1].Value;
+        var edit = await client.PostAsync("/Profile/Edit", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            { "__RequestVerificationToken", token },
+            { "DisplayName", "P46 Header" },
+            { "Bio", "" },
+            { "IconUrl", "https://example.com/p46-header-avatar.png" },
+            { "BannerUrl", "" },
+        }));
+        Assert.True(edit.IsSuccessStatusCode || edit.Headers.Location != null,
+            $"profile edit failed: {(int)edit.StatusCode}");
+
+        // Profile header icon is the LCP candidate on the profile page.
+        var profile = await (await client.GetAsync($"/Profile?username={username}")).Content.ReadAsStringAsync();
+        var imgTags = Regex.Matches(profile, "<img[^>]*>");
+        Assert.True(imgTags.Cast<Match>().Any(m => m.Value.Contains("fetchpriority=\"high\"")),
+            "Expected the profile header icon to use fetchpriority=\"high\".");
     }
 }

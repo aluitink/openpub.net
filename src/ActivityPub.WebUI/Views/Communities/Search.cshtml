@@ -28,7 +28,7 @@
                     <div class="community-card-icon">
                         @if (!string.IsNullOrEmpty(community.IconUrl))
                         {
-                            <img src="@community.IconUrl" alt="@community.Name" />
+                            <img src="@community.IconUrl" alt="@community.Name" loading="lazy" width="48" height="48" />
                         }
                         else
                         {

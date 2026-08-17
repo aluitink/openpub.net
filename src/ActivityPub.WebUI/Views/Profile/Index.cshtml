@@ -22,7 +22,7 @@
         <div class="profile-avatar">
             @if (!string.IsNullOrEmpty(Model.IconUrl))
             {
-                <img src="@Model.IconUrl" alt="@Model.DisplayName" />
+                <img src="@Model.IconUrl" alt="@Model.DisplayName" fetchpriority="high" width="90" height="90" />
             }
             else
             {
