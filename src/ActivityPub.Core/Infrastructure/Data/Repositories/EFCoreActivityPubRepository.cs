@@ -660,8 +660,66 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
     public async Task<int> GetReplyCountAsync(string activityId)
     {
         return await _context.Activities
-            .Where(a => a.JsonData.Contains("\"inReplyTo\"") &&
-                        a.JsonData.Contains($"\"{activityId}\""))
+            .Where(a => a.JsonData.Contains("\"type\":\"Reply\"") ||
+                        a.JsonData.Contains("\"inReplyTo\""))
+            .Where(a => a.JsonData.Contains($"\"{activityId}\""))
             .CountAsync();
+    }
+
+    public async Task<FederationPeerEntity?> GetFederationPeerAsync(string domain)
+    {
+        if (string.IsNullOrEmpty(domain)) return null;
+        return await _context.FederationPeers.FirstOrDefaultAsync(p => p.Domain == domain);
+    }
+
+    public async Task<bool> SaveFederationPeerAsync(FederationPeerEntity peer)
+    {
+        if (peer == null || string.IsNullOrEmpty(peer.Domain)) return false;
+
+        var existing = await _context.FederationPeers.FirstOrDefaultAsync(p => p.Domain == peer.Domain);
+        if (existing == null)
+        {
+            peer.CreatedAt = DateTime.UtcNow;
+            peer.UpdatedAt = DateTime.UtcNow;
+            await _context.FederationPeers.AddAsync(peer);
+        }
+        else
+        {
+            existing.ConsecutiveFailures = peer.ConsecutiveFailures;
+            existing.ConsecutiveSuccesses = peer.ConsecutiveSuccesses;
+            existing.TotalDeliveries = peer.TotalDeliveries;
+            existing.TotalFailures = peer.TotalFailures;
+            existing.LastDeliveryAttempt = peer.LastDeliveryAttempt;
+            existing.LastSuccessfulDelivery = peer.LastSuccessfulDelivery;
+            existing.LastProbedAt = peer.LastProbedAt;
+            existing.LastProbeReachable = peer.LastProbeReachable;
+            existing.ConsecutiveProbeFailures = peer.ConsecutiveProbeFailures;
+            existing.IsBlocked = peer.IsBlocked;
+            existing.BlockedAt = peer.BlockedAt;
+            existing.BlockedReason = peer.BlockedReason;
+            existing.UpdatedAt = DateTime.UtcNow;
+            _context.FederationPeers.Update(existing);
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<ICollection<FederationPeerEntity>> GetFederationPeersAsync(bool onlyBlocked = false)
+    {
+        var query = _context.FederationPeers.AsQueryable();
+        if (onlyBlocked)
+        {
+            query = query.Where(p => p.IsBlocked);
+        }
+        return await query.OrderBy(p => p.Domain).ToListAsync();
+    }
+
+    public async Task<ICollection<string>> GetBlockedDomainNamesAsync()
+    {
+        return await _context.FederationPeers
+            .Where(p => p.IsBlocked)
+            .Select(p => p.Domain)
+            .ToListAsync();
     }
 }

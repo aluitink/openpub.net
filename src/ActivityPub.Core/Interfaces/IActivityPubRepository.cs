@@ -233,4 +233,28 @@ public interface IActivityPubRepository
     /// Gets whether one actor currently follows another (an active Follow, not undone).
     /// </summary>
     Task<bool> IsFollowingAsync(string followerUsername, string targetActorId);
+
+    /// <summary>
+    /// Gets the federation peer health record for a domain, or null if the
+    /// domain has not been seen yet.
+    /// </summary>
+    Task<FederationPeerEntity?> GetFederationPeerAsync(string domain);
+
+    /// <summary>
+    /// Saves (inserts or updates) a federation peer health record, keyed by
+    /// domain.
+    /// </summary>
+    Task<bool> SaveFederationPeerAsync(FederationPeerEntity peer);
+
+    /// <summary>
+    /// Gets all federation peer health records, optionally filtered to only
+    /// blocked peers.
+    /// </summary>
+    Task<ICollection<FederationPeerEntity>> GetFederationPeersAsync(bool onlyBlocked = false);
+
+    /// <summary>
+    /// Gets all domains that are currently blocked, for use in the inbound
+    /// rejection path (a snapshot to avoid a DB hit per activity).
+    /// </summary>
+    Task<ICollection<string>> GetBlockedDomainNamesAsync();
 }

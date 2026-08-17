@@ -20,6 +20,7 @@ public class ActivityPubDbContext : DbContext
     public DbSet<UserPreferenceEntity> UserPreferences { get; set; } = null!;
     public DbSet<CommunityEntity> Communities { get; set; } = null!;
     public DbSet<CommunityMemberEntity> CommunityMembers { get; set; } = null!;
+    public DbSet<FederationPeerEntity> FederationPeers { get; set; } = null!;
 
     public ActivityPubDbContext(DbContextOptions<ActivityPubDbContext> options) : base(options)
     {
@@ -457,5 +458,28 @@ public class ActivityPubDbContext : DbContext
             .HasOne(m => m.Actor)
             .WithMany()
             .HasForeignKey(m => m.ActorId);
+
+        modelBuilder.Entity<FederationPeerEntity>()
+            .HasKey(p => p.Domain);
+
+        modelBuilder.Entity<FederationPeerEntity>()
+            .Property(p => p.Domain)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<FederationPeerEntity>()
+            .Property(p => p.BlockedReason)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<FederationPeerEntity>()
+            .Property(p => p.CreatedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<FederationPeerEntity>()
+            .Property(p => p.UpdatedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<FederationPeerEntity>()
+            .HasIndex(p => p.IsBlocked);
     }
 }

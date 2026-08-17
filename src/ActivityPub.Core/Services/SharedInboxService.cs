@@ -20,6 +20,7 @@ public class SharedInboxService : ISharedInboxService
     private readonly ILogger<SharedInboxService> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly DeliveryRetryOptions _retryOptions;
+    private readonly IPeerHealthService? _peerHealth;
 
     public SharedInboxService(
         IActivityPubRepository repository,
@@ -27,7 +28,8 @@ public class SharedInboxService : ISharedInboxService
         IMemoryCache cache,
         IFederationCache federationCache,
         ILogger<SharedInboxService> logger,
-        IOptions<ActivityPubOptions>? options = null)
+        IOptions<ActivityPubOptions>? options = null,
+        IPeerHealthService? peerHealth = null)
     {
         _repository = repository;
         _outboundService = outboundService;
@@ -35,6 +37,7 @@ public class SharedInboxService : ISharedInboxService
         _federationCache = federationCache;
         _logger = logger;
         _retryOptions = options?.Value?.DeliveryRetry ?? new DeliveryRetryOptions();
+        _peerHealth = peerHealth;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -122,6 +125,20 @@ public class SharedInboxService : ISharedInboxService
             return false;
         }
 
+        // Reject activities from peers that have been blocked for being
+        // unreliable (auto- or manually blocked by the peer-health service).
+        if (_peerHealth is not null)
+        {
+            var originDomain = ExtractDomain(activity.ActorId);
+            if (!string.IsNullOrEmpty(originDomain) && await _peerHealth.IsDomainBlockedAsync(originDomain))
+            {
+                _logger.LogInformation(
+                    "Rejecting inbound activity {ActivityId} from blocked peer {Domain}",
+                    activity.Id, originDomain);
+                return false;
+            }
+        }
+
         _logger.LogInformation("Processing and distributing shared inbox activity {ActivityId} for user {Username}", activity.Id, username);
 
         if (await _repository.HasSeenActivityAsync(activity.Id))
@@ -192,11 +209,52 @@ public class SharedInboxService : ISharedInboxService
                         continue;
                     }
 
-                    var success = await _outboundService.SendActivityAsync(
+                    // Determine the recipient domain and whether that peer is
+                    // currently blocked by the peer-health service. A blocked
+                    // peer is not contacted: the item is left to retry after
+                    // backoff (it may be unblocked by then), and no peer-health
+                    // failure is recorded for it (the block is already in
+                    // effect, so counting it again would be noise).
+                    var targetDomain = ExtractDomain(delivery.TargetActorId);
+                    var isBlocked = _peerHealth is not null && !string.IsNullOrEmpty(targetDomain)
+                        && await _peerHealth.IsDomainBlockedAsync(targetDomain);
+
+                    bool success;
+                    if (isBlocked)
+                    {
+                        success = false;
+                        delivery.RetryCount++;
+                        delivery.LastDeliveryAttempt = DateTime.UtcNow;
+                        delivery.FailureReason = $"Delivery to {targetDomain} skipped (peer is blocked)";
+                        delivery.NextRetryAt = DateTime.UtcNow + ComputeRetryDelay(delivery.RetryCount);
+                        if (delivery.RetryCount >= maxRetries)
+                        {
+                            delivery.Status = DeliveryStatus.MaxRetriesExceeded;
+                            delivery.FailureReason = $"Delivery to {targetDomain} skipped (peer is blocked; max retries exceeded)";
+                            delivery.NextRetryAt = null;
+                        }
+                        else
+                        {
+                            delivery.Status = DeliveryStatus.Failed;
+                        }
+                        _logger.LogInformation("Skipping delivery of activity {ActivityId} to blocked peer {Domain}", delivery.ActivityId, targetDomain);
+                        await _repository.UpdateSharedInboxDeliveryAsync(delivery);
+                        continue;
+                    }
+
+                    success = await _outboundService.SendActivityAsync(
                         delivery.ActivityJson,
                         activity.ActorId ?? string.Empty,
                         string.Empty,
                         delivery.TargetActorId);
+
+                    // Record the delivery outcome for peer-health tracking so
+                    // unreliable peers get auto-blocked and recovering peers get
+                    // auto-unblocked.
+                    if (_peerHealth is not null && !string.IsNullOrEmpty(targetDomain))
+                    {
+                        await _peerHealth.RecordDeliveryOutcomeAsync(targetDomain, success);
+                    }
 
                     if (success)
                     {
@@ -271,6 +329,20 @@ public class SharedInboxService : ISharedInboxService
         delaySeconds = Math.Min(delaySeconds, cap);
 
         return TimeSpan.FromSeconds(delaySeconds);
+    }
+
+    /// <summary>
+    /// Extracts the host/domain from an actor or inbox URL, or an empty string
+    /// when the input is not a valid absolute URI.
+    /// </summary>
+    private static string ExtractDomain(string? url)
+    {
+        if (!string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+            !string.IsNullOrEmpty(uri.Host))
+        {
+            return uri.Host;
+        }
+        return string.Empty;
     }
 
     public async Task<bool> AddToCacheAsync(string key, string value)

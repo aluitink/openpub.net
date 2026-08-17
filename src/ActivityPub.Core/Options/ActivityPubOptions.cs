@@ -43,6 +43,47 @@ public class DeliveryRetryOptions
 }
 
 /// <summary>
+/// Federation peer health tracking and auto-blocking policy. The server tracks
+/// the reliability of each remote server it delivers to and automatically
+/// blocks peers that are consistently unreliable (failing deliveries or
+/// unreachable on liveness probes), and re-admits them once they start
+/// succeeding again.
+/// </summary>
+public class PeerHealthOptions
+{
+    /// <summary>
+    /// Master switch for peer health tracking and auto-blocking. When false,
+    /// delivery outcomes and probes are still recorded but no auto-block /
+    /// auto-unblock actions are taken.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Number of consecutive delivery failures (with no success in between)
+    /// before a peer is automatically blocked.
+    /// </summary>
+    public int AutoBlockThreshold { get; set; } = 5;
+
+    /// <summary>
+    /// Number of consecutive delivery successes (with no failure in between)
+    /// required to automatically unblock a previously-blocked peer.
+    /// </summary>
+    public int AutoUnblockSuccessThreshold { get; set; } = 3;
+
+    /// <summary>
+    /// Number of consecutive unreachable liveness probes before a peer is
+    /// automatically blocked, independent of delivery outcomes.
+    /// </summary>
+    public int AutoBlockProbeFailureThreshold { get; set; } = 3;
+
+    /// <summary>
+    /// How often the background service probes known peers for liveness, in
+    /// minutes.
+    /// </summary>
+    public int ProbeIntervalMinutes { get; set; } = 5;
+}
+
+/// <summary>
 /// Configuration options for ActivityPub
 /// </summary>
 public class ActivityPubOptions
@@ -116,4 +157,10 @@ public class ActivityPubOptions
     /// <see cref="DeliveryRetryOptions"/>).
     /// </summary>
     public DeliveryRetryOptions DeliveryRetry { get; set; } = new();
+
+    /// <summary>
+    /// Federation peer health tracking and auto-blocking policy (see
+    /// <see cref="PeerHealthOptions"/>).
+    /// </summary>
+    public PeerHealthOptions PeerHealth { get; set; } = new();
 }

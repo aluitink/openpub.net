@@ -17,6 +17,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     private readonly List<WebhookConfigEntity> _webhookConfigs = new();
     private readonly List<WebhookDeliveryEntity> _webhookDeliveries = new();
     private readonly List<WebhookDeliveryHistoryEntity> _webhookDeliveryHistories = new();
+    private readonly Dictionary<string, FederationPeerEntity> _federationPeers = new();
 
     /// <inheritdoc />
     public Task<Actor?> GetUserActorAsync(string username)
@@ -443,5 +444,41 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
         }
 
         return Task.FromResult(activeFollows.Any(f => !undoneIds.Contains(f.Id ?? string.Empty)));
+    }
+
+    public Task<FederationPeerEntity?> GetFederationPeerAsync(string domain)
+    {
+        if (string.IsNullOrEmpty(domain)) return Task.FromResult<FederationPeerEntity?>(null);
+        return Task.FromResult(_federationPeers.TryGetValue(domain, out var peer) ? peer : null);
+    }
+
+    public Task<bool> SaveFederationPeerAsync(FederationPeerEntity peer)
+    {
+        if (peer == null || string.IsNullOrEmpty(peer.Domain)) return Task.FromResult(false);
+        peer.UpdatedAt = DateTime.UtcNow;
+        if (!_federationPeers.ContainsKey(peer.Domain))
+        {
+            peer.CreatedAt = DateTime.UtcNow;
+        }
+        _federationPeers[peer.Domain] = peer;
+        return Task.FromResult(true);
+    }
+
+    public Task<ICollection<FederationPeerEntity>> GetFederationPeersAsync(bool onlyBlocked = false)
+    {
+        var peers = _federationPeers.Values
+            .Where(p => !onlyBlocked || p.IsBlocked)
+            .OrderBy(p => p.Domain)
+            .ToList();
+        return Task.FromResult<ICollection<FederationPeerEntity>>(peers);
+    }
+
+    public Task<ICollection<string>> GetBlockedDomainNamesAsync()
+    {
+        var domains = _federationPeers.Values
+            .Where(p => p.IsBlocked)
+            .Select(p => p.Domain)
+            .ToList();
+        return Task.FromResult<ICollection<string>>(domains);
     }
 }
