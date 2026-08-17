@@ -242,10 +242,37 @@ public class SharedInboxService : ISharedInboxService
                         continue;
                     }
 
+                    // Look up the sender's private key so the outbound request can
+                    // be signed. The private key is stored on the local actor in
+                    // AdditionalProperties["privateKeyPem"] at registration time.
+                    var senderActorId = activity.ActorId ?? string.Empty;
+                    var privateKeyPem = await GetPrivateKeyPemAsync(senderActorId);
+                    if (string.IsNullOrEmpty(privateKeyPem))
+                    {
+                        // No private key available — the activity cannot be signed
+                        // and therefore cannot be delivered to a remote server.
+                        delivery.RetryCount++;
+                        delivery.LastDeliveryAttempt = DateTime.UtcNow;
+                        delivery.FailureReason = "No private key available for sender actor";
+                        if (delivery.RetryCount >= maxRetries)
+                        {
+                            delivery.Status = DeliveryStatus.MaxRetriesExceeded;
+                            delivery.NextRetryAt = null;
+                        }
+                        else
+                        {
+                            delivery.Status = DeliveryStatus.Failed;
+                            delivery.NextRetryAt = DateTime.UtcNow + ComputeRetryDelay(delivery.RetryCount);
+                        }
+                        _logger.LogWarning("No private key for sender {SenderActorId}; cannot sign outbound delivery of activity {ActivityId}", senderActorId, delivery.ActivityId);
+                        await _repository.UpdateSharedInboxDeliveryAsync(delivery);
+                        continue;
+                    }
+
                     success = await _outboundService.SendActivityAsync(
                         delivery.ActivityJson,
-                        activity.ActorId ?? string.Empty,
-                        string.Empty,
+                        senderActorId,
+                        privateKeyPem,
                         delivery.TargetActorId);
 
                     // Record the delivery outcome for peer-health tracking so
@@ -342,6 +369,57 @@ public class SharedInboxService : ISharedInboxService
         {
             return uri.Host;
         }
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Retrieves the sender actor's private key (PEM) from the local actor
+    /// record. The key is stored in <c>AdditionalProperties["privateKeyPem"]</c>
+    /// at registration time. Returns null when the actor is not found or has no
+    /// private key (e.g. a remote actor).
+    /// </summary>
+    private async Task<string?> GetPrivateKeyPemAsync(string senderActorId)
+    {
+        if (string.IsNullOrEmpty(senderActorId))
+        {
+            return null;
+        }
+
+        var username = ExtractUsernameFromActorId(senderActorId);
+        if (string.IsNullOrEmpty(username))
+        {
+            return null;
+        }
+
+        var actor = await _repository.GetUserActorAsync(username);
+        if (actor?.AdditionalProperties == null ||
+            !actor.AdditionalProperties.TryGetValue("privateKeyPem", out var keyElement) ||
+            keyElement.ValueKind != System.Text.Json.JsonValueKind.String)
+        {
+            return null;
+        }
+
+        return keyElement.GetString();
+    }
+
+    /// <summary>
+    /// Extracts the username from a local actor ID of the form
+    /// <c>https://{domain}/users/{username}</c>. Returns an empty string when
+    /// the input does not match the expected local actor URL shape.
+    /// </summary>
+    private static string ExtractUsernameFromActorId(string actorId)
+    {
+        if (!Uri.TryCreate(actorId, UriKind.Absolute, out var uri))
+        {
+            return string.Empty;
+        }
+
+        var segments = uri.AbsolutePath.TrimStart('/').Split('/');
+        if (segments.Length >= 2 && segments[0] == "users")
+        {
+            return Uri.UnescapeDataString(segments[1]);
+        }
+
         return string.Empty;
     }
 

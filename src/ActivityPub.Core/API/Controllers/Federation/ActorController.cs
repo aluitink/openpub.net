@@ -57,7 +57,7 @@ public class ActorController : ControllerBase
             {
                 actor.PublicKey = new PublicKey
                 {
-                    Id = $"{actor.Id}/#main-key",
+                    Id = $"{actor.Id}#main-key",
                     Owner = actor.Id,
                     PublicKeyPem = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xfn/ygWe\n-----END PUBLIC KEY-----"
                 };

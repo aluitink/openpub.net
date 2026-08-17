@@ -179,7 +179,7 @@ public class WebFingerController : ControllerBase
             if (parts.Length >= 2)
             {
                 var username = parts[0];
-                return $"{_options.Domain}{_options.UserPath}/{username}";
+                return $"{GetScheme()}://{GetHost()}{_options.UserPath}/{username}";
             }
         }
 

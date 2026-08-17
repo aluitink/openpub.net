@@ -109,40 +109,18 @@ public class OutboundActivityService : IOutboundActivityService
     }
 
     /// <summary>
-    /// Builds the inbox URL from endpoint and domain
+    /// Builds the inbox URL from endpoint and domain.
     /// </summary>
     private string BuildInboxUrl(string endpoint, string domain)
     {
-        // Try common inbox paths
-        var paths = new[] { $"/users/{domain}/inbox", $"/inbox", $"/users/{domain}/outbox" };
-
-        foreach (var path in paths)
-        {
-            var url = $"{endpoint}{path}";
-            if (TestInboxUrl(url).Result)
-            {
-                return url;
-            }
-        }
-
-        // Fallback to default
+        // Most ActivityPub servers expose a shared inbox at /inbox or use the
+        // server's base path. We prefer the server's shared inbox (which is
+        // what the remote actor's JSON-LD 'endpoints.sharedInbox' would point
+        // to) and fall back to /inbox. We do NOT probe with HEAD requests
+        // (the previous implementation did, with a sync-over-async .Result
+        // call that risked deadlocks, and it treated 404 as "valid" so it
+        // could pick a non-existent path).
         return $"{endpoint}/inbox";
-    }
-
-    /// <summary>
-    /// Tests if an inbox URL is reachable
-    /// </summary>
-    private async Task<bool> TestInboxUrl(string url)
-    {
-        try
-        {
-            var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-            return response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }
 

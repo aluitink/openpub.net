@@ -24,7 +24,7 @@ namespace ActivityPub.Tests.Services;
 public class PeerHealthDeliveryIntegrationTests
 {
     private const string ActivityJson =
-        """{"id":"urn:activity:1","type":"Create","actorId":"https://local.example/users/alice#main-key"}""";
+        """{"id":"urn:activity:1","type":"Create","actor":"https://local.example/users/alice#main-key"}""";
     private const string Target = "https://remote.example/users/bob#main-key";
 
     private static SharedInboxService CreateService(
@@ -55,6 +55,26 @@ public class PeerHealthDeliveryIntegrationTests
             repo,
             Options.Create(ap),
             Mock.Of<ILogger<PeerHealthService>>());
+    }
+
+    /// <summary>
+    /// Seeds a local sender actor (username "alice") with a private key into
+    /// the repository so that <c>SharedInboxService</c> can sign outbound
+    /// deliveries. The actor ID matches the one referenced by
+    /// <see cref="ActivityJson"/>.
+    /// </summary>
+    private static async Task SeedSenderActorAsync(InMemoryActivityPubRepository repo)
+    {
+        var actor = new Actor
+        {
+            Id = "https://local.example/users/alice#main-key",
+            PreferredUsername = "alice",
+            AdditionalProperties = new System.Collections.Generic.Dictionary<string, System.Text.Json.JsonElement>
+            {
+                ["privateKeyPem"] = System.Text.Json.JsonSerializer.SerializeToElement("test-private-key-pem")
+            }
+        };
+        await repo.SaveUserActorAsync(actor);
     }
 
     [Fact]
@@ -98,6 +118,7 @@ public class PeerHealthDeliveryIntegrationTests
     public async Task ProcessQueueAsync_RecordsFailure_AutoBlocksPeer_AtThreshold()
     {
         var repo = new InMemoryActivityPubRepository();
+        await SeedSenderActorAsync(repo);
         var peerHealth = CreatePeerHealth(repo, new PeerHealthOptions { AutoBlockThreshold = 2 });
         var outbound = new Mock<IOutboundActivityService>();
         outbound

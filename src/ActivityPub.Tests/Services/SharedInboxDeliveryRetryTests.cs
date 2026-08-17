@@ -21,7 +21,7 @@ namespace ActivityPub.Tests.Services;
 public class SharedInboxDeliveryRetryTests
 {
     private const string ActivityJson =
-        """{"id":"urn:activity:1","type":"Create","actorId":"https://local.example/users/alice#main-key"}""";
+        """{"id":"urn:activity:1","type":"Create","actor":"https://local.example/users/alice#main-key"}""";
     private const string Target = "https://remote.example/users/bob#main-key";
 
     private static SharedInboxService CreateService(
@@ -49,6 +49,26 @@ public class SharedInboxDeliveryRetryTests
     }
 
     /// <summary>
+    /// Seeds a local sender actor (username "alice") with a private key into
+    /// the repository so that <c>SharedInboxService</c> can sign outbound
+    /// deliveries. The actor ID matches the one referenced by
+    /// <see cref="ActivityJson"/>.
+    /// </summary>
+    private static async Task SeedSenderActorAsync(InMemoryActivityPubRepository repo)
+    {
+        var actor = new ActivityPub.Core.Models.Actor
+        {
+            Id = "https://local.example/users/alice#main-key",
+            PreferredUsername = "alice",
+            AdditionalProperties = new System.Collections.Generic.Dictionary<string, System.Text.Json.JsonElement>
+            {
+                ["privateKeyPem"] = System.Text.Json.JsonSerializer.SerializeToElement("test-private-key-pem")
+            }
+        };
+        await repo.SaveUserActorAsync(actor);
+    }
+
+    /// <summary>
     /// Queues a delivery and captures the entity reference the repository
     /// holds. Because <c>UpdateSharedInboxDeliveryAsync</c> mutates that same
     /// instance in place, the returned reference is a stable handle to the row's
@@ -66,6 +86,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task SuccessfulDelivery_IsMarkedDelivered_NoRetry()
     {
         var repo = new InMemoryActivityPubRepository();
+        await SeedSenderActorAsync(repo);
         var item = QueueAndCapture(repo, "act-1");
         var service = CreateService(OutboundThat(true), repo, new DeliveryRetryOptions());
 
@@ -80,6 +101,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task FailedDelivery_IsMarkedFailed_WithBackoffNextRetryAt()
     {
         var repo = new InMemoryActivityPubRepository();
+        await SeedSenderActorAsync(repo);
         var item = QueueAndCapture(repo, "act-2");
         var before = DateTime.UtcNow;
         var service = CreateService(OutboundThat(false), repo, new DeliveryRetryOptions { BaseRetryDelaySeconds = 30 });
@@ -99,6 +121,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task RepeatedFailures_GrowExponentially_UntilMaxRetries()
     {
         var repo = new InMemoryActivityPubRepository();
+        await SeedSenderActorAsync(repo);
         var item = QueueAndCapture(repo, "act-3");
         var retryOptions = new DeliveryRetryOptions
         {
@@ -141,6 +164,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task FlatBackoff_UsesConstantDelay()
     {
         var repo = new InMemoryActivityPubRepository();
+        await SeedSenderActorAsync(repo);
         var item = QueueAndCapture(repo, "act-4");
         var before = DateTime.UtcNow;
         var service = CreateService(
@@ -158,6 +182,7 @@ public class SharedInboxDeliveryRetryTests
     public async Task BackoffDelay_IsCappedAtMaxRetryDelaySeconds()
     {
         var repo = new InMemoryActivityPubRepository();
+        await SeedSenderActorAsync(repo);
         var item = QueueAndCapture(repo, "act-5");
         var before = DateTime.UtcNow;
         var service = CreateService(

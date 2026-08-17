@@ -35,9 +35,12 @@ public class OutboundSigningService : IOutboundSigningService
 
         try
         {
-            // Get the request body if available
+            // Get the request body if available. The content must be read
+            // synchronously because SignRequest is a sync method invoked just
+            // before the request is sent; the body is small (a single
+            // ActivityStreams JSON document) so this is acceptable.
             var body = request.Content != null
-                ? request.Content.ReadAsStringAsync().Result
+                ? request.Content.ReadAsStringAsync().GetAwaiter().GetResult()
                 : string.Empty;
 
             // Ensure the headers we are about to cover actually exist on the
@@ -57,6 +60,12 @@ public class OutboundSigningService : IOutboundSigningService
             // Add Host header
             request.Headers.Host = hostname;
 
+            // The 'created' timestamp (Unix epoch seconds) is a required
+            // parameter in the W3C HTTP Signature draft and is expected by
+            // Mastodon and most other ActivityPub servers. It is not covered
+            // as a header component; it is carried as a signature parameter.
+            var created = (long)(request.Headers.Date?.ToUniversalTime() ?? DateTime.UtcNow).Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+
             // Covered components, in the exact order they appear in the signed
             // string. 'digest' is only covered when a body is present.
             var headersToSign = new List<string> { "(request-target)", "host", "date" };
@@ -71,8 +80,8 @@ public class OutboundSigningService : IOutboundSigningService
             // Sign the string
             var signature = SignData(signatureString, privateKeyPem);
 
-            // Add Authorization header
-            var authHeader = CreateAuthorizationHeader(keyId, headersToSign, signature);
+            // Add Authorization header (with the 'created' signature parameter)
+            var authHeader = CreateAuthorizationHeader(keyId, headersToSign, signature, created);
             request.Headers.Authorization = new AuthenticationHeaderValue("Signature", authHeader);
         }
         catch (Exception ex)
@@ -139,14 +148,15 @@ public class OutboundSigningService : IOutboundSigningService
     /// <summary>
     /// Creates the Authorization header value
     /// </summary>
-    private string CreateAuthorizationHeader(string keyId, List<string> headers, string signature)
+    private string CreateAuthorizationHeader(string keyId, List<string> headers, string signature, long created)
     {
         var headerParts = new List<string>
         {
             $"keyId=\"{keyId}\"",
             $"algorithm=\"rsa-sha256\"",
             $"headers=\"{string.Join(" ", headers)}\"",
-            $"signature=\"{signature}\""
+            $"signature=\"{signature}\"",
+            $"created={created}"
         };
 
         return string.Join(", ", headerParts);
