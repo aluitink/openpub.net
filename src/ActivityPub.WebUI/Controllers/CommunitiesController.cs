@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using ActivityPub.Core.Interfaces;
+using ActivityPub.Core.Models;
 using ActivityPub.Core.Options;
 using ActivityPub.Core.Repositories;
 using ActivityPub.WebUI.Models;
@@ -43,6 +44,8 @@ public class CommunitiesController : Controller
                 Id = c.Id,
                 Name = c.Name,
                 Summary = c.Summary,
+                IconUrl = c.Icon?.Url ?? "",
+                BannerUrl = c.Image?.Url ?? "",
                 MemberCount = await _communityService.GetMemberCountAsync(c.Id),
                 IsMember = currentUser != null && await _communityService.IsMemberAsync(currentUser, c.Id),
                 IsOwner = currentUser != null && c.OwnerId == currentUser
@@ -79,6 +82,12 @@ public class CommunitiesController : Controller
         {
             ModelState.AddModelError("", "Failed to create community. Check that you have an actor profile.");
             return View(model);
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.IconUrl))
+        {
+            community.Icon = new Image { Url = model.IconUrl.Trim() };
+            await _communityService.UpdateCommunityAsync(community);
         }
 
         return RedirectToAction("Show", new { communityId = community.Id });
@@ -153,14 +162,17 @@ public class CommunitiesController : Controller
 
         var model = new MyCommunitiesViewModel
         {
-            Communities = communities.Select(c => new CommunityViewModel
+            Communities = await Task.WhenAll(communities.Select(async c => new CommunityViewModel
             {
                 Id = c.Id,
                 Name = c.Name,
                 Summary = c.Summary,
+                IconUrl = c.Icon?.Url ?? "",
+                BannerUrl = c.Image?.Url ?? "",
+                MemberCount = await _communityService.GetMemberCountAsync(c.Id),
                 IsMember = true,
                 IsOwner = c.OwnerId == currentUser
-            }).ToList()
+            }))
         };
 
         return View(model);
@@ -181,7 +193,9 @@ public class CommunitiesController : Controller
             {
                 Id = c.Id,
                 Name = c.Name,
-                Summary = c.Summary
+                Summary = c.Summary,
+                IconUrl = c.Icon?.Url ?? "",
+                BannerUrl = c.Image?.Url ?? ""
             }).ToList()
         };
 
@@ -212,6 +226,8 @@ public class CommunityViewModel
     public required string Id { get; set; }
     public required string Name { get; set; }
     public string? Summary { get; set; }
+    public string IconUrl { get; set; } = string.Empty;
+    public string BannerUrl { get; set; } = string.Empty;
     public int MemberCount { get; set; }
     public bool IsMember { get; set; }
     public bool IsOwner { get; set; }
@@ -237,6 +253,7 @@ public class CreateCommunityViewModel
 {
     public string? Name { get; set; }
     public string? Summary { get; set; }
+    public string? IconUrl { get; set; }
 }
 
 public class MyCommunitiesViewModel

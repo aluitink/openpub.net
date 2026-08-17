@@ -72,6 +72,21 @@ public class CommunityServiceImpl : ICommunityService
         return JsonSerializer.Deserialize<Community>(entity.JsonData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 
+    public async Task<bool> UpdateCommunityAsync(Community community, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.Communities
+            .FirstOrDefaultAsync(c => c.CommunityId == community.Id, cancellationToken);
+
+        if (entity == null) return false;
+
+        entity.Name = community.Name;
+        entity.JsonData = JsonSerializer.Serialize(community, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        entity.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+
     public async Task<ICollection<Community>> GetAllCommunitiesAsync(int skip = 0, int take = 20, CancellationToken cancellationToken = default)
     {
         var entities = await _context.Communities

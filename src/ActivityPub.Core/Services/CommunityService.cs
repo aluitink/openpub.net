@@ -5,6 +5,7 @@ namespace ActivityPub.Core.Interfaces;
 public interface ICommunityService
 {
     Task<Community?> CreateCommunityAsync(string ownerId, string name, string? summary, CancellationToken cancellationToken = default);
+    Task<bool> UpdateCommunityAsync(Community community, CancellationToken cancellationToken = default);
     Task<Community?> GetCommunityByIdAsync(string communityId, CancellationToken cancellationToken = default);
     Task<ICollection<Community>> GetAllCommunitiesAsync(int skip = 0, int take = 20, CancellationToken cancellationToken = default);
     Task<bool> JoinCommunityAsync(string actorId, string communityId, CancellationToken cancellationToken = default);

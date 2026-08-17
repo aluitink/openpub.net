@@ -27,10 +27,10 @@ public class Community
     public string? Url { get; set; }
 
     [JsonPropertyName("icon")]
-    public object? Icon { get; set; }
+    public Image? Icon { get; set; }
 
     [JsonPropertyName("image")]
-    public object? Image { get; set; }
+    public Image? Image { get; set; }
 
     [JsonPropertyName("inbox")]
     public string? Inbox { get; set; }

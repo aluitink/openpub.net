@@ -15,19 +15,40 @@
     <div class="card-grid">
         @foreach (var community in Model.Communities)
         {
-            <div class="card">
-                <div class="card-header">
-                    <a asp-action="Show" asp-route-communityId="@community.Id" class="card-title">@community.Name</a>
-                    @if (community.IsOwner)
-                    {
-                        <span class="badge badge-owner">Owner</span>
-                    }
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrEmpty(community.Summary))
-                    {
-                        <p class="card-summary">@community.Summary</p>
-                    }
+            <div class="card community-card">
+                @if (!string.IsNullOrEmpty(community.BannerUrl))
+                {
+                    <div class="community-card-banner" style="background-image: url('@community.BannerUrl')"></div>
+                }
+                else
+                {
+                    <div class="community-card-banner community-card-banner-default"></div>
+                }
+                <div class="community-card-body">
+                    <div class="community-card-icon">
+                        @if (!string.IsNullOrEmpty(community.IconUrl))
+                        {
+                            <img src="@community.IconUrl" alt="@community.Name" />
+                        }
+                        else
+                        {
+                            <div class="avatar-placeholder community-avatar-placeholder">@(community.Name.FirstOrDefault() != default ? community.Name.ToString().Substring(0, 1).ToUpperInvariant() : "?")</div>
+                        }
+                    </div>
+                    <div class="community-card-info">
+                        <a asp-action="Show" asp-route-communityId="@community.Id" class="card-title">@community.Name</a>
+                        @if (!string.IsNullOrEmpty(community.Summary))
+                        {
+                            <p class="card-summary">@community.Summary</p>
+                        }
+                    </div>
+                    <div class="community-card-footer">
+                        <span class="card-meta">@community.MemberCount member@(community.MemberCount == 1 ? "" : "s")</span>
+                        @if (community.IsOwner)
+                        {
+                            <span class="badge badge-owner">Owner</span>
+                        }
+                    </div>
                 </div>
             </div>
         }
