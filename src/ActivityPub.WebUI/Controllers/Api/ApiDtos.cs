@@ -238,3 +238,67 @@ public class ApiApp
     [JsonPropertyName("vapid_key")]
     public string VapidKey { get; init; } = string.Empty;
 }
+
+/// <summary>
+/// Request body for POST /api/v1/apps/webhooks (register a webhook endpoint
+/// for the current user's account).
+/// </summary>
+public class ApiWebhookCreateRequest
+{
+    [JsonPropertyName("endpoint_url")]
+    public string? EndpointUrl { get; init; }
+
+    [JsonPropertyName("http_method")]
+    public string? HttpMethod { get; init; }
+
+    [JsonPropertyName("event_type")]
+    public string? EventType { get; init; }
+
+    [JsonPropertyName("secret_key")]
+    public string? SecretKey { get; init; }
+
+    [JsonPropertyName("max_retries")]
+    public int? MaxRetries { get; init; }
+
+    [JsonPropertyName("retry_delay_seconds")]
+    public int? RetryDelaySeconds { get; init; }
+
+    [JsonPropertyName("enabled")]
+    public bool? Enabled { get; init; }
+}
+
+/// <summary>
+/// Response for a single webhook subscription. The secret key is echoed only
+/// when it was provided at creation time (returned by POST); it is omitted on
+/// GET listings.
+/// </summary>
+public class ApiWebhook
+{
+    [JsonPropertyName("id")]
+    public string Id { get; init; } = string.Empty;
+
+    [JsonPropertyName("endpoint_url")]
+    public string EndpointUrl { get; init; } = string.Empty;
+
+    [JsonPropertyName("http_method")]
+    public string HttpMethod { get; init; } = "POST";
+
+    [JsonPropertyName("event_type")]
+    public string EventType { get; init; } = "All";
+
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; init; } = true;
+
+    [JsonPropertyName("max_retries")]
+    public int MaxRetries { get; init; }
+
+    [JsonPropertyName("retry_delay_seconds")]
+    public int RetryDelaySeconds { get; init; }
+
+    [JsonPropertyName("secret_key")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SecretKey { get; init; }
+
+    [JsonPropertyName("created_at")]
+    public DateTime CreatedAt { get; init; }
+}

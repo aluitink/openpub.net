@@ -131,6 +131,13 @@ public class Program
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IPushNotificationService, ActivityPub.WebUI.Services.PushNotificationService>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IAuditLogService, ActivityPub.WebUI.Services.AuditLogService>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IUserReportService, ActivityPub.WebUI.Services.UserReportService>();
+
+        // Webhook delivery for external integrations: enqueue + poll a durable,
+        // DB-backed delivery queue. The background service pumps pending
+        // deliveries (HMAC-signed POST/PUT to each subscriber endpoint).
+        builder.Services.AddWebhookServices();
+        builder.Services.AddHostedService<ActivityPub.Core.Services.WebhookDeliveryBackgroundService>();
+
         builder.Services.AddHttpClient<IWebFingerService, WebFingerService>();
         builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
         {

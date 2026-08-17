@@ -1,5 +1,6 @@
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Services;
 using ActivityPub.WebUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ public class ComposeController : Controller
     private readonly IActivityPubRepository _repository;
     private readonly ILogger<ComposeController> _logger;
     private readonly INotificationService _notificationService;
+    private readonly IWebhookDeliveryService _webhookService;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,11 +25,13 @@ public class ComposeController : Controller
     public ComposeController(
         IActivityPubRepository repository,
         ILogger<ComposeController> logger,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IWebhookDeliveryService webhookService)
     {
         _repository = repository;
         _logger = logger;
         _notificationService = notificationService;
+        _webhookService = webhookService;
     }
 
     [HttpGet]
@@ -175,6 +179,18 @@ public class ComposeController : Controller
         }
 
         await _notificationService.BroadcastNewActivityAsync(activityId, "Note", username, model.Content);
+
+        // Notify external webhook subscribers (durable, async — a background
+        // service delivers to each registered endpoint). Failures here must
+        // never block the post, so swallow + log.
+        try
+        {
+            await _webhookService.DeliverActivityToWebhooksAsync(activity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Webhook enqueue failed for note {NoteId}", noteId);
+        }
 
         _logger.LogInformation("User {Username} created note {NoteId}", username, noteId);
         TempData["ComposeSuccess"] = true;
