@@ -86,7 +86,9 @@ public class AdminController : Controller
                 })
                 .ToListAsync(),
             PendingDeliveries = await _activityPubDb.SharedInboxDeliveries
-                .CountAsync(d => d.Status == DeliveryStatus.Queued || d.Status == DeliveryStatus.Failed)
+                .CountAsync(d => d.Status == DeliveryStatus.Queued || d.Status == DeliveryStatus.Failed),
+            DeadLetterCount = await _activityPubDb.InboxDeadLetters
+                .CountAsync(d => d.Status == InboxDeadLetterStatus.DeadLettered || d.Status == InboxDeadLetterStatus.Failed)
         };
 
         return View(viewModel);
@@ -312,6 +314,7 @@ public class AdminDashboardViewModel
     public int TotalActors { get; set; }
     public int BlockedUsers { get; set; }
     public int PendingDeliveries { get; set; }
+    public int DeadLetterCount { get; set; }
     public List<AdminUserItem> RecentUsers { get; set; } = new();
 }
 

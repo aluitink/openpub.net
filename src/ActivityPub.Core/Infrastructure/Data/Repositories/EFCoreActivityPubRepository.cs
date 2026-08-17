@@ -374,6 +374,87 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         return followerIds.ToList();
     }
 
+    public async Task<InboxDeadLetterEntity> AddInboxDeadLetterAsync(InboxDeadLetterEntity entity)
+    {
+        var existing = await _context.InboxDeadLetters
+            .Where(d => d.ActivityId == entity.ActivityId && d.Username == entity.Username)
+            .FirstOrDefaultAsync();
+
+        if (existing != null)
+        {
+            // A redelivery of the same failing activity: refresh the raw
+            // payload and failure details on the existing row instead of
+            // creating a duplicate.
+            existing.RawJson = entity.RawJson;
+            existing.Status = InboxDeadLetterStatus.DeadLettered;
+            existing.AttemptCount = Math.Max(existing.AttemptCount, entity.AttemptCount);
+            existing.FailureReason = entity.FailureReason;
+            existing.LastAttemptAt = entity.LastAttemptAt;
+            existing.UpdatedAt = DateTime.UtcNow;
+            _context.InboxDeadLetters.Update(existing);
+            await _context.SaveChangesAsync();
+            return existing;
+        }
+
+        await _context.InboxDeadLetters.AddAsync(entity);
+        await _context.SaveChangesAsync();
+        return entity;
+    }
+
+    public async Task<ICollection<InboxDeadLetterEntity>> GetInboxDeadLettersAsync(int maxCount = 100, string? activityId = null, string? username = null)
+    {
+        var query = _context.InboxDeadLetters.AsQueryable();
+
+        if (!string.IsNullOrEmpty(activityId))
+        {
+            query = query.Where(d => d.ActivityId == activityId);
+        }
+
+        if (!string.IsNullOrEmpty(username))
+        {
+            query = query.Where(d => d.Username == username);
+        }
+
+        return await query
+            .OrderBy(d => d.CreatedAt)
+            .Take(maxCount)
+            .ToListAsync();
+    }
+
+    public async Task<ICollection<InboxDeadLetterEntity>> GetReprocessableInboxDeadLettersAsync(int maxCount = 100)
+    {
+        var now = DateTime.UtcNow;
+
+        return await _context.InboxDeadLetters
+            .Where(d => d.Status == InboxDeadLetterStatus.DeadLettered)
+            .OrderBy(d => d.CreatedAt)
+            .Take(maxCount)
+            .ToListAsync();
+    }
+
+    public async Task<bool> UpdateInboxDeadLetterAsync(InboxDeadLetterEntity entity)
+    {
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.InboxDeadLetters.Update(entity);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<int> PruneInboxDeadLettersAsync(DateTime cutoff)
+    {
+        var stale = await _context.InboxDeadLetters
+            .Where(d => d.CreatedAt < cutoff)
+            .ToListAsync();
+
+        if (stale.Count == 0)
+        {
+            return 0;
+        }
+
+        _context.InboxDeadLetters.RemoveRange(stale);
+        return await _context.SaveChangesAsync();
+    }
+
     public async Task<int> GetFollowerCountAsync(string username)
     {
         var actor = await GetUserActorAsync(username);

@@ -43,6 +43,55 @@ public class DeliveryRetryOptions
 }
 
 /// <summary>
+/// Error handling and dead-letter policy for inbound ActivityPub activities
+/// (activities delivered to our inbox by remote servers). When processing an
+/// inbound activity fails, the item is retried with exponential backoff up to
+/// <see cref="MaxAttempts"/> times; after that it is moved to the inbound
+/// dead-letter queue (see <see cref="InboxDeadLetterEntity"/>) where it is kept
+/// for inspection until its age exceeds <see cref="DlqRetentionDays"/>.
+/// </summary>
+public class InboxProcessingOptions
+{
+    /// <summary>
+    /// Master switch for inbound retry/dead-lettering. When false, a failed
+    /// inbound activity is rejected immediately with no retry and no DLQ row
+    /// (the pre-existing behavior).
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Maximum number of processing attempts (the initial attempt plus retries)
+    /// before the item is moved to the dead-letter queue.
+    /// </summary>
+    public int MaxAttempts { get; set; } = 3;
+
+    /// <summary>
+    /// Base delay, in seconds, before the first retry. Each subsequent retry
+    /// delay is multiplied by 2 when <see cref="UseExponentialBackoff"/> is on,
+    /// capped at <see cref="MaxRetryDelaySeconds"/>.
+    /// </summary>
+    public int BaseRetryDelaySeconds { get; set; } = 30;
+
+    /// <summary>
+    /// When true, each retry delay doubles from the previous one
+    /// (base * 2^(attempt - 1)). When false, every retry waits the flat
+    /// <see cref="BaseRetryDelaySeconds"/>.
+    /// </summary>
+    public bool UseExponentialBackoff { get; set; } = true;
+
+    /// <summary>
+    /// Upper bound, in seconds, for any single retry delay.
+    /// </summary>
+    public int MaxRetryDelaySeconds { get; set; } = 3600;
+
+    /// <summary>
+    /// How long, in days, dead-lettered items are kept before the background
+    /// service purges them. A value of 0 disables purging.
+    /// </summary>
+    public int DlqRetentionDays { get; set; } = 7;
+}
+
+/// <summary>
 /// Federation peer health tracking and auto-blocking policy. The server tracks
 /// the reliability of each remote server it delivers to and automatically
 /// blocks peers that are consistently unreliable (failing deliveries or
@@ -163,4 +212,10 @@ public class ActivityPubOptions
     /// <see cref="PeerHealthOptions"/>).
     /// </summary>
     public PeerHealthOptions PeerHealth { get; set; } = new();
+
+    /// <summary>
+    /// Error handling and dead-letter policy for inbound activity processing
+    /// (see <see cref="InboxProcessingOptions"/>).
+    /// </summary>
+    public InboxProcessingOptions InboxProcessing { get; set; } = new();
 }

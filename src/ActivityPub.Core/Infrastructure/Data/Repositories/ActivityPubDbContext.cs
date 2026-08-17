@@ -8,6 +8,7 @@ public class ActivityPubDbContext : DbContext
     public DbSet<ActorEntity> Actors { get; set; } = null!;
     public DbSet<ActivityEntity> Activities { get; set; } = null!;
     public DbSet<SharedInboxDeliveryEntity> SharedInboxDeliveries { get; set; } = null!;
+    public DbSet<InboxDeadLetterEntity> InboxDeadLetters { get; set; } = null!;
     public DbSet<WebhookConfigEntity> WebhookConfigs { get; set; } = null!;
     public DbSet<WebhookDeliveryEntity> WebhookDeliveries { get; set; } = null!;
     public DbSet<WebhookDeliveryHistoryEntity> WebhookDeliveryHistories { get; set; } = null!;
@@ -105,6 +106,41 @@ public class ActivityPubDbContext : DbContext
         modelBuilder.Entity<SharedInboxDeliveryEntity>()
             .HasIndex(d => new { d.ActivityId, d.TargetActorId })
             .IsUnique();
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .HasKey(d => d.Id);
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .Property(d => d.ActivityId)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .Property(d => d.Username)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .Property(d => d.Status)
+            .HasDefaultValue(InboxDeadLetterStatus.DeadLettered);
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .Property(d => d.FailureReason)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .Property(d => d.CreatedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .Property(d => d.UpdatedAt)
+            .HasDefaultValueSql("datetime('now')");
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .HasIndex(d => d.Status);
+
+        modelBuilder.Entity<InboxDeadLetterEntity>()
+            .HasIndex(d => new { d.ActivityId, d.Username });
 
         modelBuilder.Entity<WebhookConfigEntity>()
             .HasKey(c => c.Id);

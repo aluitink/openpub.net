@@ -126,6 +126,51 @@ public interface IActivityPubRepository
     Task<ICollection<string>> GetUniqueFollowerIdsAsync(string username);
 
     /// <summary>
+    /// Adds an inbound activity to the dead-letter queue, or returns the
+    /// existing dead-lettered row for the same activity + inbox when one is
+    /// already there (a redelivery of the same failing activity updates the
+    /// row instead of creating a duplicate).
+    /// </summary>
+    /// <param name="entity">The dead-letter row to store</param>
+    /// <returns>The stored row (the new one, or the existing one for that activity)</returns>
+    Task<InboxDeadLetterEntity> AddInboxDeadLetterAsync(InboxDeadLetterEntity entity);
+
+    /// <summary>
+    /// Gets dead-lettered inbound activities, optionally filtered to a single
+    /// activity + inbox, ordered oldest first.
+    /// </summary>
+    /// <param name="maxCount">Maximum number of rows to retrieve</param>
+    /// <param name="activityId">Optional activity ID filter</param>
+    /// <param name="username">Optional inbox username filter (used together with <paramref name="activityId"/>)</param>
+    /// <returns>Collection of dead-letter rows</returns>
+    Task<ICollection<InboxDeadLetterEntity>> GetInboxDeadLettersAsync(int maxCount = 100, string? activityId = null, string? username = null);
+
+    /// <summary>
+    /// Gets dead-letter rows eligible for re-processing now: status
+    /// <c>DeadLettered</c> and either never re-processed or past their backoff
+    /// window (<c>NextRetryAt</c> is stored on the row via
+    /// <see cref="UpdateInboxDeadLetterAsync"/>).
+    /// </summary>
+    /// <param name="maxCount">Maximum number of rows to retrieve</param>
+    /// <returns>Collection of re-processable dead-letter rows</returns>
+    Task<ICollection<InboxDeadLetterEntity>> GetReprocessableInboxDeadLettersAsync(int maxCount = 100);
+
+    /// <summary>
+    /// Updates a dead-letter row (status, attempt count, failure reason, ...).
+    /// </summary>
+    /// <param name="entity">The dead-letter row to update</param>
+    /// <returns>True if updated successfully, false otherwise</returns>
+    Task<bool> UpdateInboxDeadLetterAsync(InboxDeadLetterEntity entity);
+
+    /// <summary>
+    /// Deletes dead-letter rows older than <paramref name="cutoff"/> (retention
+    /// pruning by the background service).
+    /// </summary>
+    /// <param name="cutoff">Rows with <c>CreatedAt</c> before this time are removed</param>
+    /// <returns>Number of rows removed</returns>
+    Task<int> PruneInboxDeadLettersAsync(DateTime cutoff);
+
+    /// <summary>
     /// Saves a webhook configuration
     /// </summary>
     /// <param name="config">The webhook configuration to save</param>

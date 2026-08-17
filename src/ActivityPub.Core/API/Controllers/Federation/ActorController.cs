@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
@@ -370,14 +371,32 @@ public class ActorController : ControllerBase
 
             if (activity == null)
             {
+                // The request body was empty or not valid JSON. This is a
+                // client-side problem (bad payload), so reject with 400 — the
+                // remote server should not retry this exact body.
                 _logger.LogWarning("Inbox post request missing activity body");
                 return BadRequest("{\"error\":\"activity body is required\"}");
+            }
+
+            // Capture the exact raw payload the remote server sent. The
+            // [FromBody] model binding has already consumed the request body,
+            // so reset its position to the start before re-reading. The
+            // dead-letter queue needs the original bytes to replay the item
+            // without the sender having to redeliver.
+            string? rawJson = null;
+            var requestBody = HttpContext.Request.Body;
+            if (requestBody.CanSeek)
+            {
+                requestBody.Position = 0;
+                using var bodyReader = new StreamReader(requestBody, leaveOpen: true);
+                rawJson = await bodyReader.ReadToEndAsync();
+                requestBody.Position = 0;
             }
 
             using var scope = HttpContext.RequestServices.CreateScope();
             var sharedInboxService = scope.ServiceProvider.GetRequiredService<ISharedInboxService>();
 
-            var success = await sharedInboxService.ProcessAndDistributeActivityAsync(username, activity);
+            var success = await sharedInboxService.ProcessAndDistributeActivityAsync(username, activity, rawJson);
 
             if (success)
             {
@@ -387,14 +406,21 @@ public class ActorController : ControllerBase
             }
             else
             {
-                _logger.LogWarning("Inbox post processing failed for username: {Username}", username);
+                // The activity was rejected (missing fields, unsupported type,
+                // blocked peer). This is a client-side problem: retrying the
+                // same payload will fail the same way, so answer 400.
+                _logger.LogWarning("Inbox post rejected for username: {Username}", username);
                 return BadRequest("{\"error\":\"Failed to process activity\"}");
             }
         }
         catch (Exception ex)
         {
+            // An unexpected internal error (database, cache, ...). The payload
+            // itself may be fine, so the remote server is allowed to retry:
+            // answer 500. If processing has already dead-lettered the item the
+            // service would not have thrown, so this path is rare.
             _logger.LogError(ex, "Error processing Inbox post for username: {Username}", username);
-            return BadRequest("{\"error\":\"Failed to process activity\"}");
+            return StatusCode(500, "{\"error\":\"Failed to process activity\"}");
         }
     }
 }

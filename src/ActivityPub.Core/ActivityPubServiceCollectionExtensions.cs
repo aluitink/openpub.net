@@ -94,6 +94,7 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<IPeerHealthService, PeerHealthService>();
         services.AddHostedService<SharedInboxBackgroundService>();
         services.AddHostedService<PeerHealthBackgroundService>();
+        services.AddHostedService<InboxDeadLetterBackgroundService>();
 
         return services;
     }

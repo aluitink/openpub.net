@@ -20,6 +20,7 @@ public class SharedInboxService : ISharedInboxService
     private readonly ILogger<SharedInboxService> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly DeliveryRetryOptions _retryOptions;
+    private readonly InboxProcessingOptions _inboxOptions;
     private readonly IPeerHealthService? _peerHealth;
 
     public SharedInboxService(
@@ -37,6 +38,7 @@ public class SharedInboxService : ISharedInboxService
         _federationCache = federationCache;
         _logger = logger;
         _retryOptions = options?.Value?.DeliveryRetry ?? new DeliveryRetryOptions();
+        _inboxOptions = options?.Value?.InboxProcessing ?? new InboxProcessingOptions();
         _peerHealth = peerHealth;
         _jsonOptions = new JsonSerializerOptions
         {
@@ -100,28 +102,43 @@ public class SharedInboxService : ISharedInboxService
 
     public async Task<bool> ProcessAndDistributeActivityAsync(string username, Activity activity)
     {
-        if (activity == null)
-        {
-            return false;
-        }
+        return await ProcessAndDistributeActivityAsync(username, activity, null);
+    }
 
-        if (string.IsNullOrEmpty(activity.Id))
+    /// <summary>
+    /// Processes an inbound activity for <paramref name="username"/> with
+    /// retry + dead-lettering. When <paramref name="rawJson"/> is provided (the
+    /// exact bytes the remote server POSTed) and processing keeps failing, the
+    /// item is moved to the inbound dead-letter queue once
+    /// <see cref="InboxProcessingOptions.MaxAttempts"/> attempts are exhausted,
+    /// and the method returns <c>true</c> so the remote server stops redelivering.
+    /// When retry/DLQ is disabled, the previous reject-immediately behavior is
+    /// kept.
+    /// </summary>
+    public async Task<bool> ProcessAndDistributeActivityAsync(string username, Activity activity, string? rawJson)
+    {
+        var activityId = activity?.Id;
+        if (activity == null || string.IsNullOrEmpty(activityId))
         {
+            _logger.LogWarning("Rejecting inbound activity for user {Username}: activity is null or has no id", username);
             return false;
         }
 
         if (string.IsNullOrEmpty(activity.Type))
         {
+            _logger.LogWarning("Rejecting inbound activity {ActivityId} for user {Username}: missing activity type", activityId, username);
             return false;
         }
 
         if (activity.Actor == null)
         {
+            _logger.LogWarning("Rejecting inbound activity {ActivityId} for user {Username}: missing actor", activityId, username);
             return false;
         }
 
         if (!IsValidActivityType(activity.Type))
         {
+            _logger.LogWarning("Rejecting inbound activity {ActivityId} for user {Username}: unsupported activity type {Type}", activityId, username, activity.Type);
             return false;
         }
 
@@ -139,19 +156,85 @@ public class SharedInboxService : ISharedInboxService
             }
         }
 
-        _logger.LogInformation("Processing and distributing shared inbox activity {ActivityId} for user {Username}", activity.Id, username);
-
-        if (await _repository.HasSeenActivityAsync(activity.Id))
+        if (!_inboxOptions.Enabled)
         {
-            _logger.LogInformation("Activity {ActivityId} already seen, skipping duplicate", activity.Id);
-            return true;
+            // Legacy behavior: process once and reject on any failure.
+            try
+            {
+                await ProcessAndDistributeCoreAsync(username, activity);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Inbound activity {ActivityId} for user {Username} failed to process", activity.Id, username);
+                return false;
+            }
         }
 
-        await _repository.MarkActivityAsSeenAsync(activity.Id);
-        await _repository.SaveActivityAsync(activity);
-        await _federationCache.SetActivityAsync(activity.Id, activity);
+        var maxAttempts = Math.Max(1, _inboxOptions.MaxAttempts);
+        string? lastError = null;
 
-        _logger.LogInformation("Activity {ActivityId} passed deduplication check and cached", activity.Id);
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await ProcessAndDistributeCoreAsync(username, activity);
+                _logger.LogInformation(
+                    "Inbound activity {ActivityId} for user {Username} processed on attempt {Attempt}",
+                    activity.Id, username, attempt);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex.Message;
+                _logger.LogWarning(
+                    "Inbound activity {ActivityId} for user {Username} failed on attempt {Attempt}/{MaxAttempts}: {Error}",
+                    activity.Id, username, attempt, maxAttempts, ex.Message);
+
+                if (attempt < maxAttempts)
+                {
+                    // Back off before the next attempt. The delay is computed
+                    // from the failed attempt number, optionally growing
+                    // exponentially, capped by MaxRetryDelaySeconds.
+                    var delay = ComputeInboxRetryDelay(attempt);
+                    await Task.Delay(delay);
+                }
+            }
+        }
+
+        // Retries exhausted: move the item to the dead-letter queue so it is
+        // not lost and can be inspected / re-processed later. The raw payload
+        // is kept so the item can be replayed without the remote server having
+        // to redeliver it.
+        await HandleInboxDeadLetterAsync(username, activity, rawJson, maxAttempts, lastError);
+        return true;
+    }
+
+    /// <summary>
+    /// The single-attempt inbound pipeline: deduplication, persistence, cache,
+    /// and distribution of the activity to the user's followers. Throws when
+    /// any step fails so the caller can retry or dead-letter.
+    /// </summary>
+    private async Task ProcessAndDistributeCoreAsync(string username, Activity activity)
+    {
+        // activity.Id is guaranteed non-null by the callers
+        // (ProcessAndDistributeActivityAsync validates it; replay deserializes
+        // a payload that was accepted through the same validation).
+        var activityId = activity.Id!;
+
+        _logger.LogInformation("Processing and distributing shared inbox activity {ActivityId} for user {Username}", activityId, username);
+
+        if (await _repository.HasSeenActivityAsync(activityId))
+        {
+            _logger.LogInformation("Activity {ActivityId} already seen, skipping duplicate", activityId);
+            return;
+        }
+
+        await _repository.MarkActivityAsSeenAsync(activityId);
+        await _repository.SaveActivityAsync(activity);
+        await _federationCache.SetActivityAsync(activityId, activity);
+
+        _logger.LogInformation("Activity {ActivityId} passed deduplication check and cached", activityId);
 
         var activityJson = JsonSerializer.Serialize(activity, _jsonOptions);
 
@@ -163,7 +246,7 @@ public class SharedInboxService : ISharedInboxService
         {
             try
             {
-                await _repository.QueueSharedInboxDeliveryAsync(activity.Id, activityJson, followerId);
+                await _repository.QueueSharedInboxDeliveryAsync(activityId, activityJson, followerId);
                 _logger.LogDebug("Queued delivery to follower {FollowerId}", followerId);
             }
             catch (Exception ex)
@@ -171,8 +254,132 @@ public class SharedInboxService : ISharedInboxService
                 _logger.LogError(ex, "Failed to queue delivery to follower {FollowerId}", followerId);
             }
         }
+    }
 
-        return true;
+    /// <summary>
+    /// Computes the delay before the retry that follows the
+    /// <paramref name="failedAttempt"/>-th failed attempt (1-based). With
+    /// exponential backoff the delay is <c>base * 2^(failedAttempt - 1)</c>,
+    /// capped at <see cref="InboxProcessingOptions.MaxRetryDelaySeconds"/>;
+    /// otherwise a flat <c>base</c> delay.
+    /// </summary>
+    private TimeSpan ComputeInboxRetryDelay(int failedAttempt)
+    {
+        var baseSeconds = Math.Max(1, _inboxOptions.BaseRetryDelaySeconds);
+        var delaySeconds = _inboxOptions.UseExponentialBackoff
+            ? baseSeconds * Math.Pow(2, Math.Max(0, failedAttempt - 1))
+            : baseSeconds;
+
+        var cap = Math.Max(baseSeconds, _inboxOptions.MaxRetryDelaySeconds);
+        delaySeconds = Math.Min(delaySeconds, cap);
+
+        return TimeSpan.FromSeconds(delaySeconds);
+    }
+
+    /// <summary>
+    /// Moves an exhausted inbound activity to the dead-letter queue. A
+    /// dead-letter write failure is logged but does not propagate: the activity
+    /// is still reported as accepted to the sender (returning <c>true</c> to the
+    /// controller) so the remote server does not redeliver it forever.
+    /// </summary>
+    private async Task HandleInboxDeadLetterAsync(
+        string username,
+        Activity activity,
+        string? rawJson,
+        int attemptCount,
+        string? failureReason)
+    {
+        var payload = !string.IsNullOrWhiteSpace(rawJson)
+            ? rawJson
+            : JsonSerializer.Serialize(activity, _jsonOptions);
+
+        var entity = new InboxDeadLetterEntity
+        {
+            Id = Guid.NewGuid().ToString(),
+            ActivityId = activity.Id ?? string.Empty,
+            RawJson = payload,
+            Username = username,
+            Status = InboxDeadLetterStatus.DeadLettered,
+            AttemptCount = attemptCount,
+            FailureReason = failureReason,
+            LastAttemptAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            var stored = await _repository.AddInboxDeadLetterAsync(entity);
+            _logger.LogError(
+                "Inbound activity {ActivityId} for user {Username} dead-lettered after {AttemptCount} attempts: {Reason}. DLQ id {DlqId}",
+                stored.ActivityId, username, attemptCount, failureReason, stored.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Inbound activity {ActivityId} for user {Username} exhausted retries AND failed to write the dead-letter row; the activity is dropped",
+                activity.Id, username);
+        }
+    }
+
+    /// <summary>
+    /// Re-processes dead-lettered inbound activities. Each eligible row is
+    /// re-run through the inbound pipeline (without retrying — a failure lands
+    /// the row back in the DLQ as <c>Failed</c> for manual inspection). Returns
+    /// the number of rows successfully re-processed.
+    /// </summary>
+    public async Task<int> ProcessInboxDeadLettersAsync(int batchSize = 100)
+    {
+        var items = await _repository.GetReprocessableInboxDeadLettersAsync(batchSize);
+        var replayed = 0;
+
+        foreach (var item in items)
+        {
+            item.Status = InboxDeadLetterStatus.Processing;
+            item.LastAttemptAt = DateTime.UtcNow;
+            await _repository.UpdateInboxDeadLetterAsync(item);
+
+            try
+            {
+                // Malformed JSON throws here (Deserialize returns null only for
+                // a JSON null literal); both cases are treated as an unrecoverable
+                // payload: retrying will not fix it.
+                var activity = JsonSerializer.Deserialize<Activity>(item.RawJson, _jsonOptions);
+                if (activity is null || string.IsNullOrEmpty(activity.Id))
+                {
+                    item.Status = InboxDeadLetterStatus.Failed;
+                    item.FailureReason = "Failed to deserialize dead-lettered activity";
+                    await _repository.UpdateInboxDeadLetterAsync(item);
+                    continue;
+                }
+
+                await ProcessAndDistributeCoreAsync(item.Username, activity);
+                item.Status = InboxDeadLetterStatus.Replayed;
+                item.FailureReason = null;
+                replayed++;
+                _logger.LogInformation("Dead-lettered activity {ActivityId} for user {Username} re-processed successfully (DLQ id {DlqId})",
+                    item.ActivityId, item.Username, item.Id);
+            }
+            catch (Exception ex)
+            {
+                item.Status = InboxDeadLetterStatus.Failed;
+                item.AttemptCount++;
+                // A JsonException is the same class of unrecoverable problem as
+                // a null literal: record a stable, human-readable reason instead
+                // of the raw parser message.
+                item.FailureReason = ex is System.Text.Json.JsonException
+                    ? "Failed to deserialize dead-lettered activity"
+                    : ex.Message;
+                _logger.LogWarning("Re-processing of dead-lettered activity {ActivityId} for user {Username} failed (DLQ id {DlqId}): {Error}",
+                    item.ActivityId, item.Username, item.Id, ex.Message);
+            }
+            finally
+            {
+                await _repository.UpdateInboxDeadLetterAsync(item);
+            }
+        }
+
+        return replayed;
     }
 
     public async Task<bool> ProcessQueueAsync()
@@ -478,7 +685,22 @@ public interface ISharedInboxService
 {
     Task<bool> ProcessIncomingActivityAsync(string username, Activity activity);
     Task<bool> ProcessAndDistributeActivityAsync(string username, Activity activity);
+
+    /// <summary>
+    /// Processes an inbound activity with retry + dead-lettering, keeping
+    /// <paramref name="rawJson"/> (the exact payload the remote server sent)
+    /// so it can be dead-lettered and replayed unchanged.
+    /// </summary>
+    Task<bool> ProcessAndDistributeActivityAsync(string username, Activity activity, string? rawJson);
+
     Task<bool> ProcessQueueAsync();
+
+    /// <summary>
+    /// Re-processes dead-lettered inbound activities. Returns the number of
+    /// rows successfully re-processed.
+    /// </summary>
+    Task<int> ProcessInboxDeadLettersAsync(int batchSize = 100);
+
     Task<bool> AddToCacheAsync(string key, string value);
     Task<string?> TryGetFromCacheAsync(string key);
     Task<bool> RemoveFromCacheAsync(string key);

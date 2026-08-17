@@ -14,6 +14,7 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     private readonly Dictionary<string, Activity> _activities = new();
     private readonly HashSet<string> _seenActivities = new();
     private readonly List<SharedInboxDeliveryEntity> _sharedInboxDeliveries = new();
+    private readonly List<InboxDeadLetterEntity> _inboxDeadLetters = new();
     private readonly List<WebhookConfigEntity> _webhookConfigs = new();
     private readonly List<WebhookDeliveryEntity> _webhookDeliveries = new();
     private readonly List<WebhookDeliveryHistoryEntity> _webhookDeliveryHistories = new();
@@ -190,6 +191,83 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .ToList();
 
         return Task.FromResult<ICollection<string>>(followers);
+    }
+
+    /// <inheritdoc />
+    public Task<InboxDeadLetterEntity> AddInboxDeadLetterAsync(InboxDeadLetterEntity entity)
+    {
+        var existing = _inboxDeadLetters
+            .FirstOrDefault(d => d.ActivityId == entity.ActivityId && d.Username == entity.Username);
+
+        if (existing != null)
+        {
+            existing.RawJson = entity.RawJson;
+            existing.Status = InboxDeadLetterStatus.DeadLettered;
+            existing.AttemptCount = Math.Max(existing.AttemptCount, entity.AttemptCount);
+            existing.FailureReason = entity.FailureReason;
+            existing.LastAttemptAt = entity.LastAttemptAt;
+            existing.UpdatedAt = DateTime.UtcNow;
+            return Task.FromResult(existing);
+        }
+
+        entity.Id = string.IsNullOrEmpty(entity.Id) ? Guid.NewGuid().ToString() : entity.Id;
+        if (entity.CreatedAt == default) entity.CreatedAt = DateTime.UtcNow;
+        if (entity.UpdatedAt == default) entity.UpdatedAt = DateTime.UtcNow;
+        _inboxDeadLetters.Add(entity);
+        return Task.FromResult(entity);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<InboxDeadLetterEntity>> GetInboxDeadLettersAsync(int maxCount = 100, string? activityId = null, string? username = null)
+    {
+        var query = _inboxDeadLetters.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(activityId))
+        {
+            query = query.Where(d => d.ActivityId == activityId);
+        }
+
+        if (!string.IsNullOrEmpty(username))
+        {
+            query = query.Where(d => d.Username == username);
+        }
+
+        var result = query.OrderBy(d => d.CreatedAt).Take(maxCount).ToList();
+        return Task.FromResult<ICollection<InboxDeadLetterEntity>>(result);
+    }
+
+    /// <inheritdoc />
+    public Task<ICollection<InboxDeadLetterEntity>> GetReprocessableInboxDeadLettersAsync(int maxCount = 100)
+    {
+        var result = _inboxDeadLetters
+            .Where(d => d.Status == InboxDeadLetterStatus.DeadLettered)
+            .OrderBy(d => d.CreatedAt)
+            .Take(maxCount)
+            .ToList();
+        return Task.FromResult<ICollection<InboxDeadLetterEntity>>(result);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> UpdateInboxDeadLetterAsync(InboxDeadLetterEntity entity)
+    {
+        var index = _inboxDeadLetters.FindIndex(d => d.Id == entity.Id);
+        if (index >= 0)
+        {
+            entity.UpdatedAt = DateTime.UtcNow;
+            _inboxDeadLetters[index] = entity;
+        }
+        return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
+    public Task<int> PruneInboxDeadLettersAsync(DateTime cutoff)
+    {
+        var stale = _inboxDeadLetters.Where(d => d.CreatedAt < cutoff).ToList();
+        foreach (var entity in stale)
+        {
+            _inboxDeadLetters.Remove(entity);
+        }
+        return Task.FromResult(stale.Count);
     }
 
     private static string GetUsernameFromActor(Actor actor)
