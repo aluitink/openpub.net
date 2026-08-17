@@ -14,6 +14,7 @@ public class ActivityPubDbContext : DbContext
     public DbSet<OAuth2AuthorizationCodeEntity> AuthorizationCodes { get; set; } = null!;
     public DbSet<OAuth2AccessTokenEntity> AccessTokens { get; set; } = null!;
     public DbSet<OAuth2RefreshTokenEntity> RefreshTokens { get; set; } = null!;
+    public DbSet<OAuthClientEntity> OAuthClients { get; set; } = null!;
     public DbSet<UserPreferenceEntity> UserPreferences { get; set; } = null!;
     public DbSet<CommunityEntity> Communities { get; set; } = null!;
     public DbSet<CommunityMemberEntity> CommunityMembers { get; set; } = null!;
@@ -278,6 +279,47 @@ public class ActivityPubDbContext : DbContext
             .HasOne(r => r.Actor)
             .WithMany()
             .HasForeignKey(r => r.ActorId);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .HasKey(c => c.Id);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.ClientId)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .HasIndex(c => c.ClientId)
+            .IsUnique();
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.ClientSecret)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.Name)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.Scopes)
+            .IsRequired();
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.RedirectUris)
+            .IsRequired();
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.Website)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .Property(c => c.OwnerActorId)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<OAuthClientEntity>()
+            .HasIndex(c => c.OwnerActorId);
 
         modelBuilder.Entity<UserPreferenceEntity>()
             .HasKey(p => p.Id);

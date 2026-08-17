@@ -190,3 +190,51 @@ public class ApiPollOption
     [JsonPropertyName("votes_count")]
     public int VotesCount { get; init; }
 }
+
+/// <summary>
+/// Request body for POST /api/v1/apps (Mastodon application registration).
+/// </summary>
+public class ApiAppRegistrationRequest
+{
+    [JsonPropertyName("name")]
+    public string? Name { get; init; }
+
+    [JsonPropertyName("redirect_uris")]
+    public string? RedirectUris { get; init; }
+
+    [JsonPropertyName("scopes")]
+    public string? Scopes { get; init; }
+
+    [JsonPropertyName("website")]
+    public string? Website { get; init; }
+}
+
+/// <summary>
+/// Response body for POST /api/v1/apps and GET /api/v1/apps (the latter omits
+/// the client secret, which is only shown once at creation).
+/// </summary>
+public class ApiApp
+{
+    [JsonPropertyName("id")]
+    public string Id { get; init; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; init; } = string.Empty;
+
+    [JsonPropertyName("website")]
+    public string? Website { get; init; }
+
+    [JsonPropertyName("redirect_uri")]
+    public string? RedirectUri { get; init; }
+
+    [JsonPropertyName("client_id")]
+    public string? ClientId { get; init; }
+
+    // Omitted on GET /api/v1/apps (the secret is only shown once, at creation).
+    [JsonPropertyName("client_secret")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ClientSecret { get; init; }
+
+    [JsonPropertyName("vapid_key")]
+    public string VapidKey { get; init; } = string.Empty;
+}

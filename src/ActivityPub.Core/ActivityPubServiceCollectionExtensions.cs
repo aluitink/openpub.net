@@ -66,6 +66,7 @@ public static class ActivityPubServiceCollectionExtensions
         }
 
         services.AddScoped<IActivityPubRepository, EFCoreActivityPubRepository>();
+        services.AddScoped<IApplicationRepository, EFCoreApplicationRepository>();
         services.AddScoped<ActivityPubEventDispatcher>();
         services.AddScoped<IKeyFetchingService, KeyFetchingService>();
         services.AddScoped<IKeyGenerationService, KeyGenerationService>();

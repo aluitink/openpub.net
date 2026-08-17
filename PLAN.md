@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 17, 2026
-**Status:** Phases 1-45 complete. **816/816 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done. Phase 37 T1 done: local Mastodon-compatible REST API under `/api/v1` (statuses/accounts/timelines, numeric status IDs, cookie-session auth, 10 API tests). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding).
+**Status:** Phases 1-45 complete. **821/821 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done. Phase 37 T1 done: local Mastodon-compatible REST API under `/api/v1` (statuses/accounts/timelines, numeric status IDs, cookie-session auth, 10 API tests). Phase 37 T2 done: application registration (`POST`/`GET /api/v1/apps`) issuing ClientID/ClientSecret, backed by `OAuthClientEntity` + `IApplicationRepository` (5 API tests). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding).
 
 ---
 
@@ -149,7 +149,7 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 **Goal:** Provide a local REST API for third-party clients and improve developer tooling.
 
 1. ✅ Local REST API: `/api/v1/statuses`, `/api/v1/accounts`, `/api/v1/timelines` (Mastodon-compatible DTOs, numeric status IDs, cookie-session auth)
-2. ⬜ Application registration flow (ClientID/ClientSecret)
+2. ✅ Application registration flow (ClientID/ClientSecret): `POST /api/v1/apps` issues a client_id + one-time client_secret; `GET /api/v1/apps` lists the caller's apps (secret omitted). Backed by new `OAuthClientEntity` + `IApplicationRepository` (EF + InMemory). 5 API tests.
 3. ⬜ OAuth 2.0 PKCE for API authentication
 4. ⬜ API rate limiting with configurable limits per application
 5. ⬜ API documentation (Swagger/OpenAPI)
