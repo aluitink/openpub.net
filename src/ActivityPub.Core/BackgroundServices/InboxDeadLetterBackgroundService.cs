@@ -64,6 +64,7 @@ public class InboxDeadLetterBackgroundService : BackgroundService
         finally
         {
             try { _timer.Stop(); } catch { /* may already be disposed */ }
+            try { _timer.Dispose(); } catch { /* may already be disposed */ }
             SafeLogInformation("InboxDeadLetterBackgroundService stopping");
         }
     }
@@ -126,6 +127,7 @@ public class InboxDeadLetterBackgroundService : BackgroundService
     {
         try { _logger?.LogInformation("InboxDeadLetterBackgroundService stopping"); } catch { /* ignore */ }
         try { _timer?.Stop(); } catch { /* may already be disposed */ }
+        try { _timer?.Dispose(); } catch { /* may already be disposed */ }
         await base.StopAsync(stoppingToken);
     }
 }

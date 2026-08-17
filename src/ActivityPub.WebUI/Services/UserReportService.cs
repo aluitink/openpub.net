@@ -9,15 +9,28 @@ public interface IUserReportService
     Task DeleteReportTargetAsync(int id, string adminUsername);
 }
 
+/// <summary>
+/// In-memory user-report store.
+///
+/// Reports are kept in a bounded dictionary keyed by id. When the store exceeds
+/// <see cref="MaxReports"/>, the oldest resolved (non-pending) reports are evicted
+/// so the structure cannot grow without limit over the process lifetime (the
+/// previous implementation queued every report and never removed any). Pending
+/// reports are never evicted while a bound would force it, so in-flight
+/// moderation is not lost.
+/// </summary>
 public class UserReportService : IUserReportService
 {
-    private static readonly System.Collections.Concurrent.ConcurrentQueue<UserReport> _reports = new();
+    /// <summary>Maximum number of reports retained in memory.</summary>
+    public const int MaxReports = 10_000;
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<int, UserReport> _reports = new();
     private static int _nextId = 1;
 
     public async Task SubmitReportAsync(string reporterUsername, string targetUsername, string reason, string? activityId)
     {
         var id = Interlocked.Increment(ref _nextId);
-        _reports.Enqueue(new UserReport
+        _reports[id] = new UserReport
         {
             Id = id,
             ReporterUsername = reporterUsername,
@@ -26,54 +39,74 @@ public class UserReportService : IUserReportService
             ActivityId = activityId,
             Status = "pending",
             CreatedAt = DateTime.UtcNow
-        });
+        };
+        TrimResolved();
         await Task.CompletedTask;
     }
 
     public async Task<ICollection<UserReport>> GetPendingReportsAsync()
     {
-        var result = _reports.ToArray().Where(r => r.Status == "pending").ToList();
+        var result = _reports.Values.Where(r => r.Status == "pending")
+            .OrderBy(r => r.Id)
+            .ToList();
         await Task.CompletedTask;
         return result;
     }
 
     public async Task<UserReport?> GetReportAsync(int id)
     {
-        var result = _reports.ToArray().FirstOrDefault(r => r.Id == id);
+        _reports.TryGetValue(id, out var result);
         await Task.CompletedTask;
         return result;
     }
 
     public async Task DismissReportAsync(int id, string adminUsername, string? note)
     {
-        foreach (var report in _reports)
+        if (_reports.TryGetValue(id, out var report))
         {
-            if (report.Id == id)
-            {
-                report.Status = "dismissed";
-                report.ResolvedAt = DateTime.UtcNow;
-                report.ResolvedBy = adminUsername;
-                report.ResolverNote = note;
-                break;
-            }
+            report.Status = "dismissed";
+            report.ResolvedAt = DateTime.UtcNow;
+            report.ResolvedBy = adminUsername;
+            report.ResolverNote = note;
         }
         await Task.CompletedTask;
     }
 
     public async Task DeleteReportTargetAsync(int id, string adminUsername)
     {
-        foreach (var report in _reports)
+        if (_reports.TryGetValue(id, out var report))
         {
-            if (report.Id == id)
-            {
-                report.Status = "action_taken";
-                report.ResolvedAt = DateTime.UtcNow;
-                report.ResolvedBy = adminUsername;
-                report.ResolverNote = "Target content deleted";
-                break;
-            }
+            report.Status = "action_taken";
+            report.ResolvedAt = DateTime.UtcNow;
+            report.ResolvedBy = adminUsername;
+            report.ResolverNote = "Target content deleted";
         }
         await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Evicts the oldest resolved (non-pending) reports once the store exceeds
+    /// <see cref="MaxReports"/>, keeping pending reports intact. This bounds the
+    /// store's growth while preserving anything an admin still needs to act on.
+    /// </summary>
+    private static void TrimResolved()
+    {
+        if (_reports.Count <= MaxReports)
+            return;
+
+        // Evict resolved reports oldest-first until back under the bound.
+        var resolved = _reports.Values
+            .Where(r => r.Status != "pending")
+            .OrderBy(r => r.Id)
+            .Select(r => r.Id)
+            .ToList();
+
+        foreach (var id in resolved)
+        {
+            if (_reports.Count <= MaxReports)
+                break;
+            _reports.TryRemove(id, out _);
+        }
     }
 }
 

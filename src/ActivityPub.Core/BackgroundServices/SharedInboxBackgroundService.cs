@@ -48,6 +48,18 @@ public class SharedInboxBackgroundService : BackgroundService
             {
                 // Timer may already be disposed; ignore.
             }
+            // Dispose the timer (and its Elapsed delegate closure) so the
+            // System.Threading.Timer it wraps can be reclaimed. Without this the
+            // timer and the service reference it holds would be left to
+            // finalization.
+            try
+            {
+                _timer.Dispose();
+            }
+            catch
+            {
+                // Timer may already be disposed; ignore.
+            }
             SafeLogInformation("SharedInboxBackgroundService stopping");
         }
     }
@@ -113,6 +125,15 @@ public class SharedInboxBackgroundService : BackgroundService
         try
         {
             _timer?.Stop();
+        }
+        catch
+        {
+            // Timer may already be disposed; ignore.
+        }
+
+        try
+        {
+            _timer?.Dispose();
         }
         catch
         {

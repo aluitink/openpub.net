@@ -6,8 +6,19 @@ public interface IAuditLogService
     Task<ICollection<AuditLogEntry>> GetRecentEntriesAsync(int limit = 50);
 }
 
+/// <summary>
+/// In-memory audit log of administrative actions.
+///
+/// The log is a bounded ring: it retains at most <see cref="MaxEntries"/> of the
+/// most recent entries and drops the oldest beyond that. Without the bound, the
+/// static queue would accumulate every admin action for the process lifetime and
+/// grow without limit (a memory leak in a long-running server).
+/// </summary>
 public class AuditLogService : IAuditLogService
 {
+    /// <summary>Maximum number of audit entries retained in memory.</summary>
+    public const int MaxEntries = 10_000;
+
     private static readonly System.Collections.Concurrent.ConcurrentQueue<AuditLogEntry> _entries = new();
 
     public async Task LogActionAsync(string adminUsername, string action, string targetId, string? details)
@@ -20,12 +31,23 @@ public class AuditLogService : IAuditLogService
             Details = details,
             Timestamp = DateTime.UtcNow
         });
+
+        // Trim the oldest entries once the ring exceeds its bound so the queue
+        // stays bounded regardless of how long the process has been running.
+        while (_entries.Count > MaxEntries && _entries.TryDequeue(out _))
+        {
+        }
+
         await Task.CompletedTask;
     }
 
     public async Task<ICollection<AuditLogEntry>> GetRecentEntriesAsync(int limit = 50)
     {
-        var entries = _entries.ToArray().Take(limit).ToList();
+        // The queue is oldest-first; the most recent entries are at the tail, so
+        // take the last <paramref name="limit"/> entries.
+        var all = _entries.ToArray();
+        var start = Math.Max(0, all.Length - limit);
+        var entries = all[start..].Reverse().ToList();
         await Task.CompletedTask;
         return entries;
     }

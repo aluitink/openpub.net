@@ -56,6 +56,7 @@ public class PeerHealthBackgroundService : BackgroundService
         finally
         {
             try { _timer.Stop(); } catch { /* may already be disposed */ }
+            try { _timer.Dispose(); } catch { /* may already be disposed */ }
             SafeLogInformation("PeerHealthBackgroundService stopping");
         }
     }
@@ -138,6 +139,7 @@ public class PeerHealthBackgroundService : BackgroundService
     {
         try { _logger?.LogInformation("PeerHealthBackgroundService stopping"); } catch { /* ignore */ }
         try { _timer?.Stop(); } catch { /* may already be disposed */ }
+        try { _timer?.Dispose(); } catch { /* may already be disposed */ }
         await base.StopAsync(stoppingToken);
     }
 }

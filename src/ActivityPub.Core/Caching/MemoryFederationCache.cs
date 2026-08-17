@@ -11,13 +11,29 @@ namespace ActivityPub.Core.Caching;
 public class MemoryFederationCache : IFederationCache
 {
     private readonly IMemoryCache _cache;
-    private readonly ConcurrentDictionary<string, bool> _cacheKeys;
+
+    /// <summary>
+    /// Index of cached keys and their scheduled expiry. This parallel index exists
+    /// so domain/actor invalidation can find the keys it must evict without
+    /// scanning the whole cache. It mirrors the <see cref="IMemoryCache"/> value
+    /// store, so it must be pruned in lockstep: the underlying cache expires each
+    /// entry by TTL, but without an equivalent here the index would accumulate
+    /// every distinct key ever cached and grow unboundedly (a singleton leak).
+    /// </summary>
+    private readonly ConcurrentDictionary<string, KeyExpiry> _cacheKeys;
 
     // Cache TTL settings
     private static readonly TimeSpan ActorCacheTtl = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan ActivityCacheTtl = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan WebFingerCacheTtl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan InboxResponseCacheTtl = TimeSpan.FromMinutes(5);
+
+    // Amortize the expired-key sweep across operations so per-call overhead is
+    // negligible while still bounding index growth.
+    private static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(10);
+    private DateTime _lastSweepUtc = DateTime.UtcNow;
+
+    private sealed record KeyExpiry(DateTime ExpiresAtUtc);
 
     /// <summary>
     /// Creates a new MemoryFederationCache instance
@@ -26,7 +42,55 @@ public class MemoryFederationCache : IFederationCache
     public MemoryFederationCache(IMemoryCache cache)
     {
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _cacheKeys = new ConcurrentDictionary<string, bool>();
+        _cacheKeys = new ConcurrentDictionary<string, KeyExpiry>();
+    }
+
+    /// <summary>
+    /// Records a key in the index with a scheduled expiry matching the value's
+    /// TTL, so the index can be pruned in step with the cache.
+    /// </summary>
+    private void TrackKey(string key, TimeSpan ttl)
+    {
+        _cacheKeys[key] = new KeyExpiry(DateTime.UtcNow.Add(ttl));
+        PruneExpired();
+    }
+
+    /// <summary>
+    /// Removes an index entry (and the cache value) for a key.
+    /// </summary>
+    private void ForgetKey(string key)
+    {
+        _cacheKeys.TryRemove(key, out _);
+        _cache.Remove(key);
+    }
+
+    /// <summary>
+    /// Drops index entries whose values have already expired in the cache, so
+    /// the index does not outlive the values it indexes. Called opportunistically
+    /// at most once per <see cref="SweepInterval"/> from <see cref="TrackKey"/>,
+    /// but also exposed so it can be driven from tests or a timer.
+    /// </summary>
+    public void PruneExpired(DateTime? nowUtc = null)
+    {
+        var now = nowUtc ?? DateTime.UtcNow;
+        if (now - _lastSweepUtc < SweepInterval)
+            return;
+
+        var lastSweep = _lastSweepUtc;
+        _lastSweepUtc = now;
+
+        foreach (var kvp in _cacheKeys)
+        {
+            if (now >= kvp.Value.ExpiresAtUtc)
+            {
+                if (_cacheKeys.TryRemove(kvp.Key, out _))
+                {
+                    // Best-effort: the value has almost certainly already expired
+                    // in the cache; removing it again is harmless.
+                    _cache.Remove(kvp.Key);
+                }
+            }
+        }
     }
 
     #region Actor Caching
@@ -49,8 +113,8 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(uri) || actor == null)
             return;
 
-        _cacheKeys.TryAdd(uri, true);
         _cache.Set(uri, actor, ActorCacheTtl);
+        TrackKey(uri, ActorCacheTtl);
     }
 
     public async Task RemoveActorAsync(string uri)
@@ -58,8 +122,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(uri))
             return;
 
-        _cacheKeys.TryRemove(uri, out _);
-        _cache.Remove(uri);
+        ForgetKey(uri);
     }
 
     public async Task InvalidateActorsByDomainAsync(string domain)
@@ -73,8 +136,7 @@ public class MemoryFederationCache : IFederationCache
 
         foreach (var key in keysToRemove)
         {
-            _cacheKeys.TryRemove(key, out _);
-            _cache.Remove(key);
+            ForgetKey(key);
         }
     }
 
@@ -100,8 +162,8 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(activityId) || activity == null)
             return;
 
-        _cacheKeys.TryAdd(activityId, true);
         _cache.Set(activityId, activity, ActivityCacheTtl);
+        TrackKey(activityId, ActivityCacheTtl);
     }
 
     public async Task RemoveActivityAsync(string activityId)
@@ -109,8 +171,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(activityId))
             return;
 
-        _cacheKeys.TryRemove(activityId, out _);
-        _cache.Remove(activityId);
+        ForgetKey(activityId);
     }
 
     public async Task InvalidateActivitiesByActorAsync(string actorId)
@@ -124,8 +185,7 @@ public class MemoryFederationCache : IFederationCache
 
         foreach (var key in keysToRemove)
         {
-            _cacheKeys.TryRemove(key, out _);
-            _cache.Remove(key);
+            ForgetKey(key);
         }
     }
 
@@ -151,8 +211,8 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(key) || response == null)
             return;
 
-        _cacheKeys.TryAdd(key, true);
         _cache.Set(key, response, WebFingerCacheTtl);
+        TrackKey(key, WebFingerCacheTtl);
     }
 
     public async Task RemoveWebFingerResponseAsync(string key)
@@ -160,8 +220,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(key))
             return;
 
-        _cacheKeys.TryRemove(key, out _);
-        _cache.Remove(key);
+        ForgetKey(key);
     }
 
     public async Task InvalidateWebFingerByDomainAsync(string domain)
@@ -175,8 +234,7 @@ public class MemoryFederationCache : IFederationCache
 
         foreach (var key in keysToRemove)
         {
-            _cacheKeys.TryRemove(key, out _);
-            _cache.Remove(key);
+            ForgetKey(key);
         }
     }
 
@@ -202,8 +260,8 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(response))
             return;
 
-        _cacheKeys.TryAdd(key, true);
         _cache.Set(key, response, InboxResponseCacheTtl);
+        TrackKey(key, InboxResponseCacheTtl);
     }
 
     public async Task RemoveInboxResponseAsync(string key)
@@ -211,8 +269,7 @@ public class MemoryFederationCache : IFederationCache
         if (string.IsNullOrEmpty(key))
             return;
 
-        _cacheKeys.TryRemove(key, out _);
-        _cache.Remove(key);
+        ForgetKey(key);
     }
 
     public async Task InvalidateInboxResponsesByActorAsync(string actorId)
@@ -226,8 +283,7 @@ public class MemoryFederationCache : IFederationCache
 
         foreach (var key in keysToRemove)
         {
-            _cacheKeys.TryRemove(key, out _);
-            _cache.Remove(key);
+            ForgetKey(key);
         }
     }
 
@@ -244,7 +300,16 @@ public class MemoryFederationCache : IFederationCache
         _cacheKeys.Clear();
     }
 
-    public int Count => _cacheKeys.Count;
+    public int Count
+    {
+        get
+        {
+            // Reading the count is a natural place to opportunistically drop
+            // expired index entries, so the reported count tracks the live cache.
+            PruneExpired();
+            return _cacheKeys.Count;
+        }
+    }
 
     #endregion
 }
