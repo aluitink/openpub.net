@@ -33,7 +33,7 @@
         {
             var noteNextUrl = Model.HasMoreNotes ? Url.Action("Index", new { q = Model.Query, tab = Model.Tab == "all" ? "all" : "notes", page = Model.Page + 1 }) : null;
 
-            <div class="search-results search-notes-results" data-page="@Model.Page" data-next="@noteNextUrl">
+            <div class="search-results search-notes-results" data-feed data-card-selector=".search-note-card" data-page="@Model.Page" data-next="@noteNextUrl">
                 @foreach (var note in Model.Notes)
                 {
                     <div class="search-note-card" data-activity-id="@note.ActivityId">
@@ -134,103 +134,8 @@
 </div>
 
 @section Scripts {
-<script>
-(function() {
-    var input = document.getElementById('search-input');
-    var form = document.getElementById('search-form');
-    var loading = document.getElementById('search-loading');
-    if (!input || !form) return;
-    var timer = null;
-    var currentTab = new URLSearchParams(window.location.search).get('tab') || 'all';
-    input.addEventListener('input', function() {
-        clearTimeout(timer);
-        var q = this.value.trim();
-        if (q.length < 2) return;
-        loading.style.display = 'block';
-        timer = setTimeout(function() {
-            var url = '/search?q=' + encodeURIComponent(q) + '&tab=' + encodeURIComponent(currentTab);
-            window.location.href = url;
-        }, 400);
-    });
-    form.addEventListener('submit', function() {
-        clearTimeout(timer);
-        loading.style.display = 'none';
-    });
-
-    var loadMoreBtn = document.querySelector('.load-more-btn');
-    var loadSkeleton = document.getElementById('load-more-skeleton');
-    var loadContainer = document.querySelector('.load-more-container');
-    var notesResults = document.querySelector('.search-notes-results');
-    if (loadMoreBtn && loadSkeleton && loadContainer && notesResults) {
-        var loadingMore = false;
-        function decodeUrl(v) {
-            // Razor HTML-encodes attribute values, so the query string uses &amp;.
-            return v ? v.replace(/&amp;/g, '&') : v;
-        }
-        var nextUrl = decodeUrl(loadContainer.getAttribute('data-next'));
-        function setLoading(state) {
-            loadingMore = state;
-            loadSkeleton.classList.toggle('active', state);
-            loadMoreBtn.disabled = state;
-            loadMoreBtn.textContent = state ? 'Loading…' : 'Load more';
-        }
-        function injectResults(html) {
-            var doc = new DOMParser().parseFromString(html, 'text/html');
-            var feed = doc.querySelector('.search-notes-results');
-            if (!feed) return;
-            var existing = new Set();
-            document.querySelectorAll('.search-note-card[data-activity-id]').forEach(function(c) {
-                existing.add(c.getAttribute('data-activity-id'));
-            });
-            var frag = document.createDocumentFragment();
-            feed.querySelectorAll('.search-note-card').forEach(function(card) {
-                var id = card.getAttribute('data-activity-id');
-                if (id && existing.has(id)) return;
-                if (id) existing.add(id);
-                frag.appendChild(card.cloneNode(true));
-            });
-            if (frag.childNodes.length) {
-                notesResults.appendChild(frag);
-            }
-            var next = doc.querySelector('.load-more-container');
-            var noMore = !doc.querySelector('.load-more-btn');
-            if (next && next.getAttribute('data-next')) {
-                var decodedNext = decodeUrl(next.getAttribute('data-next'));
-                loadContainer.setAttribute('data-page', next.getAttribute('data-page'));
-                loadContainer.setAttribute('data-next', next.getAttribute('data-next'));
-                nextUrl = decodedNext;
-                loadMoreBtn.href = decodedNext;
-                notesResults.setAttribute('data-next', next.getAttribute('data-next'));
-            } else if (noMore) {
-                loadContainer.remove();
-                loadSkeleton.remove();
-            }
-        }
-        async function loadMore(e) {
-            if (e) e.preventDefault();
-            if (loadingMore) return;
-            if (!nextUrl) return;
-            setLoading(true);
-            try {
-                var res = await fetch(nextUrl, { credentials: 'same-origin' });
-                if (!res.ok) throw new Error('load failed');
-                injectResults(await res.text());
-            } catch (err) {
-                if (typeof showToast === 'function') showToast('Could not load more results', 'error');
-            } finally {
-                setLoadingMore(false);
-            }
-        }
-        loadMoreBtn.addEventListener('click', loadMore);
-        if ('IntersectionObserver' in window) {
-            var observer = new IntersectionObserver(function(entries) {
-                if (entries[0] && entries[0].isIntersecting) loadMore(null);
-            }, { rootMargin: '600px 0px' });
-            observer.observe(loadSkeleton);
-        }
-    }
-})();
-</script>
+    <script src="~/js/menu.js" asp-append-version="true"></script>
+    <script src="~/js/search.js" asp-append-version="true"></script>
 }
 
 @functions {

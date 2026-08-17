@@ -1,4 +1,4 @@
-(function() {
+FB.register('compose', function() {
     'use strict';
     var textarea = document.getElementById('Content');
     var counter = document.getElementById('charCount');
@@ -75,4 +75,4 @@
             });
         }
     }
-})();
+});

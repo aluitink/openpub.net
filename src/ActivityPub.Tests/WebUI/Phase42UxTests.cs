@@ -31,6 +31,13 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         return content;
     }
 
+    private async Task<string> GetAppJsAsync()
+    {
+        var client = _factory.CreateClient();
+        var res = await client.GetAsync("/js/app.js");
+        return await res.Content.ReadAsStringAsync();
+    }
+
     private async Task<HttpClient> GetAuthenticatedClient()
     {
         var client = _factory.CreateClient();
@@ -78,23 +85,17 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
     [Fact]
     public async Task TimelinePage_HasConfirmDialogForDelete()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("confirm", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("confirm", appJs);
     }
 
     [Fact]
     public async Task TimelinePage_HasOptimisticLikeBoost()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("btn-like", body);
-        Assert.Contains("btn-boost", body);
-        Assert.Contains("data-published", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("btn-like", appJs);
+        Assert.Contains("btn-boost", appJs);
+        Assert.Contains("data-published", appJs);
     }
 
     [Fact]
@@ -175,12 +176,9 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
     [Fact]
     public async Task NoteCard_HasTimestampWithTitle()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("note-timestamp", body);
-        Assert.Contains("data-published", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("note-timestamp", appJs);
+        Assert.Contains("data-published", appJs);
     }
 
     [Fact]
@@ -191,7 +189,7 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("toast-container", body);
-        Assert.Contains("toast.js", body);
+        Assert.Contains("app.js", body);
     }
 
     [Fact]
@@ -208,22 +206,16 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
     [Fact]
     public async Task TimelinePage_HasMoreMenu()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("note-more-menu", body);
-        Assert.Contains("copy-link", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("note-more-menu", appJs);
+        Assert.Contains("copy-link", appJs);
     }
 
     [Fact]
     public async Task TimelinePage_HasToastFeedback()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("showToast", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("showToast", appJs);
     }
 
     [Fact]
@@ -241,12 +233,9 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
     [Fact]
     public async Task TimelinePage_HasCwToggleJs()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("cw-toggle-btn", body);
-        Assert.Contains("cw-hidden", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("cw-toggle-btn", appJs);
+        Assert.Contains("cw-hidden", appJs);
     }
 
     [Fact]
@@ -259,18 +248,15 @@ public class Phase42UxTests : IClassFixture<WebUIFactory>
         Assert.Contains("poll-preview", body);
         Assert.Contains("poll-option-input", body);
         Assert.Contains("poll-multiselect", body);
-        Assert.Contains("updatePreview", body);
+        Assert.Contains("poll.js", body);
     }
 
     [Fact]
     public async Task TimelinePage_HasLoadingSkeleton()
     {
-        var client = await GetAuthenticatedClient();
-        var response = await client.GetAsync("/timeline");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("skeleton", body);
-        Assert.Contains("load-more-skeleton", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("skeleton", appJs);
+        Assert.Contains("load-more-skeleton", appJs);
     }
 
     [Fact]

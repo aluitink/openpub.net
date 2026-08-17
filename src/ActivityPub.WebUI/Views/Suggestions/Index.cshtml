@@ -64,7 +64,7 @@
                 {
                     <li>
                         <span class="filter-keyword">@filter</span>
-                        <button class="btn-remove-filter" onclick="removeFilter('@filter')">Remove</button>
+                        <button type="button" class="btn-remove-filter" data-filter="@filter">Remove</button>
                     </li>
                 }
             </ul>
@@ -76,7 +76,7 @@
 
         <div class="add-filter-form">
             <input type="text" id="filterInput" placeholder="Add keyword to filter..." aria-label="Keyword to filter" maxlength="50" />
-            <button class="btn-add-filter" onclick="addFilter()">Add Filter</button>
+            <button type="button" class="btn-add-filter" id="add-filter-btn">Add Filter</button>
         </div>
     </div>
 </div>
@@ -110,29 +110,4 @@
     .empty-state { color: #888; text-align: center; padding: 20px; }
 </style>
 
-<script>
-async function addFilter() {
-    const input = document.getElementById('filterInput');
-    const keyword = input.value.trim();
-    if (!keyword) return;
-
-    await fetch('/suggestions/add-filter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword })
-    });
-
-    input.value = '';
-    location.reload();
-}
-
-async function removeFilter(keyword) {
-    await fetch('/suggestions/remove-filter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword })
-    });
-
-    location.reload();
-}
-</script>
+<script src="~/js/suggestions.js" asp-append-version="true"></script>

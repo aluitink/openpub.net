@@ -23,6 +23,13 @@ public class RealtimeTests : IClassFixture<WebUIFactory>
 
     HttpClient CreateClient() => _factory.CreateClient();
 
+    async Task<string> GetAppJsAsync()
+    {
+        var client = _factory.CreateClient();
+        var res = await client.GetAsync("/js/app.js");
+        return await res.Content.ReadAsStringAsync();
+    }
+
     async Task<HttpClient> RegisterAndLoginAndGetClient(string username)
     {
         var (client, _) = await RegisterAndLogin(username);
@@ -183,23 +190,17 @@ public class RealtimeTests : IClassFixture<WebUIFactory>
     [Fact]
     public async Task DesktopNotification_Code_ExistsInLayout()
     {
-        var (client, _) = await RegisterAndLogin($"rt_desktop_{Guid.NewGuid().ToString("N")[..8]}");
-        var response = await client.GetAsync("/");
-        Assert.True(response.IsSuccessStatusCode, $"Home failed: {(int)response.StatusCode}");
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Notification", body);
-        Assert.Contains("desktopNotification", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("Notification", appJs);
+        Assert.Contains("desktopNotification", appJs);
     }
 
     [Fact]
     public async Task NotificationSound_Code_ExistsInLayout()
     {
-        var (client, _) = await RegisterAndLogin($"rt_sound_{Guid.NewGuid().ToString("N")[..8]}");
-        var response = await client.GetAsync("/");
-        Assert.True(response.IsSuccessStatusCode, $"Home failed: {(int)response.StatusCode}");
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("notificationSound", body);
-        Assert.Contains("playNotificationSound", body);
+        var appJs = await GetAppJsAsync();
+        Assert.Contains("notificationSound", appJs);
+        Assert.Contains("playNotificationSound", appJs);
     }
 
     [Fact]

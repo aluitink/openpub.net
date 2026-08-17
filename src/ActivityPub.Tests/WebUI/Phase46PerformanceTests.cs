@@ -32,6 +32,14 @@ public class Phase46PerformanceTests : IClassFixture<WebUIFactory>
         try { scope.ServiceProvider.GetRequiredService<ActivityPubDbContext>().Database.EnsureCreated(); } catch { }
     }
 
+    /// <summary>Fetches the external app.js module so tests can assert on client-side behaviour that now lives in a separate file.</summary>
+    async Task<string> GetAppJsAsync()
+    {
+        var client = _factory.CreateClient();
+        var res = await client.GetAsync("/js/app.js");
+        return await res.Content.ReadAsStringAsync();
+    }
+
     /// <summary>Registers + logs in a fresh user and returns their HTTP client.</summary>
     async Task<(HttpClient Client, string Username)> GetAuthenticatedUser()
     {
@@ -126,15 +134,16 @@ public class Phase46PerformanceTests : IClassFixture<WebUIFactory>
         await SeedNotesAsync(username, 25, "p46full");
 
         var body = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+        var appJs = await GetAppJsAsync();
 
         Assert.True(body.Contains("load-more-container"),
             "A full first page (>= 20 notes) should surface the load-more affordance.");
         Assert.True(body.Contains("load-more-btn"), "Expected the load-more button element.");
         Assert.True(body.Contains("data-next"),
             "The load-more container should expose a data-next cursor URL for client-side fetching.");
-        Assert.True(body.Contains("IntersectionObserver"),
+        Assert.True(appJs.Contains("IntersectionObserver"),
             "The timeline script should set up an IntersectionObserver for infinite scroll.");
-        Assert.True(body.Contains("load-more-skeleton"),
+        Assert.True(appJs.Contains("load-more-skeleton"),
             "A loading skeleton should be present for perceived speed during incremental loads.");
     }
 
@@ -227,11 +236,11 @@ public class Phase46PerformanceTests : IClassFixture<WebUIFactory>
         var (client, _) = await GetAuthenticatedUser();
         await PostViaEndpointAsync(client, $"p46xh_{Guid.NewGuid().ToString("N")[..8]}");
 
-        var body = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+        var appJs = await GetAppJsAsync();
 
-        Assert.True(body.Contains("e.preventDefault();"),
+        Assert.True(appJs.Contains("e.preventDefault();"),
             "Like/boost/delete should prevent full form navigation (fetch-based) for perceived speed.");
-        Assert.True(body.Contains("fetch(form.action"),
+        Assert.True(appJs.Contains("fetch(form.action"),
             "Interactions should use fetch so the page does not reload.");
     }
 
@@ -306,6 +315,106 @@ public class Phase46PerformanceTests : IClassFixture<WebUIFactory>
         var imgBlock = Regex.Match(css, @"\.note-image\s*\{[^}]*\}", RegexOptions.Singleline);
         Assert.True(imgBlock.Success, "Expected a .note-image rule in site.css.");
         Assert.Contains("aspect-ratio", imgBlock.Groups[0].Value);
+    }
+
+    // ---------------------------------------------------------------------
+    // Phase 46.5 — JS module loader. All UI behaviour now ships through the
+    // small FB module loader (wwwroot/js/app.js + feature modules) instead of
+    // per-view inline scripts; the SignalR bootstrap lives in exactly one
+    // place (app.js) and is gated by the CDN script tag in the layout.
+    // ---------------------------------------------------------------------
+
+    private async Task<string> JsAsync(string path)
+        => await (await _factory.CreateClient().GetAsync(path)).Content.ReadAsStringAsync();
+
+    [Fact]
+    public async Task ModuleLoader_ServesAllFeatureModules()
+    {
+        foreach (var p in new[] { "/js/app.js", "/js/menu.js", "/js/theme.js", "/js/compose.js", "/js/poll.js", "/js/search.js", "/js/suggestions.js" })
+        {
+            var client = _factory.CreateClient();
+            var response = await client.GetAsync(p);
+            Assert.True(response.IsSuccessStatusCode, $"{p} should be served as a static asset.");
+        }
+    }
+
+    [Fact]
+    public async Task AppJs_DefinesModuleLoaderAndCoreModules()
+    {
+        var app = await JsAsync("/js/app.js");
+        Assert.Contains("window.FB = FB", app, StringComparison.Ordinal);
+        Assert.Contains("FB.register", app, StringComparison.Ordinal);
+        foreach (var m in new[] { "toast", "theme", "shortcuts", "signals", "timestamps", "loadmore", "notes", "dropdowns" })
+            Assert.Contains($"register('{m}'", app, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task FeatureModules_RegisterThroughLoader()
+    {
+        var menu = await JsAsync("/js/menu.js");
+        Assert.Contains("FB.register('menu'", menu, StringComparison.Ordinal);
+        var compose = await JsAsync("/js/compose.js");
+        Assert.Contains("FB.register('compose'", compose, StringComparison.Ordinal);
+        var poll = await JsAsync("/js/poll.js");
+        Assert.Contains("FB.register('poll'", poll, StringComparison.Ordinal);
+        var search = await JsAsync("/js/search.js");
+        Assert.Contains("FB.register('search'", search, StringComparison.Ordinal);
+        var suggestions = await JsAsync("/js/suggestions.js");
+        Assert.Contains("FB.register('suggestions'", suggestions, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Pages_LoadSingleLoader_PlusFeatureModules_Only()
+    {
+        var (client, _) = await GetAuthenticatedUser();
+
+        var timeline = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+        Assert.Contains("js/app.js", timeline, StringComparison.Ordinal);
+        Assert.Contains("js/menu.js", timeline, StringComparison.Ordinal);
+        // The timeline behaviour (like/boost, load more, more-menu, cw toggle)
+        // must come from the loader, not from a page-local inline <script>.
+        Assert.DoesNotContain("<script>", timeline, StringComparison.Ordinal);
+
+        var compose = await (await client.GetAsync("/compose")).Content.ReadAsStringAsync();
+        Assert.Contains("js/compose.js", compose, StringComparison.Ordinal);
+        Assert.Contains("js/app.js", compose, StringComparison.Ordinal);
+        Assert.DoesNotContain("<script>", compose, StringComparison.Ordinal);
+
+        var search = await (await client.GetAsync("/search?q=module")).Content.ReadAsStringAsync();
+        Assert.Contains("js/search.js", search, StringComparison.Ordinal);
+        Assert.Contains("js/app.js", search, StringComparison.Ordinal);
+        Assert.DoesNotContain("<script>", search, StringComparison.Ordinal);
+
+        var poll = await (await client.GetAsync("/poll/new")).Content.ReadAsStringAsync();
+        Assert.Contains("js/poll.js", poll, StringComparison.Ordinal);
+        Assert.Contains("js/app.js", poll, StringComparison.Ordinal);
+        Assert.DoesNotContain("<script>", poll, StringComparison.Ordinal);
+
+        var suggestions = await (await client.GetAsync("/suggestions")).Content.ReadAsStringAsync();
+        Assert.Contains("js/suggestions.js", suggestions, StringComparison.Ordinal);
+        Assert.DoesNotContain("<script>", suggestions, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SignalR_Bootstrap_IsDedupedInLayout()
+    {
+        var (client, _) = await GetAuthenticatedUser();
+        var body = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        // One CDN tag per page...
+        var signalrTagCount = System.Text.RegularExpressions.Regex.Matches(body, "cdn\\.jsdelivr\\.net[^\"']*signalr", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count;
+        Assert.True(signalrTagCount == 1, "The SignalR CDN script should be referenced exactly once (deduped in the layout).");
+        // ...and the only connection bootstrap is the one in app.js.
+        var app = await JsAsync("/js/app.js");
+        var hubBuilderCount = System.Text.RegularExpressions.Regex.Matches(app, "HubConnectionBuilder").Count;
+        Assert.True(hubBuilderCount == 1, "The SignalR connection should be built exactly once (deduped in app.js).");
+    }
+
+    [Fact]
+    public async Task ThemeBootstrap_IsExternalScript()
+    {
+        var body = await (await _factory.CreateClient().GetAsync("/")).Content.ReadAsStringAsync();
+        Assert.Contains("js/theme.js", body, StringComparison.Ordinal);
     }
 
     [Fact]
