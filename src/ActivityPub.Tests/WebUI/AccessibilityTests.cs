@@ -131,6 +131,34 @@ public class AccessibilityTests : IClassFixture<WebUIFactory>
         }
     }
 
+    [Fact]
+    public async Task Footer_RendersUsefulNavigationLinks()
+    {
+        var html = await (await _client.GetAsync("/about")).Content.ReadAsStringAsync();
+
+        // The footer must expose a labeled nav with multiple useful links (T9).
+        Assert.True(html.Contains("footer-links"), "Expected the footer to contain a .footer-links navigation");
+        Assert.True(html.Contains("aria-label=\"Footer\""), "Footer nav should have an aria-label");
+
+        var footer = Regex.Match(html, "<footer>.*?</footer>", RegexOptions.Singleline);
+        Assert.True(footer.Success, "Expected a <footer> element in the rendered layout");
+        var linkCount = Regex.Matches(footer.Value, "<a ").Count;
+        Assert.True(linkCount >= 3, $"Expected the footer to contain at least 3 useful links, found {linkCount}");
+    }
+
+    [Fact]
+    public async Task AboutPage_Returns200_WithRealContent()
+    {
+        var response = await _client.GetAsync("/about");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("About", html);
+        // Real content, not just the old tagline.
+        Assert.Contains("What is Fediblog", html);
+        Assert.Contains("ActivityPub", html);
+    }
+
     // ---------- helpers ----------
 
     private async Task<HttpClient> GetAuthenticatedClient()

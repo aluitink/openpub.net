@@ -470,7 +470,7 @@ body.nav-open {
 
 footer {
     background: #1a1a2e;
-    color: var(--color-text-muted);
+    color: #b9b9d6;
     text-align: center;
     padding: 1.5rem;
     font-size: 0.85rem;
@@ -479,6 +479,70 @@ footer {
 .footer-container {
     max-width: 960px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.footer-tagline {
+    color: #b9b9d6;
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    justify-content: center;
+}
+
+.footer-links a {
+    color: #d0d0ea;
+    text-decoration: none;
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* About page */
+.about-page {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.about-section {
+    margin-bottom: 1.75rem;
+}
+
+.about-section h2 {
+    font-size: var(--font-lg, 1.15rem);
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+}
+
+.about-section p {
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.about-list {
+    margin: 0;
+    padding-left: 1.3rem;
+    color: var(--color-text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.about-link {
+    color: var(--color-accent);
+}
+
+.about-link:hover {
+    text-decoration: underline;
 }
 
 .alert-error {

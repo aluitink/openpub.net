@@ -57,6 +57,7 @@ public class RouteAuditTests : IClassFixture<WebUIFactory>
     [InlineData("/auth/register")]
     [InlineData("/trends")]
     [InlineData("/trending")]
+    [InlineData("/about")]
     public async Task AnonymousRoutes_Return200(string route)
     {
         var client = _factory.CreateClient();

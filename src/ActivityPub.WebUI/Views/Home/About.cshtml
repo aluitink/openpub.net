@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="page-header">
+    <h1>About Fediblog</h1>
+</div>
+
+<div class="about-page">
+    <section class="about-section">
+        <h2>What is Fediblog?</h2>
+        <p>
+            Fediblog is a federated microblogging platform built on the
+            <a href="https://activitypub.rocks/" class="about-link" rel="noopener" target="_blank">ActivityPub</a>
+            protocol. It is powered by <strong>ActivityPub.NET</strong> and connects to the broader
+            Fediverse, so you can follow and interact with people on other ActivityPub-compatible servers.
+        </p>
+    </section>
+
+    <section class="about-section">
+        <h2>What you can do here</h2>
+        <ul class="about-list">
+            <li>Post short notes, long-form articles, polls, and image attachments.</li>
+            <li>Follow users and communities, and join the conversations in your timeline.</li>
+            <li>Discover trending hashtags and suggested accounts to follow.</li>
+            <li>Boost, like, reply, and report content.</li>
+        </ul>
+    </section>
+
+    <section class="about-section">
+        <h2>Need help?</h2>
+        <ul class="about-list">
+            <li>
+                <a href="/auth/register" class="about-link">Create an account</a> to start posting and following.
+            </li>
+            <li>
+                Explore the <a href="/trends" class="about-link">trending hashtags</a> to see what's popular right now.
+            </li>
+            <li>
+                Use the search bar in the navigation to find people, communities, and posts.
+            </li>
+            <li>
+                Server federation health and moderation settings are available to administrators under the Admin area.
+            </li>
+        </ul>
+    </section>
+
+    <section class="about-section">
+        <h2>Technology</h2>
+        <p>
+            Fediblog runs on ASP.NET Core (C#), EF Core with SQLite, and SignalR for real-time updates.
+            It is an open-source ActivityPub server implementation.
+        </p>
+    </section>
+</div>

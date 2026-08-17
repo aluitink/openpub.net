@@ -121,7 +121,19 @@
     </div>
     <footer>
         <div class="footer-container">
-            <p>Fediblog - A federated microblogging platform powered by ActivityPub.NET</p>
+            <div class="footer-tagline">
+                Fediblog &mdash; a federated microblogging platform powered by ActivityPub.NET
+            </div>
+            <nav class="footer-links" aria-label="Footer">
+                <a asp-controller="Home" asp-action="About">About</a>
+                <a asp-controller="Trends" asp-action="Index">Trending</a>
+                <a asp-controller="Communities" asp-action="Index">Communities</a>
+                <a asp-controller="Home" asp-action="Index">Home</a>
+                @if (User.Identity?.IsAuthenticated ?? false)
+                {
+                    <a asp-controller="FederationHealth" asp-action="Index">Server health</a>
+                }
+            </nav>
         </div>
     </footer>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>

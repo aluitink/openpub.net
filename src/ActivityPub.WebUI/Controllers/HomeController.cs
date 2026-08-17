@@ -10,6 +10,10 @@ public class HomeController : Controller
     public IActionResult Index() => View();
 
     [HttpGet]
+    [Route("about")]
+    public IActionResult About() => View();
+
+    [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
