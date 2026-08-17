@@ -113,7 +113,10 @@ else
     var loadContainer = document.querySelector('.load-more-container');
     if (loadMoreBtn && loadSkeleton && loadContainer) {
         var loading = false;
-        var nextUrl = loadContainer.getAttribute('data-next');
+        function decodeUrl(v) {
+            return v ? v.replace(/&amp;/g, '&') : v;
+        }
+        var nextUrl = decodeUrl(loadContainer.getAttribute('data-next'));
         function setLoading(state) {
             loading = state;
             loadSkeleton.classList.toggle('active', state);
@@ -141,10 +144,11 @@ else
             var next = doc.querySelector('.load-more-container');
             var noMore = !doc.querySelector('.load-more-btn');
             if (next && next.getAttribute('data-next')) {
+                var decodedNext = decodeUrl(next.getAttribute('data-next'));
                 loadContainer.setAttribute('data-page', next.getAttribute('data-page'));
                 loadContainer.setAttribute('data-next', next.getAttribute('data-next'));
-                nextUrl = next.getAttribute('data-next');
-                loadMoreBtn.href = nextUrl;
+                nextUrl = decodedNext;
+                loadMoreBtn.href = decodedNext;
             } else if (noMore) {
                 loadContainer.remove();
                 loadSkeleton.remove();

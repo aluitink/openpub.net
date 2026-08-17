@@ -31,10 +31,12 @@
 
         @if ((Model.Tab == "all" || Model.Tab == "notes") && Model.Notes.Any())
         {
-            <div class="search-results">
+            var noteNextUrl = Model.HasMoreNotes ? Url.Action("Index", new { q = Model.Query, tab = Model.Tab == "all" ? "all" : "notes", page = Model.Page + 1 }) : null;
+
+            <div class="search-results search-notes-results" data-page="@Model.Page" data-next="@noteNextUrl">
                 @foreach (var note in Model.Notes)
                 {
-                    <div class="search-note-card">
+                    <div class="search-note-card" data-activity-id="@note.ActivityId">
                         <div class="search-note-author">
                             <a asp-controller="Profile" asp-action="Index" asp-route-username="@note.AuthorUsername">@note.AuthorName</a>
                             <span class="search-note-username">@note.AuthorUsername</span>
@@ -44,6 +46,26 @@
                     </div>
                 }
             </div>
+
+            @if (Model.HasMoreNotes)
+            {
+                <div class="load-more-container" data-page="@Model.Page" data-next="@noteNextUrl">
+                    <a href="@noteNextUrl" class="btn btn-secondary load-more-btn" role="button">Load more</a>
+                </div>
+                <div id="load-more-skeleton" class="timeline-loading" aria-hidden="true">
+                    <div class="skeleton-note-card">
+                        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
+                            <div class="skeleton skeleton-avatar"></div>
+                            <div>
+                                <div class="skeleton skeleton-line short"></div>
+                                <div class="skeleton skeleton-line medium" style="height:10px"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton skeleton-line long"></div>
+                        <div class="skeleton skeleton-line medium"></div>
+                    </div>
+                </div>
+            }
         }
         else if (Model.Tab == "notes" && !Model.Notes.Any())
         {
@@ -134,6 +156,79 @@
         clearTimeout(timer);
         loading.style.display = 'none';
     });
+
+    var loadMoreBtn = document.querySelector('.load-more-btn');
+    var loadSkeleton = document.getElementById('load-more-skeleton');
+    var loadContainer = document.querySelector('.load-more-container');
+    var notesResults = document.querySelector('.search-notes-results');
+    if (loadMoreBtn && loadSkeleton && loadContainer && notesResults) {
+        var loadingMore = false;
+        function decodeUrl(v) {
+            // Razor HTML-encodes attribute values, so the query string uses &amp;.
+            return v ? v.replace(/&amp;/g, '&') : v;
+        }
+        var nextUrl = decodeUrl(loadContainer.getAttribute('data-next'));
+        function setLoading(state) {
+            loadingMore = state;
+            loadSkeleton.classList.toggle('active', state);
+            loadMoreBtn.disabled = state;
+            loadMoreBtn.textContent = state ? 'Loading…' : 'Load more';
+        }
+        function injectResults(html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var feed = doc.querySelector('.search-notes-results');
+            if (!feed) return;
+            var existing = new Set();
+            document.querySelectorAll('.search-note-card[data-activity-id]').forEach(function(c) {
+                existing.add(c.getAttribute('data-activity-id'));
+            });
+            var frag = document.createDocumentFragment();
+            feed.querySelectorAll('.search-note-card').forEach(function(card) {
+                var id = card.getAttribute('data-activity-id');
+                if (id && existing.has(id)) return;
+                if (id) existing.add(id);
+                frag.appendChild(card.cloneNode(true));
+            });
+            if (frag.childNodes.length) {
+                notesResults.appendChild(frag);
+            }
+            var next = doc.querySelector('.load-more-container');
+            var noMore = !doc.querySelector('.load-more-btn');
+            if (next && next.getAttribute('data-next')) {
+                var decodedNext = decodeUrl(next.getAttribute('data-next'));
+                loadContainer.setAttribute('data-page', next.getAttribute('data-page'));
+                loadContainer.setAttribute('data-next', next.getAttribute('data-next'));
+                nextUrl = decodedNext;
+                loadMoreBtn.href = decodedNext;
+                notesResults.setAttribute('data-next', next.getAttribute('data-next'));
+            } else if (noMore) {
+                loadContainer.remove();
+                loadSkeleton.remove();
+            }
+        }
+        async function loadMore(e) {
+            if (e) e.preventDefault();
+            if (loadingMore) return;
+            if (!nextUrl) return;
+            setLoading(true);
+            try {
+                var res = await fetch(nextUrl, { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('load failed');
+                injectResults(await res.text());
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('Could not load more results', 'error');
+            } finally {
+                setLoadingMore(false);
+            }
+        }
+        loadMoreBtn.addEventListener('click', loadMore);
+        if ('IntersectionObserver' in window) {
+            var observer = new IntersectionObserver(function(entries) {
+                if (entries[0] && entries[0].isIntersecting) loadMore(null);
+            }, { rootMargin: '600px 0px' });
+            observer.observe(loadSkeleton);
+        }
+    }
 })();
 </script>
 }

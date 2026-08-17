@@ -14,9 +14,11 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
     public EFCoreActivityPubRepository(ActivityPubDbContext context)
     {
         _context = context;
+        // No PropertyNamingPolicy: [JsonPropertyName] attributes on the AS models must win,
+        // otherwise attributes like "content" are re-emitted as "Content" and the round-trip
+        // deserialization loses them (case-insensitive deserialization still reads legacy rows).
         _jsonOptions = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true
         };
     }

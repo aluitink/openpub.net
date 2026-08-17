@@ -191,6 +191,36 @@ public class Phase46PerformanceTests : IClassFixture<WebUIFactory>
     }
 
     [Fact]
+    public async Task Search_Notes_PaginatesAndExposesLoadMore()
+    {
+        var (client, username) = await GetAuthenticatedUser();
+        var marker = $"p46srch_{Guid.NewGuid().ToString("N")[..6]}";
+
+        // 25 matching notes: page 1 is full (20) with a cursor, page 2 is short (5) without one.
+        await SeedNotesAsync(username, 25, marker);
+
+        var body1 = await (await client.GetAsync($"/search?q={marker}&tab=notes")).Content.ReadAsStringAsync();
+        Assert.True(body1.Contains("search-note-card"), "Search should return the matching notes.");
+        Assert.True(body1.Contains("data-next"), "A full first page should expose a data-next cursor.");
+        Assert.True(body1.Contains("load-more-btn"), "A full first page should surface the load-more affordance.");
+
+        var next1 = Regex.Match(body1, @"data-next=""(?<url>[^""]+)""");
+        Assert.True(next1.Success, "Expected a data-next cursor URL.");
+        // Razor HTML-encodes attribute values, so the query string uses &amp;.
+        var url = System.Net.WebUtility.HtmlDecode(next1.Groups["url"].Value);
+        var abs = url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? url
+            : $"{client.BaseAddress}{url.TrimStart('/')}";
+        var res = await client.GetAsync(new Uri(abs, UriKind.Absolute));
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        var body2 = await res.Content.ReadAsStringAsync();
+
+        Assert.True(body2.Contains("search-note-card"), "Page 2 should contain the remaining notes.");
+        Assert.False(body2.Contains("class=\"btn btn-secondary load-more-btn\""),
+            "The last (partial) search page should not render the load-more button.");
+    }
+
+    [Fact]
     public async Task Timeline_LikeBoostInteraction_SkipsFullNavigation()
     {
         var (client, _) = await GetAuthenticatedUser();

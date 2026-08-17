@@ -22,7 +22,7 @@ public class SearchController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index(string q = "", string tab = "notes")
+    public async Task<IActionResult> Index(string q = "", string tab = "notes", int page = 1)
     {
         if (string.IsNullOrWhiteSpace(q))
         {
@@ -39,6 +39,7 @@ public class SearchController : Controller
         {
             Query = q,
             Tab = tab,
+            Page = page,
         };
 
         if (tab == "users" || tab == "all")
@@ -49,8 +50,9 @@ public class SearchController : Controller
 
         if (tab == "notes" || tab == "all")
         {
-            var notes = await SearchNotesAsync(q);
+            var (notes, hasMore) = await SearchNotesAsync(q, page);
             model.Notes = notes;
+            model.HasMoreNotes = hasMore;
         }
 
         if (tab == "hashtags" || tab == "all")
@@ -92,29 +94,32 @@ public class SearchController : Controller
         }
     }
 
-    async Task<List<SearchNoteResult>> SearchNotesAsync(string query)
+    async Task<(List<SearchNoteResult> Notes, bool HasMore)> SearchNotesAsync(string query, int page)
     {
+        const int pageSize = 20;
         var lowerQuery = query.ToLowerInvariant();
-        var noteResults = new List<SearchNoteResult>();
+
+        // Collect every matching note once, newest first, then page over it.
+        // The scan is bounded (50 recent activities per user) and matches the
+        // previous behaviour; paging keeps each response cheap.
+        var matches = new List<SearchNoteResult>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
 
         var users = await _identityDb.Users.ToListAsync();
 
         foreach (var user in users)
         {
-            if (noteResults.Count >= 20) break;
-
             if (string.IsNullOrEmpty(user.UserName)) continue;
             var activityIds = await _repository.GetActorOutboxActivitiesAsync(user.UserName, 0, 50);
 
             foreach (var activityId in activityIds)
             {
-                if (noteResults.Count >= 20) break;
-
                 var activity = await _repository.GetActivityAsync(activityId);
                 if (activity == null) continue;
+                if (string.IsNullOrEmpty(activity.Id) || !seen.Add(activity.Id)) continue;
 
-                if (activity.Object is not Obj obj) continue;
-                if (obj.Type == "Tombstone") continue;
+                var obj = ExtractObject(activity);
+                if (obj == null || obj.Type == "Tombstone") continue;
 
                 var content = obj.Content ?? "";
                 var name = obj.Name ?? "";
@@ -128,7 +133,7 @@ public class SearchController : Controller
 
                 var author = await GetAuthorForActivity(activity);
 
-                noteResults.Add(new SearchNoteResult
+                matches.Add(new SearchNoteResult
                 {
                     ActivityId = activity.Id ?? "",
                     Content = Truncate(content, 200),
@@ -140,8 +145,31 @@ public class SearchController : Controller
             }
         }
 
-        noteResults.Sort((a, b) => b.Published.CompareTo(a.Published));
-        return noteResults;
+        matches.Sort((a, b) => b.Published.CompareTo(a.Published));
+        var safePage = Math.Max(1, page);
+        var notes = matches.Skip((safePage - 1) * pageSize).Take(pageSize).ToList();
+        var hasMore = safePage * pageSize < matches.Count;
+        return (notes, hasMore);
+    }
+
+    // Activity.Object is declared as object, so the repository hands back a
+    // JsonElement; convert it to the typed AS object (mirrors the timeline).
+    static Obj? ExtractObject(Activity activity)
+    {
+        if (activity.Object is Obj obj)
+            return obj;
+
+        if (activity.Object is System.Text.Json.JsonElement element && element.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var opts = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true
+            };
+            return System.Text.Json.JsonSerializer.Deserialize<Obj>(element.GetRawText(), opts);
+        }
+
+        return null;
     }
 
     async Task<Actor?> GetAuthorForActivity(Activity activity)
@@ -198,6 +226,8 @@ public class SearchViewModel
 {
     public string Query { get; set; } = "";
     public string Tab { get; set; } = "notes";
+    public int Page { get; set; } = 1;
+    public bool HasMoreNotes { get; set; }
     public List<SearchNoteResult> Notes { get; set; } = new();
     public List<SearchUserResult> Users { get; set; } = new();
     public List<SearchHashtagResult> Hashtags { get; set; } = new();
