@@ -3,9 +3,11 @@ using ActivityPub.Core.Caching;
 using ActivityPub.Core.Events;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Options;
 using ActivityPub.Core.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ActivityPub.Core.Services;
 
@@ -17,19 +19,22 @@ public class SharedInboxService : ISharedInboxService
     private readonly IFederationCache _federationCache;
     private readonly ILogger<SharedInboxService> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly DeliveryRetryOptions _retryOptions;
 
     public SharedInboxService(
         IActivityPubRepository repository,
         IOutboundActivityService outboundService,
         IMemoryCache cache,
         IFederationCache federationCache,
-        ILogger<SharedInboxService> logger)
+        ILogger<SharedInboxService> logger,
+        IOptions<ActivityPubOptions>? options = null)
     {
         _repository = repository;
         _outboundService = outboundService;
         _cache = cache;
         _federationCache = federationCache;
         _logger = logger;
+        _retryOptions = options?.Value?.DeliveryRetry ?? new DeliveryRetryOptions();
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -155,14 +160,18 @@ public class SharedInboxService : ISharedInboxService
 
     public async Task<bool> ProcessQueueAsync()
     {
-        var deliveries = await _repository.GetPendingSharedInboxDeliveriesAsync(100);
+        var maxRetries = Math.Max(1, _retryOptions.MaxRetries);
+        var deliveries = await _repository.GetPendingSharedInboxDeliveriesAsync(100, maxRetries);
         var batch = deliveries.Take(50).ToList();
 
         foreach (var delivery in batch)
         {
             try
             {
-                if (delivery.Status == DeliveryStatus.Queued)
+                // Both freshly-queued items and previously-failed items that have
+                // come out of their backoff window are transitioned to Processing
+                // so they get another delivery attempt.
+                if (delivery.Status == DeliveryStatus.Queued || delivery.Status == DeliveryStatus.Failed)
                 {
                     delivery.Status = DeliveryStatus.Processing;
                     delivery.LastDeliveryAttempt = DateTime.UtcNow;
@@ -174,8 +183,11 @@ public class SharedInboxService : ISharedInboxService
                     var activity = JsonSerializer.Deserialize<Activity>(delivery.ActivityJson, _jsonOptions);
                     if (activity == null)
                     {
+                        // Malformed payload: retrying will not fix it, so go
+                        // straight to the terminal dead-letter state.
                         delivery.Status = DeliveryStatus.MaxRetriesExceeded;
                         delivery.FailureReason = "Failed to deserialize activity";
+                        delivery.NextRetryAt = null;
                         await _repository.UpdateSharedInboxDeliveryAsync(delivery);
                         continue;
                     }
@@ -189,23 +201,13 @@ public class SharedInboxService : ISharedInboxService
                     if (success)
                     {
                         delivery.Status = DeliveryStatus.Delivered;
+                        delivery.NextRetryAt = null;
                         _logger.LogInformation("Successfully delivered activity {ActivityId} to {TargetActorId}", delivery.ActivityId, delivery.TargetActorId);
                     }
                     else
                     {
-                        delivery.RetryCount++;
-                        if (delivery.RetryCount >= 3)
-                        {
-                            delivery.Status = DeliveryStatus.MaxRetriesExceeded;
-                            delivery.FailureReason = "Max retries (3) exceeded";
-                            _logger.LogWarning("Max retries exceeded for activity {ActivityId} to {TargetActorId}", delivery.ActivityId, delivery.TargetActorId);
-                        }
-                        else
-                        {
-                            delivery.Status = DeliveryStatus.Failed;
-                            delivery.FailureReason = $"Delivery attempt {delivery.RetryCount} failed";
-                            _logger.LogWarning("Failed to deliver activity {ActivityId} to {TargetActorId}, retry {RetryCount}", delivery.ActivityId, delivery.TargetActorId, delivery.RetryCount);
-                        }
+                        HandleDeliveryFailure(delivery, $"Delivery attempt {delivery.RetryCount + 1} failed", maxRetries);
+                        _logger.LogWarning("Failed to deliver activity {ActivityId} to {TargetActorId}, retry {RetryCount}, next retry at {NextRetryAt:O}", delivery.ActivityId, delivery.TargetActorId, delivery.RetryCount, delivery.NextRetryAt);
                     }
 
                     await _repository.UpdateSharedInboxDeliveryAsync(delivery);
@@ -215,23 +217,60 @@ public class SharedInboxService : ISharedInboxService
             {
                 _logger.LogError(ex, "Error processing delivery for activity {ActivityId} to {TargetActorId}", delivery.ActivityId, delivery.TargetActorId);
 
-                delivery.RetryCount++;
-                if (delivery.RetryCount >= 3)
-                {
-                    delivery.Status = DeliveryStatus.MaxRetriesExceeded;
-                    delivery.FailureReason = ex.Message;
-                }
-                else
-                {
-                    delivery.Status = DeliveryStatus.Failed;
-                    delivery.FailureReason = ex.Message;
-                }
-
+                HandleDeliveryFailure(delivery, ex.Message, maxRetries);
                 await _repository.UpdateSharedInboxDeliveryAsync(delivery);
             }
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Records a failed delivery attempt and schedules the next one. Increments
+    /// <see cref="SharedInboxDeliveryEntity.RetryCount"/>, and either moves the
+    /// item to the terminal <c>MaxRetriesExceeded</c> state (when the retry cap
+    /// is reached) or leaves it <c>Failed</c> with a backoff-gated
+    /// <see cref="SharedInboxDeliveryEntity.NextRetryAt"/> so the queue processor
+    /// will not re-attempt it until the delay has elapsed.
+    /// </summary>
+    private void HandleDeliveryFailure(SharedInboxDeliveryEntity delivery, string reason, int maxRetries)
+    {
+        delivery.RetryCount++;
+        delivery.LastDeliveryAttempt = DateTime.UtcNow;
+        delivery.FailureReason = reason;
+
+        if (delivery.RetryCount >= maxRetries)
+        {
+            delivery.Status = DeliveryStatus.MaxRetriesExceeded;
+            delivery.FailureReason = $"{reason} (max retries ({maxRetries}) exceeded)";
+            delivery.NextRetryAt = null;
+            _logger.LogWarning("Max retries ({MaxRetries}) exceeded for activity {ActivityId} to {TargetActorId}", maxRetries, delivery.ActivityId, delivery.TargetActorId);
+            return;
+        }
+
+        delivery.Status = DeliveryStatus.Failed;
+        delivery.NextRetryAt = DateTime.UtcNow + ComputeRetryDelay(delivery.RetryCount);
+    }
+
+    /// <summary>
+    /// Computes the delay before the retry that follows the
+    /// <paramref name="attemptNumber"/>-th failed attempt (1-based). With
+    /// exponential backoff the delay is
+    /// <c>base * 2^(attemptNumber - 1)</c>, capped at
+    /// <see cref="DeliveryRetryOptions.MaxRetryDelaySeconds"/>; otherwise a flat
+    /// <c>base</c> delay.
+    /// </summary>
+    private TimeSpan ComputeRetryDelay(int attemptNumber)
+    {
+        var baseSeconds = Math.Max(1, _retryOptions.BaseRetryDelaySeconds);
+        var delaySeconds = _retryOptions.UseExponentialBackoff
+            ? baseSeconds * Math.Pow(2, Math.Max(0, attemptNumber - 1))
+            : baseSeconds;
+
+        var cap = Math.Max(baseSeconds, _retryOptions.MaxRetryDelaySeconds);
+        delaySeconds = Math.Min(delaySeconds, cap);
+
+        return TimeSpan.FromSeconds(delaySeconds);
     }
 
     public async Task<bool> AddToCacheAsync(string key, string value)

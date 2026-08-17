@@ -101,11 +101,15 @@ public interface IActivityPubRepository
     Task<bool> QueueSharedInboxDeliveryAsync(string activityId, string activityJson, string targetActorId);
 
     /// <summary>
-    /// Gets pending shared inbox deliveries
+    /// Gets pending shared inbox deliveries that are eligible for an attempt
+    /// now. A <c>Failed</c> delivery is only included when it has not exceeded
+    /// <paramref name="maxRetries"/> and its <c>NextRetryAt</c> backoff gate has
+    /// passed.
     /// </summary>
     /// <param name="maxCount">Maximum number of deliveries to retrieve</param>
+    /// <param name="maxRetries">Retry cap used to gate <c>Failed</c> deliveries</param>
     /// <returns>Collection of pending deliveries</returns>
-    Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100);
+    Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100, int maxRetries = 5);
 
     /// <summary>
     /// Updates a shared inbox delivery status

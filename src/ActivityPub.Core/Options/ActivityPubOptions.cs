@@ -8,6 +8,41 @@ public class MRFOptions
 }
 
 /// <summary>
+/// Retry policy for outbound ActivityPub activity deliveries. When a delivery
+/// attempt fails, the item is re-queued and becomes eligible for its next
+/// attempt after a delay that grows (optionally) exponentially with each
+/// consecutive failure, up to <see cref="MaxRetries"/> attempts.
+/// </summary>
+public class DeliveryRetryOptions
+{
+    /// <summary>
+    /// Maximum number of delivery attempts before the item is marked
+    /// <c>MaxRetriesExceeded</c> (the terminal, de-facto dead-letter state).
+    /// </summary>
+    public int MaxRetries { get; set; } = 5;
+
+    /// <summary>
+    /// Base delay, in seconds, before the first retry. Each subsequent retry
+    /// delay is multiplied by 2 when <see cref="UseExponentialBackoff"/> is on,
+    /// capped at <see cref="MaxRetryDelaySeconds"/>.
+    /// </summary>
+    public int BaseRetryDelaySeconds { get; set; } = 30;
+
+    /// <summary>
+    /// When true, each retry delay doubles from the previous one
+    /// (base * 2^attempt). When false, every retry waits the flat
+    /// <see cref="BaseRetryDelaySeconds"/>.
+    /// </summary>
+    public bool UseExponentialBackoff { get; set; } = true;
+
+    /// <summary>
+    /// Upper bound, in seconds, for any single retry delay. Prevents a long
+    /// streak of failures from pushing the next attempt hours out.
+    /// </summary>
+    public int MaxRetryDelaySeconds { get; set; } = 3600;
+}
+
+/// <summary>
 /// Configuration options for ActivityPub
 /// </summary>
 public class ActivityPubOptions
@@ -75,4 +110,10 @@ public class ActivityPubOptions
     /// Message Rewrite Rules (MRF) options for content moderation
     /// </summary>
     public MRFOptions? MRFOptions { get; set; }
+
+    /// <summary>
+    /// Retry policy for outbound activity deliveries (see
+    /// <see cref="DeliveryRetryOptions"/>).
+    /// </summary>
+    public DeliveryRetryOptions DeliveryRetry { get; set; } = new();
 }

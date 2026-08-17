@@ -302,6 +302,7 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
                 existing.Status = DeliveryStatus.Queued;
                 existing.RetryCount = 0;
                 existing.FailureReason = null;
+                existing.NextRetryAt = null;
                 _context.SharedInboxDeliveries.Update(existing);
             }
             else
@@ -330,11 +331,15 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         return true;
     }
 
-    public async Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100)
+    public async Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100, int maxRetries = 5)
     {
+        var now = DateTime.UtcNow;
+
         var deliveries = await _context.SharedInboxDeliveries
             .Where(d => d.Status == DeliveryStatus.Queued || d.Status == DeliveryStatus.Processing ||
-                       (d.Status == DeliveryStatus.Failed && d.RetryCount < 3))
+                       (d.Status == DeliveryStatus.Failed &&
+                        d.RetryCount < maxRetries &&
+                        (d.NextRetryAt == null || d.NextRetryAt <= now)))
             .OrderBy(d => d.CreatedAt)
             .Take(maxCount)
             .ToListAsync();

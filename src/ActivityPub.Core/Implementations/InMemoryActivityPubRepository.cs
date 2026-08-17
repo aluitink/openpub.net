@@ -149,11 +149,16 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     }
 
     /// <inheritdoc />
-    public Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100)
+    public Task<ICollection<SharedInboxDeliveryEntity>> GetPendingSharedInboxDeliveriesAsync(int maxCount = 100, int maxRetries = 5)
     {
+        var now = DateTime.UtcNow;
+
         var pending = _sharedInboxDeliveries
             .Where(d => d.Status == DeliveryStatus.Queued ||
-                       d.Status == DeliveryStatus.Failed)
+                       d.Status == DeliveryStatus.Processing ||
+                       (d.Status == DeliveryStatus.Failed &&
+                        d.RetryCount < maxRetries &&
+                        (d.NextRetryAt == null || d.NextRetryAt <= now)))
             .Take(maxCount)
             .ToList();
         return Task.FromResult<ICollection<SharedInboxDeliveryEntity>>(pending);
