@@ -42,6 +42,14 @@ public class Program
             options.SlidingExpiration = true;
         });
 
+        // Register the custom Bearer-token scheme for API authentication while
+        // keeping the Identity cookie scheme as the default (so existing
+        // [Authorize] controllers and cookie sign-in keep working unchanged).
+        builder.Services
+            .AddAuthentication(IdentityConstants.ApplicationScheme)
+            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ActivityPub.WebUI.Auth.BearerTokenAuthenticationHandler>(
+                ActivityPub.WebUI.Auth.BearerTokenAuthConstants.SchemeName, null);
+
         builder.Services.AddActivityPub(configureOptions: null, configureDbContext: opts =>
             opts.UseSqlite(builder.Configuration.GetConnectionString("ActivityPubConnection") ??
                 "Data Source=fediblog_ap.db"));

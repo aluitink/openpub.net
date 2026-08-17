@@ -15,6 +15,8 @@ public class ActivityPubDbContext : DbContext
     public DbSet<OAuth2AccessTokenEntity> AccessTokens { get; set; } = null!;
     public DbSet<OAuth2RefreshTokenEntity> RefreshTokens { get; set; } = null!;
     public DbSet<OAuthClientEntity> OAuthClients { get; set; } = null!;
+    public DbSet<OAuthCodeEntity> OAuthCodes { get; set; } = null!;
+    public DbSet<OAuthTokenEntity> OAuthTokens { get; set; } = null!;
     public DbSet<UserPreferenceEntity> UserPreferences { get; set; } = null!;
     public DbSet<CommunityEntity> Communities { get; set; } = null!;
     public DbSet<CommunityMemberEntity> CommunityMembers { get; set; } = null!;
@@ -320,6 +322,68 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<OAuthClientEntity>()
             .HasIndex(c => c.OwnerActorId);
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .HasKey(c => c.Id);
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .Property(c => c.Code)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .HasIndex(c => c.Code)
+            .IsUnique();
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .Property(c => c.Username)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .Property(c => c.ClientId)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .Property(c => c.Scopes)
+            .IsRequired();
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .Property(c => c.CodeChallenge)
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthCodeEntity>()
+            .HasIndex(c => new { c.Username, c.ClientId });
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .HasKey(t => t.Id);
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .Property(t => t.Token)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .HasIndex(t => t.Token)
+            .IsUnique();
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .Property(t => t.Username)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .Property(t => t.ClientId)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .Property(t => t.Scopes)
+            .IsRequired();
+
+        modelBuilder.Entity<OAuthTokenEntity>()
+            .HasIndex(t => t.Username);
 
         modelBuilder.Entity<UserPreferenceEntity>()
             .HasKey(p => p.Id);

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Repositories;
+using ActivityPub.WebUI.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -93,7 +94,7 @@ public class ApiAppsController : ControllerBase
     /// authentication. The client secret is never re-emitted.
     /// </summary>
     [HttpGet]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = BearerTokenAuthConstants.BothSchemes)]
     [Route("apps")]
     public async Task<IActionResult> List()
     {

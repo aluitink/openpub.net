@@ -1,4 +1,5 @@
 using ActivityPub.Core.Interfaces;
+using ActivityPub.WebUI.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +10,7 @@ namespace ActivityPub.WebUI.Controllers.Api;
 /// Home timeline mirrors the WebUI: the union of the actor's outbox and inbox.
 /// </summary>
 [ApiController]
-[Authorize]
+[Authorize(AuthenticationSchemes = BearerTokenAuthConstants.BothSchemes)]
 [Route("api/v1")]
 [Produces("application/json")]
 public class ApiTimelinesController : ControllerBase

@@ -64,4 +64,54 @@ public class EFCoreApplicationRepository : IApplicationRepository
             .Where(c => c.OwnerActorId == ownerActorId)
             .ToListAsync();
     }
+
+    public async Task<bool> SaveAuthorizationCodeAsync(OAuthCodeEntity code)
+    {
+        if (code == null || string.IsNullOrWhiteSpace(code.Code))
+            return false;
+
+        _context.OAuthCodes.Add(code);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<OAuthCodeEntity?> RedeemAuthorizationCodeAsync(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        var entity = await _context.OAuthCodes
+            .FirstOrDefaultAsync(c => c.Code == code);
+
+        if (entity == null || entity.IsUsed || entity.ExpiresAt < DateTime.UtcNow)
+            return null;
+
+        entity.IsUsed = true;
+        await _context.SaveChangesAsync();
+        return entity;
+    }
+
+    public async Task<bool> SaveAccessTokenAsync(OAuthTokenEntity token)
+    {
+        if (token == null || string.IsNullOrWhiteSpace(token.Token))
+            return false;
+
+        _context.OAuthTokens.Add(token);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<OAuthTokenEntity?> GetAccessTokenAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var entity = await _context.OAuthTokens
+            .FirstOrDefaultAsync(t => t.Token == token);
+
+        if (entity == null || entity.ExpiresAt < DateTime.UtcNow)
+            return null;
+
+        return entity;
+    }
 }

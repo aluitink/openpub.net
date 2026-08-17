@@ -37,4 +37,25 @@ public interface IApplicationRepository
     /// Returns the client applications registered by a given actor.
     /// </summary>
     Task<IReadOnlyList<OAuthClientEntity>> GetByOwnerAsync(string ownerActorId);
+
+    /// <summary>
+    /// Stores a new (unused) OAuth 2.0 authorization code.
+    /// </summary>
+    Task<bool> SaveAuthorizationCodeAsync(OAuthCodeEntity code);
+
+    /// <summary>
+    /// Consumes an authorization code: marks it used and returns it if it is
+    /// still valid (not used, not expired). Returns null otherwise.
+    /// </summary>
+    Task<OAuthCodeEntity?> RedeemAuthorizationCodeAsync(string code);
+
+    /// <summary>
+    /// Persists a new bearer access token.
+    /// </summary>
+    Task<bool> SaveAccessTokenAsync(OAuthTokenEntity token);
+
+    /// <summary>
+    /// Looks up a non-expired access token by its bearer value, or null.
+    /// </summary>
+    Task<OAuthTokenEntity?> GetAccessTokenAsync(string token);
 }

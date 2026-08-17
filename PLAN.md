@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 17, 2026
-**Status:** Phases 1-45 complete. **821/821 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done. Phase 37 T1 done: local Mastodon-compatible REST API under `/api/v1` (statuses/accounts/timelines, numeric status IDs, cookie-session auth, 10 API tests). Phase 37 T2 done: application registration (`POST`/`GET /api/v1/apps`) issuing ClientID/ClientSecret, backed by `OAuthClientEntity` + `IApplicationRepository` (5 API tests). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding).
+**Status:** Phases 1-45 complete. **828/828 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done. Phase 37 T1 done: local Mastodon-compatible REST API under `/api/v1` (statuses/accounts/timelines, numeric status IDs, cookie-session auth, 10 API tests). Phase 37 T2 done: application registration (`POST`/`GET /api/v1/apps`) issuing ClientID/ClientSecret, backed by `OAuthClientEntity` + `IApplicationRepository` (5 API tests). Phase 37 T3 done: OAuth 2.0 PKCE for API auth (`/api/v1/oauth/authorize` + `/api/v1/oauth/token`, Bearer `BearerToken` scheme, 7 API tests). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding).
 
 ---
 
@@ -150,7 +150,7 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 
 1. ✅ Local REST API: `/api/v1/statuses`, `/api/v1/accounts`, `/api/v1/timelines` (Mastodon-compatible DTOs, numeric status IDs, cookie-session auth)
 2. ✅ Application registration flow (ClientID/ClientSecret): `POST /api/v1/apps` issues a client_id + one-time client_secret; `GET /api/v1/apps` lists the caller's apps (secret omitted). Backed by new `OAuthClientEntity` + `IApplicationRepository` (EF + InMemory). 5 API tests.
-3. ⬜ OAuth 2.0 PKCE for API authentication
+3. ✅ OAuth 2.0 PKCE for API authentication: `GET /api/v1/oauth/authorize` (cookie-auth, issues single-use code, 302 redirect) + `POST /api/v1/oauth/token` (authorization_code + PKCE S256/plain, returns Bearer access_token). Username-keyed `OAuthCodeEntity`/`OAuthTokenEntity` + `IApplicationRepository` methods (EF + InMemory). `BearerToken` auth scheme (`BearerTokenAuthenticationHandler`) so API controllers accept cookie **or** Bearer. 7 API tests.
 4. ⬜ API rate limiting with configurable limits per application
 5. ⬜ API documentation (Swagger/OpenAPI)
 6. ⬜ Webhook support for external integrations

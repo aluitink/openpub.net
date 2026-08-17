@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ActivityPub.Core.Interfaces;
+using ActivityPub.WebUI.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -83,7 +84,7 @@ public class ApiStatusesController : ControllerBase
     }
 
     [HttpDelete]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = BearerTokenAuthConstants.BothSchemes)]
     [Route("statuses/{id}")]
     public async Task<IActionResult> Delete(string id)
     {
