@@ -219,6 +219,97 @@ public class RealtimeOptions
 }
 
 /// <summary>
+/// The relational database provider used for persistence.
+/// </summary>
+public enum DatabaseProvider
+{
+    /// <summary>
+    /// SQLite (default). Lightweight, file-based, zero-configuration. Suitable for
+    /// development and single-node deployments.
+    /// </summary>
+    Sqlite = 0,
+
+    /// <summary>
+    /// PostgreSQL. Use for production, multi-instance, or high-throughput
+    /// deployments. Requires a running PostgreSQL server and the connection
+    /// strings in <see cref="DatabaseOptions"/>.
+    /// </summary>
+    Postgresql = 1
+}
+
+/// <summary>
+/// Configuration for the relational database provider and connection strings.
+/// The application uses two databases: one for ASP.NET Core Identity (users and
+/// roles) and one for ActivityPub federation data. When <see cref="Provider"/>
+/// is <see cref="DatabaseProvider.Postgresql"/>, the PostgreSQL connection
+/// strings are used; otherwise the SQLite file paths (derived from
+/// <see cref="DataDirectory"/>) are used.
+/// </summary>
+public class DatabaseOptions
+{
+    /// <summary>
+    /// The relational database provider. Defaults to <see cref="DatabaseProvider.Sqlite"/>.
+    /// </summary>
+    public DatabaseProvider Provider { get; set; } = DatabaseProvider.Sqlite;
+
+    /// <summary>
+    /// Connection string for the Identity database. For SQLite this is a file path
+    /// (e.g. "Data Source=fediblog.db"); for PostgreSQL a full connection string
+    /// (e.g. "Host=localhost;Database=fediblog_identity;Username=ap;Password=...").
+    /// When null, a SQLite file in <see cref="DataDirectory"/> is used.
+    /// </summary>
+    public string? IdentityConnection { get; set; }
+
+    /// <summary>
+    /// Connection string for the ActivityPub federation database. For SQLite this is
+    /// a file path (e.g. "Data Source=fediblog_ap.db"); for PostgreSQL a full
+    /// connection string (e.g. "Host=localhost;Database=fediblog_ap;Username=ap;Password=...").
+    /// When null, a SQLite file in <see cref="DataDirectory"/> is used.
+    /// </summary>
+    public string? FederationConnection { get; set; }
+
+    /// <summary>
+    /// Directory in which SQLite database files are stored when the provider is
+    /// SQLite and no explicit connection string is given. Defaults to the current
+    /// directory.
+    /// </summary>
+    public string DataDirectory { get; set; } = ".";
+
+    /// <summary>
+    /// File name of the Identity SQLite database. Defaults to "fediblog.db".
+    /// </summary>
+    public string IdentityDatabaseFile { get; set; } = "fediblog.db";
+
+    /// <summary>
+    /// File name of the federation SQLite database. Defaults to "fediblog_ap.db".
+    /// </summary>
+    public string FederationDatabaseFile { get; set; } = "fediblog_ap.db";
+
+    /// <summary>
+    /// Resolves the effective connection string for the Identity database, honoring
+    /// the configured provider and falling back to a SQLite file in
+    /// <see cref="DataDirectory"/>.
+    /// </summary>
+    public string GetIdentityConnectionString() =>
+        Provider == DatabaseProvider.Postgresql
+            ? IdentityConnection ?? "Host=localhost;Database=fediblog_identity;Username=ap;Password=ap"
+            : IdentityConnection ?? SqlitePath(IdentityDatabaseFile);
+
+    /// <summary>
+    /// Resolves the effective connection string for the federation database, honoring
+    /// the configured provider and falling back to a SQLite file in
+    /// <see cref="DataDirectory"/>.
+    /// </summary>
+    public string GetFederationConnectionString() =>
+        Provider == DatabaseProvider.Postgresql
+            ? FederationConnection ?? "Host=localhost;Database=fediblog_ap;Username=ap;Password=ap"
+            : FederationConnection ?? SqlitePath(FederationDatabaseFile);
+
+    private string SqlitePath(string fileName) =>
+        $"Data Source={System.IO.Path.Combine(DataDirectory, fileName)}";
+}
+
+/// <summary>
 /// Configuration options for ActivityPub
 /// </summary>
 public class ActivityPubOptions
@@ -314,4 +405,10 @@ public class ActivityPubOptions
     /// Real-time (SignalR) scale-out configuration (see <see cref="RealtimeOptions"/>).
     /// </summary>
     public RealtimeOptions Realtime { get; set; } = new();
+
+    /// <summary>
+    /// Relational database provider and connection strings (see
+    /// <see cref="DatabaseOptions"/>).
+    /// </summary>
+    public DatabaseOptions Database { get; set; } = new();
 }

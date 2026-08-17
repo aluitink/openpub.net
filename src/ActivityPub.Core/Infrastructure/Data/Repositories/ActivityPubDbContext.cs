@@ -27,6 +27,15 @@ public class ActivityPubDbContext : DbContext
     {
     }
 
+    /// <summary>
+    /// Returns the provider-appropriate SQL expression for the current timestamp.
+    /// SQLite uses <c>datetime('now')</c>; PostgreSQL uses <c>now()</c>. This is
+    /// evaluated at model-building time, so the same context definition works
+    /// against either provider.
+    /// </summary>
+    private string NowDefaultSql() =>
+        Database.IsNpgsql() ? "now()" : "datetime('now')";
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActorEntity>()
@@ -43,11 +52,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<ActorEntity>()
             .Property(a => a.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<ActorEntity>()
             .Property(a => a.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<ActivityEntity>()
             .HasKey(a => a.Id);
@@ -63,11 +72,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<ActivityEntity>()
             .Property(a => a.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<ActivityEntity>()
             .Property(a => a.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<ActivityEntity>()
             .HasIndex(a => a.CreatedAt);
@@ -94,11 +103,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<SharedInboxDeliveryEntity>()
             .Property(d => d.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<SharedInboxDeliveryEntity>()
             .Property(d => d.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<SharedInboxDeliveryEntity>()
             .HasIndex(d => d.Status);
@@ -130,11 +139,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<InboxDeadLetterEntity>()
             .Property(d => d.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<InboxDeadLetterEntity>()
             .Property(d => d.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<InboxDeadLetterEntity>()
             .HasIndex(d => d.Status);
@@ -167,11 +176,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<WebhookConfigEntity>()
             .Property(c => c.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<WebhookConfigEntity>()
             .Property(c => c.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<WebhookConfigEntity>()
             .HasIndex(c => new { c.ActorId, c.EventType })
@@ -201,11 +210,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<WebhookDeliveryEntity>()
             .Property(d => d.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<WebhookDeliveryEntity>()
             .Property(d => d.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<WebhookDeliveryEntity>()
             .HasIndex(d => d.Status);
@@ -463,11 +472,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<CommunityEntity>()
             .Property(c => c.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<CommunityEntity>()
             .Property(c => c.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<CommunityEntity>()
             .HasOne(c => c.Owner)
@@ -483,7 +492,7 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<CommunityMemberEntity>()
             .Property(m => m.JoinedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<CommunityMemberEntity>()
             .HasOne(m => m.Community)
@@ -509,11 +518,11 @@ public class ActivityPubDbContext : DbContext
 
         modelBuilder.Entity<FederationPeerEntity>()
             .Property(p => p.CreatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<FederationPeerEntity>()
             .Property(p => p.UpdatedAt)
-            .HasDefaultValueSql("datetime('now')");
+            .HasDefaultValueSql(NowDefaultSql());
 
         modelBuilder.Entity<FederationPeerEntity>()
             .HasIndex(p => p.IsBlocked);

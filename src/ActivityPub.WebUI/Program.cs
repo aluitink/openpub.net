@@ -17,9 +17,23 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ??
-                "Data Source=fediblog.db"));
+        // Relational database provider selection (ActivityPub:Database in
+        // appsettings.json). Defaults to SQLite. When set to "Postgresql" the
+        // Identity and federation contexts are wired against PostgreSQL using the
+        // connection strings configured on DatabaseOptions (falling back to the
+        // "DefaultConnection" / "ActivityPubConnection" connection strings when
+        // present).
+        var dbOptions = builder.Configuration
+            .GetSection("ActivityPub:Database")
+            .Get<ActivityPub.Core.Options.DatabaseOptions>()
+            ?? new ActivityPub.Core.Options.DatabaseOptions();
+
+        var identityConnection =
+            builder.Configuration.GetConnectionString("DefaultConnection") ??
+            dbOptions.GetIdentityConnectionString();
+
+        builder.Services.AddConfiguredDbContext<ApplicationDbContext>(
+            dbOptions.Provider, identityConnection);
 
         builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
         {
@@ -50,9 +64,12 @@ public class Program
             .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ActivityPub.WebUI.Auth.BearerTokenAuthenticationHandler>(
                 ActivityPub.WebUI.Auth.BearerTokenAuthConstants.SchemeName, null);
 
+        var federationConnection =
+            builder.Configuration.GetConnectionString("ActivityPubConnection") ??
+            dbOptions.GetFederationConnectionString();
+
         builder.Services.AddActivityPub(configureOptions: null, configureDbContext: opts =>
-            opts.UseSqlite(builder.Configuration.GetConnectionString("ActivityPubConnection") ??
-                "Data Source=fediblog_ap.db"));
+            opts.ConfigureDatabaseProvider(dbOptions.Provider, federationConnection));
         builder.Services.AddRazorPages();
         builder.Services.AddControllersWithViews();
         builder.Services.AddResponseCaching();
