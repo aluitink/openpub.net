@@ -1,38 +1,48 @@
 @model ICollection<ActivityPub.WebUI.Services.AuditLogEntry>
-
-<div class="page-header">
-    <h1>Audit Log</h1>
-</div>
-
-@if (!Model.Any())
-{
-    <p>No audit log entries.</p>
+@{
+    ViewData["Title"] = "Audit Log";
 }
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Admin</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th>Details</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var entry in Model.OrderByDescending(e => e.Timestamp))
-            {
+
+<div class="admin-page">
+    <div class="page-header">
+        <h1>Audit Log</h1>
+    </div>
+
+    <div class="admin-nav">
+        <a asp-action="Dashboard" class="btn btn-secondary">Dashboard</a>
+        <a asp-action="Users" class="btn btn-secondary">Manage Users</a>
+        <a asp-action="Moderation" class="btn btn-secondary">Moderation</a>
+        <a asp-action="Reports" class="btn btn-secondary">Reports</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p class="empty-state">No audit log entries.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <td>@entry.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
-                    <td>@entry.AdminUsername</td>
-                    <td>@entry.Action</td>
-                    <td>@entry.TargetId</td>
-                    <td>@entry.Details</td>
+                    <th>Timestamp</th>
+                    <th>Admin</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>Details</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
-
-<a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model.OrderByDescending(e => e.Timestamp))
+                {
+                    <tr>
+                        <td>@entry.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@entry.AdminUsername</td>
+                        <td>@entry.Action</td>
+                        <td>@entry.TargetId</td>
+                        <td>@entry.Details</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

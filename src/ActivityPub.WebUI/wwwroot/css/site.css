@@ -1802,7 +1802,7 @@ footer {
 }
 
 /* Admin Styles */
-.admin-dashboard, .admin-users, .admin-moderation {
+.admin-dashboard, .admin-users, .admin-moderation, .admin-page {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1rem;
@@ -1817,16 +1817,17 @@ footer {
 
 .stat-card {
     background: var(--color-surface);
-    border-radius: 8px;
+    border-radius: var(--card-radius);
     padding: 1.5rem;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border-light);
 }
 
 .stat-value {
     font-size: 2rem;
     font-weight: 700;
-    color: #4a90d9;
+    color: var(--color-accent);
 }
 
 .stat-label {
@@ -1838,16 +1839,26 @@ footer {
 .admin-nav {
     display: flex;
     gap: 0.5rem;
+    flex-wrap: wrap;
     margin: 1.5rem 0;
+}
+
+.admin-card {
+    background: var(--color-surface);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+    margin: 1rem 0;
 }
 
 .admin-table {
     width: 100%;
     border-collapse: collapse;
     background: var(--color-surface);
-    border-radius: 8px;
+    border-radius: var(--card-radius);
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border-light);
     margin: 1rem 0;
 }
 
@@ -1857,17 +1868,17 @@ footer {
     text-align: left;
     font-size: 0.85rem;
     color: var(--color-text-secondary);
-    border-bottom: 2px solid #e9ecef;
+    border-bottom: 2px solid var(--color-border);
 }
 
 .admin-table td {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--color-border-light);
     font-size: 0.9rem;
 }
 
 .admin-table tr.blocked-row {
-    background: #fff5f5;
+    background: color-mix(in srgb, var(--color-danger, #e74c3c) 8%, var(--color-surface));
 }
 
 .admin-table .action-cell {
@@ -3043,6 +3054,8 @@ footer {
 :root[data-theme="dark"] .report-card,
 :root[data-theme="dark"] .notification-item,
 :root[data-theme="dark"] .admin-card,
+:root[data-theme="dark"] .admin-table,
+:root[data-theme="dark"] .stat-card,
 :root[data-theme="dark"] .settings-card,
 :root[data-theme="dark"] .compose-box,
 :root[data-theme="dark"] .compose-footer,
@@ -3086,6 +3099,20 @@ footer {
 
 :root[data-theme="dark"] .community-card-footer {
     border-top-color: var(--dark-border-light);
+}
+
+:root[data-theme="dark"] .admin-table th {
+    background-color: var(--dark-surface-alt);
+    border-bottom-color: var(--dark-border);
+    color: var(--dark-text-secondary);
+}
+
+:root[data-theme="dark"] .admin-table td {
+    border-bottom-color: var(--dark-border-light);
+}
+
+:root[data-theme="dark"] .stat-card {
+    border-color: var(--dark-border);
 }
 
 :root[data-theme="dark"] .community-summary {

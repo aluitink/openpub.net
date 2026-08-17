@@ -1,53 +1,63 @@
 @model ICollection<ActivityPub.WebUI.Services.UserReport>
-
-<div class="page-header">
-    <h1>Pending Reports</h1>
-</div>
-
-@if (!Model.Any())
-{
-    <p>No pending reports.</p>
+@{
+    ViewData["Title"] = "Reports";
 }
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Reporter</th>
-                <th>Target</th>
-                <th>Reason</th>
-                <th>Activity</th>
-                <th>Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var report in Model)
-            {
+
+<div class="admin-page">
+    <div class="page-header">
+        <h1>Pending Reports</h1>
+    </div>
+
+    <div class="admin-nav">
+        <a asp-action="Dashboard" class="btn btn-secondary">Dashboard</a>
+        <a asp-action="Users" class="btn btn-secondary">Manage Users</a>
+        <a asp-action="Moderation" class="btn btn-secondary">Moderation</a>
+        <a asp-action="AuditLog" class="btn btn-secondary">Audit Log</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p class="empty-state">No pending reports.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <td>@report.Id</td>
-                    <td>@report.ReporterUsername</td>
-                    <td>@report.TargetUsername</td>
-                    <td>@report.Reason</td>
-                    <td>@(report.ActivityId ?? "N/A")</td>
-                    <td>@report.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                    <td>
-                        <form asp-action="DismissReport" method="post" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="reportId" value="@report.Id" />
-                            <button type="submit" class="btn btn-sm btn-secondary">Dismiss</button>
-                        </form>
-                        <form asp-action="TakeActionReport" method="post" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="reportId" value="@report.Id" />
-                            <button type="submit" class="btn btn-sm btn-danger">Take Action</button>
-                        </form>
-                    </td>
+                    <th>ID</th>
+                    <th>Reporter</th>
+                    <th>Target</th>
+                    <th>Reason</th>
+                    <th>Activity</th>
+                    <th>Date</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
-
-<a asp-action="Moderation" class="btn btn-secondary">Back to Moderation</a>
+            </thead>
+            <tbody>
+                @foreach (var report in Model)
+                {
+                    <tr>
+                        <td>@report.Id</td>
+                        <td>@report.ReporterUsername</td>
+                        <td>@report.TargetUsername</td>
+                        <td>@report.Reason</td>
+                        <td>@(report.ActivityId ?? "N/A")</td>
+                        <td>@report.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="action-cell">
+                            <form asp-action="DismissReport" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="reportId" value="@report.Id" />
+                                <button type="submit" class="btn btn-sm btn-secondary">Dismiss</button>
+                            </form>
+                            <form asp-action="TakeActionReport" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="reportId" value="@report.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger">Take Action</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
