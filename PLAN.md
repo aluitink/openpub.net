@@ -26,7 +26,7 @@ Make the timeline and interactions feel instant.
 2. ✅ Defer non-critical note cards; audit `fetchpriority`/`loading="lazy"` on images — every `<img>` now has an explicit loading/fetchpriority strategy + dimensions; note images reserve a stable box (aspect-ratio + min-height) so lazy loads cause no layout shift.
 3. ✅ `prefers-reduced-motion: reduce` block in `site.css` zeroes animation/transition durations and scroll-behavior.
 4. ⬜ Measure LCP/TTI on home timeline via delegated subagent (before/after screenshots + JS perf snapshot).
-5. ⬜ Consolidate the 3 JS files + inline scripts into a small module loader (no framework); dedupe SignalR bootstrap.
+ 5. ✅ Consolidate all JS into a single `window.FB` module loader (`app.js`) + feature modules (`menu.js`, `compose.js`, `poll.js`, `search.js`, `suggestions.js`); `theme.js` bootstraps dark mode pre-SSR; SignalR CDN script deduped in the layout.
 
 ### Phase 47: Responsive & Mobile-First
 1. ⬜ Audit every page at 320 / 768 / 1024 / 1440px via delegated Playwright; fix overflow, touch-target (<44px), font-size issues.
