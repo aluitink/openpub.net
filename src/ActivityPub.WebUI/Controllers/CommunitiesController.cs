@@ -94,11 +94,11 @@ public class CommunitiesController : Controller
     }
 
     [HttpGet]
-    [Route("{communityId}")]
-    public async Task<IActionResult> Show(string communityId)
+    [Route("show")]
+    public async Task<IActionResult> Show([FromQuery] string? communityId)
     {
-        if (communityId is "create" or "my" or "search")
-            return RedirectToAction(communityId == "create" ? "Create" : communityId == "my" ? "MyCommunities" : "Search");
+        if (string.IsNullOrEmpty(communityId))
+            return RedirectToAction("Index");
 
         var community = await _communityService.GetCommunityByIdAsync(communityId);
         if (community == null) return NotFound();
@@ -119,9 +119,11 @@ public class CommunitiesController : Controller
     }
 
     [HttpPost]
-    [Route("{communityId}/join")]
-    public async Task<IActionResult> Join(string communityId)
+    [Route("join")]
+    public async Task<IActionResult> Join([FromQuery] string? communityId)
     {
+        if (string.IsNullOrEmpty(communityId)) return RedirectToAction("Index");
+
         var currentUser = await GetCurrentActorId();
         if (currentUser == null) return RedirectToAction("Index");
 
@@ -130,9 +132,11 @@ public class CommunitiesController : Controller
     }
 
     [HttpPost]
-    [Route("{communityId}/leave")]
-    public async Task<IActionResult> Leave(string communityId)
+    [Route("leave")]
+    public async Task<IActionResult> Leave([FromQuery] string? communityId)
     {
+        if (string.IsNullOrEmpty(communityId)) return RedirectToAction("Index");
+
         var currentUser = await GetCurrentActorId();
         if (currentUser == null) return RedirectToAction("Index");
 
@@ -141,9 +145,11 @@ public class CommunitiesController : Controller
     }
 
     [HttpPost]
-    [Route("{communityId}/delete")]
-    public async Task<IActionResult> Delete(string communityId)
+    [Route("delete")]
+    public async Task<IActionResult> Delete([FromQuery] string? communityId)
     {
+        if (string.IsNullOrEmpty(communityId)) return RedirectToAction("Index");
+
         var currentUser = await GetCurrentActorId();
         if (currentUser == null) return RedirectToAction("Index");
 

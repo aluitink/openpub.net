@@ -55,20 +55,23 @@
         <div class="community-actions">
             @if (!Model.IsMember)
             {
-                <form asp-action="Join" asp-route-communityId="@Model.Community.Id" method="post" class="inline-form">
+                <form asp-action="Join" method="post" class="inline-form">
+                    <input type="hidden" name="communityId" value="@Model.Community.Id" />
                     <button type="submit" class="btn btn-primary">Join</button>
                 </form>
             }
             else if (!Model.IsOwner)
             {
-                <form asp-action="Leave" asp-route-communityId="@Model.Community.Id" method="post" class="inline-form">
+                <form asp-action="Leave" method="post" class="inline-form">
+                    <input type="hidden" name="communityId" value="@Model.Community.Id" />
                     <button type="submit" class="btn btn-secondary">Leave</button>
                 </form>
             }
             @if (Model.IsOwner)
             {
-                <form asp-action="Delete" asp-route-communityId="@Model.Community.Id" method="post" class="inline-form"
+                <form asp-action="Delete" method="post" class="inline-form"
                       onsubmit="return confirm('Are you sure you want to delete this community?')">
+                    <input type="hidden" name="communityId" value="@Model.Community.Id" />
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             }

@@ -40,6 +40,7 @@
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
     --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
 
     /* Type scale */
     --font-xs: 0.75rem;
@@ -104,6 +105,7 @@
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
     --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.35);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -2100,6 +2102,108 @@ footer {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
+}
+
+/* --- Filter tabs (period selectors etc.) --- */
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0 1.5rem;
+}
+
+.filter-tab {
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.filter-tab:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.filter-tab.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
+
+/* --- Trends / Discover cards --- */
+.trends-container {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.trends-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.trend-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--color-surface);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-card);
+    padding: 0.9rem 1rem;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.trend-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    color: var(--color-text);
+}
+
+.trend-rank {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: var(--font-sm);
+}
+
+.trend-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.trend-card .hashtag-name {
+    font-weight: 600;
+    color: var(--color-accent);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trend-card .hashtag-count {
+    color: var(--color-text-muted);
+    font-size: var(--font-xs);
+}
+
+.trend-time {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-xs);
 }
 
 .card {

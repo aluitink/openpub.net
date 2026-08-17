@@ -41,7 +41,7 @@
                         }
                     </div>
                     <div class="community-card-info">
-                        <a asp-action="Show" asp-route-communityId="@community.Id" class="card-title">@community.Name</a>
+                        <a href="/communities/show?communityId=@Uri.EscapeDataString(community.Id)" class="card-title">@community.Name</a>
                         @if (!string.IsNullOrEmpty(community.Summary))
                         {
                             <p class="card-summary">@community.Summary</p>
