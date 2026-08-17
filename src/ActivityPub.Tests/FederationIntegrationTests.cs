@@ -20,6 +20,7 @@ using ActivityPub.Core.Caching;
 using ActivityPub.Core.Tests;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
@@ -388,134 +389,214 @@ public class FederationIntegrationTests : IClassFixture<TestWebApplicationFactor
     [Fact]
     public async Task HttpSignature_ValidSignature_IsAccepted()
     {
-        // Arrange
+        // A validly signed inbox delivery (signed with the production outbound
+        // signer) must pass through to the next middleware.
         var keyPair = RSA.Create(2048);
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var headersToSign = "(created)";
-        var stringToSign = $"{headersToSign}: {timestamp}";
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(stringToSign));
-        var signatureBytes = keyPair.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        var signature = Convert.ToBase64String(signatureBytes);
+        var privateKeyPem = keyPair.ExportPkcs8PrivateKeyPem();
+        var publicKeyPem = keyPair.ExportSubjectPublicKeyInfoPem();
+        const string host = "localhost";
+        const string path = "/users/test/inbox";
+        const string keyId = "https://localhost/users/test#main-key";
+        var body = """{"type":"Create"}""";
+        var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
+        // Build and sign an outbound request the way production does.
+        var outbound = new HttpRequestMessage(HttpMethod.Post, $"https://{host}{path}");
+        outbound.Content = new StringContent(body, Encoding.UTF8, "application/activity+json");
+        outbound.Headers.Date = DateTimeOffset.FromUnixTimeSeconds(created).UtcDateTime;
+        var signer = new OutboundSigningService(Mock.Of<ILogger<OutboundSigningService>>());
+        signer.SignRequest(outbound, privateKeyPem, keyId, host);
+
+        // Reconstruct the inbound context from the signed outbound request.
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
-        context.Request.Path = "/users/test/inbox";
-        context.Request.Body = new MemoryStream(new byte[] { (byte)'{', (byte)'}' });
-        context.Request.Body.Position = 0;
+        context.Request.Path = path;
+        context.Request.Headers["Host"] = host;
+        context.Request.ContentType = "application/activity+json";
+        var bodyBytes = Encoding.UTF8.GetBytes(body);
+        context.Request.Body = new MemoryStream(bodyBytes);
+        context.Request.EnableBuffering();
+        context.Request.Headers["Date"] = outbound.Headers.Date?.ToString("R", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        if (outbound.Headers.TryGetValues("Digest", out var digestValues))
+        {
+            context.Request.Headers["Digest"] = digestValues.FirstOrDefault() ?? "";
+        }
+        context.Request.Headers["Authorization"] = $"{outbound.Headers.Authorization?.Scheme} {outbound.Headers.Authorization?.Parameter}";
+        context.Request.Headers["created"] = created.ToString();
 
-        // Set up headers with parentheses using indexer (bypasses validation)
-        context.Request.Headers["Host"] = "localhost";
-        context.Request.Headers["(created)"] = timestamp.ToString();
-        context.Request.Headers["(expires)"] = (timestamp + 300).ToString();
-        context.Request.Headers["Signature"] = $"keyId=\"test\",headers=\"(created)\",signature=\"{signature}\"";
-
-        // Set up mock key fetching service
         var services = new ServiceCollection();
         var mockKeyFetcher = new Mock<IKeyFetchingService>();
-        var publicKeyDer = keyPair.ExportSubjectPublicKeyInfo();
-        var publicKeyPem = $"-----BEGIN PUBLIC KEY-----\n{Convert.ToBase64String(publicKeyDer, Base64FormattingOptions.InsertLineBreaks)}\n-----END PUBLIC KEY-----";
-        mockKeyFetcher.Setup(s => s.FetchPublicKeyAsync("test")).ReturnsAsync(new PublicKey
+        mockKeyFetcher.Setup(s => s.FetchPublicKeyAsync(keyId)).ReturnsAsync(new PublicKey
         {
-            Id = "test",
-            Owner = "https://localhost/test",
+            Id = keyId,
+            Owner = "https://localhost/users/test",
             PublicKeyPem = publicKeyPem
         });
         services.AddSingleton(mockKeyFetcher.Object);
         context.RequestServices = services.BuildServiceProvider();
 
-        var logger = Mock.Of<ILogger<HttpSignatureMiddleware>>();
+        var options = new ActivityPub.Core.Options.ActivityPubOptions { EnableSignatureVerification = true, RequireSignatures = false };
         var middleware = new HttpSignatureMiddleware(
             next: _ => Task.CompletedTask,
-            logger
-        );
+            Mock.Of<ILogger<HttpSignatureMiddleware>>(),
+            Options.Create(options));
 
-        // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
+        // Accepted: no rejection status is written.
         Assert.Equal(200, context.Response.StatusCode);
+        Assert.False(context.Response.HasStarted);
     }
 
     [Fact]
     public async Task HttpSignature_ExpiredSignature_IsRejected()
     {
-        // Arrange
-        var expiredTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 400;
+        // A signature whose 'created' timestamp is far in the past must be
+        // rejected with 403 (replay protection), before any key lookup.
+        var keyPair = RSA.Create(2048);
+        var privateKeyPem = keyPair.ExportPkcs8PrivateKeyPem();
+        var publicKeyPem = keyPair.ExportSubjectPublicKeyInfoPem();
+        const string host = "localhost";
+        const string path = "/users/test/inbox";
+        const string keyId = "https://localhost/users/test#main-key";
+        var body = """{"type":"Create"}""";
+        var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 400; // 400s old (> 300s skew)
+
+        var outbound = new HttpRequestMessage(HttpMethod.Post, $"https://{host}{path}");
+        outbound.Content = new StringContent(body, Encoding.UTF8, "application/activity+json");
+        outbound.Headers.Date = DateTimeOffset.FromUnixTimeSeconds(created).UtcDateTime;
+        var signer = new OutboundSigningService(Mock.Of<ILogger<OutboundSigningService>>());
+        signer.SignRequest(outbound, privateKeyPem, keyId, host);
 
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
-        context.Request.Path = "/users/test/inbox";
-        context.Request.Headers["Host"] = "localhost";
-        context.Request.Headers["(created)"] = expiredTimestamp.ToString();
-        context.Request.Headers["(expires)"] = (expiredTimestamp + 300).ToString();
-        context.Request.Headers["Signature"] = "keyId=\"test\",headers=\"(created)\",signature=\"fake\"";
+        context.Request.Path = path;
+        context.Request.Headers["Host"] = host;
+        context.Request.ContentType = "application/activity+json";
+        var bodyBytes = Encoding.UTF8.GetBytes(body);
+        context.Request.Body = new MemoryStream(bodyBytes);
+        context.Request.EnableBuffering();
+        context.Request.Headers["Date"] = outbound.Headers.Date?.ToString("R", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        if (outbound.Headers.TryGetValues("Digest", out var digestValues))
+        {
+            context.Request.Headers["Digest"] = digestValues.FirstOrDefault() ?? "";
+        }
+        context.Request.Headers["Authorization"] = $"{outbound.Headers.Authorization?.Scheme} {outbound.Headers.Authorization?.Parameter}";
+        context.Request.Headers["created"] = created.ToString(); // stale
 
         var services = new ServiceCollection();
         var mockKeyFetcher = new Mock<IKeyFetchingService>();
+        mockKeyFetcher.Setup(s => s.FetchPublicKeyAsync(keyId)).ReturnsAsync(new PublicKey { Id = keyId, PublicKeyPem = publicKeyPem });
         services.AddSingleton(mockKeyFetcher.Object);
         context.RequestServices = services.BuildServiceProvider();
 
-        var logger = Mock.Of<ILogger<HttpSignatureMiddleware>>();
+        var options = new ActivityPub.Core.Options.ActivityPubOptions { EnableSignatureVerification = true, RequireSignatures = false };
         var middleware = new HttpSignatureMiddleware(
             next: _ => Task.CompletedTask,
-            logger
-        );
+            Mock.Of<ILogger<HttpSignatureMiddleware>>(),
+            Options.Create(options));
 
-        // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
         Assert.Equal(403, context.Response.StatusCode);
     }
 
     [Fact]
-    public async Task HttpSignature_MissingSignature_IsRejected()
+    public async Task HttpSignature_MissingSignature_IsRejected_WhenRequired()
     {
-        // Arrange
+        // With RequireSignatures enabled (production posture) an unsigned inbox
+        // delivery must be rejected with 401.
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
         context.Request.Path = "/users/test/inbox";
         context.Request.Headers["Host"] = "localhost";
 
-        var logger = Mock.Of<ILogger<HttpSignatureMiddleware>>();
+        var options = new ActivityPub.Core.Options.ActivityPubOptions { EnableSignatureVerification = true, RequireSignatures = true };
         var middleware = new HttpSignatureMiddleware(
             next: _ => Task.CompletedTask,
-            logger
-        );
+            Mock.Of<ILogger<HttpSignatureMiddleware>>(),
+            Options.Create(options));
 
-        // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
         Assert.Equal(401, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task HttpSignature_MissingSignature_IsTolerated_WhenNotRequired()
+    {
+        // With RequireSignatures disabled (local-dev posture) an unsigned inbox
+        // delivery is tolerated and passes through.
+        var context = new DefaultHttpContext();
+        context.Request.Method = "POST";
+        context.Request.Path = "/users/test/inbox";
+        context.Request.Headers["Host"] = "localhost";
+
+        var options = new ActivityPub.Core.Options.ActivityPubOptions { EnableSignatureVerification = true, RequireSignatures = false };
+        var middleware = new HttpSignatureMiddleware(
+            next: _ => Task.CompletedTask,
+            Mock.Of<ILogger<HttpSignatureMiddleware>>(),
+            Options.Create(options));
+
+        await middleware.InvokeAsync(context);
+
+        // Tolerated: no rejection is written.
+        Assert.Equal(200, context.Response.StatusCode);
+        Assert.False(context.Response.HasStarted);
     }
 
     [Fact]
     public async Task HttpSignature_InvalidSignature_IsRejected()
     {
-        // Arrange
+        // A signature that does not verify against the resolved public key must
+        // be rejected with 401.
+        var keyPair = RSA.Create(2048);
+        var privateKeyPem = keyPair.ExportPkcs8PrivateKeyPem();
+        // Use a *different* key pair for verification so the signature is invalid.
+        var otherKeyPair = RSA.Create(2048);
+        var publicKeyPem = otherKeyPair.ExportSubjectPublicKeyInfoPem();
+        const string host = "localhost";
+        const string path = "/users/test/inbox";
+        const string keyId = "https://localhost/users/test#main-key";
+        var body = """{"type":"Create"}""";
+        var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        var outbound = new HttpRequestMessage(HttpMethod.Post, $"https://{host}{path}");
+        outbound.Content = new StringContent(body, Encoding.UTF8, "application/activity+json");
+        outbound.Headers.Date = DateTimeOffset.FromUnixTimeSeconds(created).UtcDateTime;
+        var signer = new OutboundSigningService(Mock.Of<ILogger<OutboundSigningService>>());
+        signer.SignRequest(outbound, privateKeyPem, keyId, host);
+
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
-        context.Request.Path = "/users/test/inbox";
-        context.Request.Headers["Host"] = "localhost";
-        context.Request.Headers["(created)"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        context.Request.Headers["Signature"] = "keyId=\"test\",headers=\"(created)\",signature=\"invalidsignature123\"";
+        context.Request.Path = path;
+        context.Request.Headers["Host"] = host;
+        context.Request.ContentType = "application/activity+json";
+        var bodyBytes = Encoding.UTF8.GetBytes(body);
+        context.Request.Body = new MemoryStream(bodyBytes);
+        context.Request.EnableBuffering();
+        context.Request.Headers["Date"] = outbound.Headers.Date?.ToString("R", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        if (outbound.Headers.TryGetValues("Digest", out var digestValues))
+        {
+            context.Request.Headers["Digest"] = digestValues.FirstOrDefault() ?? "";
+        }
+        context.Request.Headers["Authorization"] = $"{outbound.Headers.Authorization?.Scheme} {outbound.Headers.Authorization?.Parameter}";
+        context.Request.Headers["created"] = created.ToString();
 
         var services = new ServiceCollection();
         var mockKeyFetcher = new Mock<IKeyFetchingService>();
+        mockKeyFetcher.Setup(s => s.FetchPublicKeyAsync(keyId)).ReturnsAsync(new PublicKey { Id = keyId, PublicKeyPem = publicKeyPem });
         services.AddSingleton(mockKeyFetcher.Object);
         context.RequestServices = services.BuildServiceProvider();
 
-        var logger = Mock.Of<ILogger<HttpSignatureMiddleware>>();
+        var options = new ActivityPub.Core.Options.ActivityPubOptions { EnableSignatureVerification = true, RequireSignatures = false };
         var middleware = new HttpSignatureMiddleware(
             next: _ => Task.CompletedTask,
-            logger
-        );
+            Mock.Of<ILogger<HttpSignatureMiddleware>>(),
+            Options.Create(options));
 
-        // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
         Assert.Equal(401, context.Response.StatusCode);
     }
 

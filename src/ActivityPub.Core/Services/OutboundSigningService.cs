@@ -40,8 +40,26 @@ public class OutboundSigningService : IOutboundSigningService
                 ? request.Content.ReadAsStringAsync().Result
                 : string.Empty;
 
-            // Define headers to sign (per ActivityPub spec)
-            var headersToSign = new List<string> { "(request-target)", "host", "date", "digest" };
+            // Ensure the headers we are about to cover actually exist on the
+            // request *before* we build the signature string, so the signed
+            // content and the 'headers' parameter stay in agreement.
+            if (!request.Headers.Date.HasValue)
+            {
+                request.Headers.Date = DateTime.UtcNow;
+            }
+
+            // Add the Digest header (SHA-256 of the body) when there is a body.
+            if (!string.IsNullOrEmpty(body) && !request.Headers.TryGetValues("Digest", out _))
+            {
+                request.Headers.Add("Digest", ComputeDigest(body));
+            }
+
+            // Add Host header
+            request.Headers.Host = hostname;
+
+            // Covered components, in the exact order they appear in the signed
+            // string. 'digest' is only covered when a body is present.
+            var headersToSign = new List<string> { "(request-target)", "host", "date" };
             if (!string.IsNullOrEmpty(body))
             {
                 headersToSign.Add("digest");
@@ -56,22 +74,6 @@ public class OutboundSigningService : IOutboundSigningService
             // Add Authorization header
             var authHeader = CreateAuthorizationHeader(keyId, headersToSign, signature);
             request.Headers.Authorization = new AuthenticationHeaderValue("Signature", authHeader);
-
-            // Add Date header if not present
-            if (!request.Headers.Date.HasValue)
-            {
-                request.Headers.Date = DateTime.UtcNow;
-            }
-
-            // Add Digest header for body
-            if (!string.IsNullOrEmpty(body))
-            {
-                var digest = ComputeDigest(body);
-                request.Headers.Add("Digest", digest);
-            }
-
-            // Add Host header
-            request.Headers.Host = hostname;
         }
         catch (Exception ex)
         {
@@ -81,31 +83,29 @@ public class OutboundSigningService : IOutboundSigningService
     }
 
     /// <summary>
-    /// Creates the signature string from request components
+    /// Creates the signature string from the covered components, in the exact
+    /// order they appear in <paramref name="headers"/>. Each line is
+    /// <c>name: value</c>, joined by newlines — matching the W3C
+    /// draft-cavage-http-signatures construction and the verifier.
     /// </summary>
     private string CreateSignatureString(HttpRequestMessage request, List<string> headers, string hostname)
     {
         var signatureLines = new List<string>();
 
-        // (request-target) line
-        var requestTarget = $"{request.Method.ToString().ToLowerInvariant()} {request.RequestUri?.PathAndQuery}";
-        signatureLines.Add($"(request-target): {requestTarget}");
-
-        // Host header
-        signatureLines.Add($"host: {hostname}");
-
-        // Date header
-        if (request.Headers.Date.HasValue)
+        foreach (var header in headers)
         {
-            signatureLines.Add($"date: {request.Headers.Date.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}");
-        }
-
-        // Digest header (SHA-256 of body)
-        if (request.Content != null)
-        {
-            var body = request.Content.ReadAsStringAsync().Result;
-            var digest = ComputeDigest(body);
-            signatureLines.Add($"digest: {digest}");
+            var value = header switch
+            {
+                "(request-target)" =>
+                    $"{request.Method.ToString().ToLowerInvariant()} {request.RequestUri?.PathAndQuery}",
+                "host" => hostname,
+                "date" => request.Headers.Date?.ToString("R", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                "digest" => request.Headers.TryGetValues("Digest", out var digestValues)
+                    ? digestValues.FirstOrDefault() ?? string.Empty
+                    : string.Empty,
+                _ => string.Empty,
+            };
+            signatureLines.Add($"{header}: {value}");
         }
 
         return string.Join("\n", signatureLines);

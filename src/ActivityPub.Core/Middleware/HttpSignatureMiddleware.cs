@@ -1,60 +1,97 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
-using ActivityPub.Core.Services;
 using ActivityPub.Core.Models;
+using ActivityPub.Core.Options;
+using ActivityPub.Core.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 
 namespace ActivityPub.Core.Middleware;
 
 /// <summary>
-/// Middleware for verifying HTTP signatures according to W3C draft-cavage-http-signatures-12 spec
+/// Middleware for verifying HTTP signatures on incoming ActivityPub activity
+/// deliveries, per the W3C draft-cavage-http-signatures spec.
+///
+/// Verification posture (driven by <see cref="ActivityPubOptions"/>):
+///   * <c>EnableSignatureVerification == false</c>: verification is skipped entirely
+///     (pass-through). This is the "federation off" posture.
+///   * <c>EnableSignatureVerification == true, RequireSignatures == false</c>:
+///     a present signature is verified and the request is rejected if it is
+///     invalid; an absent signature is tolerated (logged). This preserves local
+///     development / testing where posts are unsigned while still rejecting
+///     tampered or forged signed deliveries.
+///   * <c>EnableSignatureVerification == true, RequireSignatures == true</c>:
+///     every inbox delivery must carry a valid signature; unsigned requests are
+///     rejected with 401. This is the full production federation posture.
 /// </summary>
 public class HttpSignatureMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<HttpSignatureMiddleware> _logger;
-    private static readonly HashSet<string> _allowedHeaders = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "digest",
-        "created",
-        "expires"
-    };
+    private readonly ActivityPubOptions _options;
 
-    public HttpSignatureMiddleware(RequestDelegate next, ILogger<HttpSignatureMiddleware> logger)
+    public HttpSignatureMiddleware(
+        RequestDelegate next,
+        ILogger<HttpSignatureMiddleware> logger,
+        IOptions<ActivityPubOptions>? options = null)
     {
         _next = next;
         _logger = logger;
+        _options = options?.Value ?? new ActivityPubOptions();
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Only process POST requests to inbox endpoints
-        if (context.Request.Method == "POST" && context.Request.Path.StartsWithSegments("/users"))
+        // Only enforce on inbound activity deliveries: POST to an inbox endpoint.
+        if (context.Request.Method == "POST" && IsInboxPath(context.Request.Path))
         {
+            // Verification disabled: pass through (federation off posture).
+            if (!_options.EnableSignatureVerification)
+            {
+                await _next(context);
+                return;
+            }
+
+            // No signature present.
+            var signatureHeader = GetRawSignatureHeader(context);
+            if (string.IsNullOrEmpty(signatureHeader))
+            {
+                if (_options.RequireSignatures)
+                {
+                    _logger.LogWarning(
+                        "Rejecting unsigned inbox delivery to {Path} (RequireSignatures is enabled)",
+                        context.Request.Path);
+                    await RejectAsync(context, 401, "Unauthorized: HTTP signature is required");
+                    return;
+                }
+
+                // Tolerate unsigned (local dev / testing) but log it.
+                _logger.LogWarning(
+                    "Inbox delivery to {Path} had no HTTP signature; accepting (RequireSignatures is disabled)",
+                    context.Request.Path);
+                await _next(context);
+                return;
+            }
+
             try
             {
-                if (IsInboxPath(context.Request.Path))
+                var (status, message) = await VerifyHttpSignatureAsync(context, signatureHeader);
+                if (status != 200)
                 {
-                    if (!await VerifyHttpSignatureAsync(context))
-                    {
-                        if (context.Response.StatusCode < 400)
-                        {
-                            context.Response.StatusCode = 401;
-                        }
-                        _logger.LogWarning("HTTP signature verification failed for request to {Path}", context.Request.Path);
-                        await WriteResponseAsync(context, "Unauthorized: Invalid HTTP signature");
-                        return;
-                    }
+                    _logger.LogWarning(
+                        "HTTP signature verification failed for {Path}: {Message}",
+                        context.Request.Path, message);
+                    await RejectAsync(context, status, $"Unauthorized: {message}");
+                    return;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing HTTP signature for request to {Path}", context.Request.Path);
-                context.Response.StatusCode = 401;
-                await WriteResponseAsync(context, "Unauthorized: Error processing signature");
+                await RejectAsync(context, 401, "Unauthorized: Error processing signature");
                 return;
             }
         }
@@ -62,116 +99,118 @@ public class HttpSignatureMiddleware
         await _next(context);
     }
 
-    private bool IsInboxPath(PathString path)
+    /// <summary>
+    /// Returns true when the path is an ActivityPub inbox endpoint
+    /// (e.g. /users/{name}/inbox or /inbox or /shared-inbox).
+    /// </summary>
+    private static bool IsInboxPath(PathString path)
     {
-        var segments = path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return segments?.Length >= 3 && segments[segments.Length - 1] == "inbox";
-    }
-
-    private async Task<bool> VerifyHttpSignatureAsync(HttpContext context)
-    {
-        var signatureHeader = context.Request.Headers["Signature"].FirstOrDefault();
-        if (string.IsNullOrEmpty(signatureHeader))
-        {
-            signatureHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-            if (string.IsNullOrEmpty(signatureHeader) || !signatureHeader.StartsWith("Signature ", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-            signatureHeader = signatureHeader.Substring(10);
-        }
-
-        if (string.IsNullOrEmpty(signatureHeader))
+        var value = path.Value;
+        if (string.IsNullOrEmpty(value))
         {
             return false;
         }
 
-        try
+        if (value is "/inbox" or "/shared-inbox")
         {
-            var signatureParams = ParseSignatureHeader(signatureHeader);
-
-            if (!signatureParams.ContainsKey("keyId") || !signatureParams.ContainsKey("signature"))
-            {
-                return false;
-            }
-
-            // Check replay protection (created/expired) before fetching public key
-            // This ensures expired signatures are rejected with 403 even if key fetch fails
-            if (!ValidateReplayProtection(context, signatureParams))
-            {
-                context.Response.StatusCode = 403;
-                return false;
-            }
-
-            var publicKey = await GetPublicKeyForVerificationAsync(context, signatureParams["keyId"]);
-            if (publicKey == null)
-            {
-                return false;
-            }
-
-            var signedContent = await CreateSignedContentAsync(context, signatureParams);
-            if (string.IsNullOrEmpty(signedContent))
-            {
-                return false;
-            }
-
-            if (!VerifySignature(signedContent, signatureParams["signature"], publicKey.PublicKeyPem))
-            {
-                context.Response.StatusCode = 401;
-                return false;
-            }
-
             return true;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error verifying HTTP signature");
-            return false;
-        }
+
+        var segments = value.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length >= 3 && segments[^1] == "inbox";
     }
 
-    private bool ValidateReplayProtection(HttpContext context, Dictionary<string, string> signatureParams)
+    /// <summary>
+    /// Reads the signature from the dedicated <c>Signature</c> header, or from
+    /// an <c>Authorization: Signature ...</c> header (the form our outbound
+    /// signer produces). Returns the parameter string (without the "Signature"
+    /// scheme prefix) or null when absent.
+    /// </summary>
+    private static string? GetRawSignatureHeader(HttpContext context)
     {
-        const int maxTimeSkewSeconds = 300;
-        bool hasCreated = false;
-        bool hasExpires = false;
-        long created = 0;
-        long expires = 0;
-
-        // Check signature params first (created=, expires= in Signature header)
-        if (signatureParams.TryGetValue("created", out var createdStr) && long.TryParse(createdStr, out created))
+        var signatureHeader = context.Request.Headers["Signature"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(signatureHeader))
         {
-            hasCreated = true;
+            return signatureHeader;
         }
 
-        if (signatureParams.TryGetValue("expires", out var expiresStr) && long.TryParse(expiresStr, out expires))
+        var authorization = context.Request.Headers["Authorization"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(authorization) &&
+            authorization.StartsWith("Signature ", StringComparison.OrdinalIgnoreCase))
         {
-            hasExpires = true;
+            return authorization.Substring("Signature ".Length);
         }
 
-        // If not in signature params, check HTTP headers ((created), (expires))
-        if (!hasCreated && context.Request.Headers.TryGetValue("(created)", out StringValues createdHeader) &&
-            long.TryParse(createdHeader.FirstOrDefault(), out created))
+        return null;
+    }
+
+    private async Task<(int Status, string Message)> VerifyHttpSignatureAsync(HttpContext context, string signatureHeader)
+    {
+        var signatureParams = ParseSignatureHeader(signatureHeader);
+
+        if (!signatureParams.ContainsKey("keyId") || !signatureParams.ContainsKey("signature"))
         {
-            hasCreated = true;
+            return (401, "Signature header is missing keyId or signature");
         }
 
-        if (!hasExpires && context.Request.Headers.TryGetValue("(expires)", out StringValues expiresHeader) &&
-            long.TryParse(expiresHeader.FirstOrDefault(), out expires))
+        // Replay protection must hold before we trust anything else.
+        if (!ValidateReplayProtection(context, signatureParams, out var replayMessage))
         {
-            hasExpires = true;
+            return (403, replayMessage);
         }
 
-        if (!hasCreated)
+        var publicKey = await GetPublicKeyForVerificationAsync(context, signatureParams["keyId"]);
+        if (publicKey == null || string.IsNullOrEmpty(publicKey.PublicKeyPem))
         {
-            _logger.LogWarning("Signature missing required 'created' field for replay attack protection");
+            return (401, $"Could not resolve a public key for keyId '{signatureParams["keyId"]}'");
+        }
+
+        var signedContent = await CreateSignedContentAsync(context, signatureParams);
+        if (signedContent == null)
+        {
+            return (401, "Could not reconstruct the signed content");
+        }
+
+        if (!VerifySignature(signedContent, signatureParams["signature"], publicKey.PublicKeyPem))
+        {
+            return (401, "Signature does not match");
+        }
+
+        // When a digest was signed, confirm the body actually matches it so a
+        // forged body cannot ride on a valid signature.
+        if (signatureParams.ContainsKey("headers") &&
+            signatureParams["headers"].Contains("digest", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!await ValidateDigestAsync(context))
+            {
+                return (401, "Body does not match the signed digest");
+            }
+        }
+
+        return (200, "ok");
+    }
+
+    private bool ValidateReplayProtection(HttpContext context, Dictionary<string, string> signatureParams, out string message)
+    {
+        const long maxTimeSkewSeconds = 300;
+        long created;
+
+        if (TryGetTimestamp(signatureParams, "created", context, out created))
+        {
+            // found
+        }
+        else
+        {
+            message = "Signature is missing the 'created' timestamp required for replay protection";
             return false;
         }
+
+        var hasExpires = TryGetTimestamp(signatureParams, "expires", context, out var expires);
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (created < now - maxTimeSkewSeconds || created > now + maxTimeSkewSeconds)
         {
-            _logger.LogWarning("Signature created time is outside acceptable window");
+            message = "Signature 'created' timestamp is outside the acceptable window";
             return false;
         }
 
@@ -179,45 +218,142 @@ public class HttpSignatureMiddleware
         {
             if (expires <= now)
             {
-                _logger.LogWarning("Signature has expired");
+                message = "Signature has expired";
                 return false;
             }
 
             if (expires < created)
             {
-                _logger.LogWarning("Signature expires before it is created");
+                message = "Signature expires before it was created";
                 return false;
             }
         }
 
+        message = string.Empty;
         return true;
     }
 
-    private async Task WriteResponseAsync(HttpContext context, string message)
+    /// <summary>
+    /// Reads a numeric timestamp from a signature parameter (preferred) or an
+    /// HTTP header of the same name. Returns false when neither is present or
+    /// parseable.
+    /// </summary>
+    private static bool TryGetTimestamp(
+        Dictionary<string, string> signatureParams,
+        string name,
+        HttpContext context,
+        out long value)
     {
-        if (context.Response.Body.CanWrite)
+        value = 0;
+
+        if (signatureParams.TryGetValue(name, out var paramValue) && long.TryParse(paramValue, out var parsed))
         {
+            value = parsed;
+            return true;
+        }
+
+        if (context.Request.Headers.TryGetValue(name, out var headerValues) &&
+            long.TryParse(headerValues.FirstOrDefault(), out var parsedHeader))
+        {
+            value = parsedHeader;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static async Task RejectAsync(HttpContext context, int statusCode, string message)
+    {
+        if (!context.Response.HasStarted && context.Response.Body.CanWrite)
+        {
+            context.Response.StatusCode = statusCode;
             context.Response.ContentType = "text/plain";
             await context.Response.WriteAsync(message);
         }
     }
 
-    private Dictionary<string, string> ParseSignatureHeader(string signatureHeader)
+    private static Dictionary<string, string> ParseSignatureHeader(string signatureHeader)
     {
         var paramsDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var pairs = signatureHeader.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        foreach (var pair in pairs)
+        // The signature value is base64 and can contain characters we must not
+        // split on; parse key=value pairs where values are double-quoted.
+        foreach (var (key, value) in ParseParameters(signatureHeader))
         {
-            var keyValue = pair.Split('=', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (keyValue.Length == 2)
-            {
-                var value = keyValue[1].Trim('"');
-                paramsDict[keyValue[0]] = value;
-            }
+            paramsDict[key] = value;
         }
 
         return paramsDict;
+    }
+
+    /// <summary>
+    /// Parses a signature parameter string of the form
+    /// <c>keyId="...",headers="a b c",signature="...",created="123"</c> into
+    /// key/value pairs, correctly handling quoted values that contain commas
+    /// or other characters.
+    /// </summary>
+    private static IEnumerable<(string Key, string Value)> ParseParameters(string input)
+    {
+        var i = 0;
+        while (i < input.Length)
+        {
+            // Skip whitespace and commas between parameters.
+            while (i < input.Length && (input[i] == ',' || char.IsWhiteSpace(input[i])))
+            {
+                i++;
+            }
+
+            if (i >= input.Length)
+            {
+                break;
+            }
+
+            // Read the key up to '='.
+            var keyStart = i;
+            while (i < input.Length && input[i] != '=')
+            {
+                i++;
+            }
+
+            if (i >= input.Length || input[i] != '=')
+            {
+                break;
+            }
+
+            var key = input[keyStart..i].Trim();
+            i++; // consume '='
+
+            // Read the value: quoted or bare token.
+            string value;
+            if (i < input.Length && input[i] == '"')
+            {
+                i++; // consume opening quote
+                var valueStart = i;
+                while (i < input.Length && input[i] != '"')
+                {
+                    i++;
+                }
+                value = input[valueStart..i];
+                if (i < input.Length)
+                {
+                    i++; // consume closing quote
+                }
+            }
+            else
+            {
+                var valueStart = i;
+                while (i < input.Length && input[i] != ',' && !char.IsWhiteSpace(input[i]))
+                {
+                    i++;
+                }
+                value = input[valueStart..i];
+            }
+
+            if (key.Length > 0)
+            {
+                yield return (key, value);
+            }
+        }
     }
 
     private async Task<PublicKey?> GetPublicKeyForVerificationAsync(HttpContext context, string keyId)
@@ -225,80 +361,154 @@ public class HttpSignatureMiddleware
         var keyFetchingService = context.RequestServices.GetService<IKeyFetchingService>();
         if (keyFetchingService != null)
         {
-            var publicKey = await keyFetchingService.FetchPublicKeyAsync(keyId);
-            return publicKey;
+            return await keyFetchingService.FetchPublicKeyAsync(keyId);
         }
 
         return null;
     }
 
-    private async Task<string> CreateSignedContentAsync(HttpContext context, Dictionary<string, string> signatureParams)
+    private async Task<string?> CreateSignedContentAsync(HttpContext context, Dictionary<string, string> signatureParams)
     {
         var headersToSign = GetHeadersToSign(signatureParams);
-        var builder = new StringBuilder();
+        if (headersToSign.Count == 0)
+        {
+            return null;
+        }
 
-        for (int i = 0; i < headersToSign.Count; i++)
+        var builder = new StringBuilder();
+        for (var i = 0; i < headersToSign.Count; i++)
         {
             var headerName = headersToSign[i];
             var headerValue = GetHeaderValue(context, headerName);
-
-            if (string.IsNullOrEmpty(headerValue))
-            {
-                headerValue = string.Empty;
-            }
-
-            builder.Append(headerName).Append(": ").Append(headerValue);
-
+            builder.Append(NormalizeHeaderName(headerName)).Append(": ").Append(headerValue);
             if (i < headersToSign.Count - 1)
             {
-                builder.Append("\n");
+                builder.Append('\n');
             }
+        }
+
+        // Ensure the request body is fully buffered so a later digest check and
+        // controller binding can both read it.
+        if (signatureParams.ContainsKey("headers") &&
+            signatureParams["headers"].Contains("digest", StringComparison.OrdinalIgnoreCase))
+        {
+            await BufferRequestBodyAsync(context);
         }
 
         return builder.ToString();
     }
 
-    private List<string> GetHeadersToSign(Dictionary<string, string> signatureParams)
+    private static async Task BufferRequestBodyAsync(HttpContext context)
     {
-        if (signatureParams.TryGetValue("headers", out var headersStr))
+        // Read the body fully into memory so it can be re-read by both this
+        // middleware (digest validation) and the downstream model binder. The
+        // resulting stream is intentionally NOT disposed here — it is now the
+        // request body.
+        var memoryStream = new MemoryStream();
+        await context.Request.Body.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+        context.Request.Body = memoryStream;
+    }
+
+    private static List<string> GetHeadersToSign(Dictionary<string, string> signatureParams)
+    {
+        if (signatureParams.TryGetValue("headers", out var headersStr) && !string.IsNullOrWhiteSpace(headersStr))
         {
-            var headers = headersStr.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            return headers.Where(h => !string.IsNullOrEmpty(h)).ToList();
+            return headersStr
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(h => !string.IsNullOrEmpty(h))
+                .ToList();
         }
 
-        return new List<string> { "request-target" };
+        // Per spec, when no covered components are listed, only
+        // (request-target) is covered.
+        return new List<string> { "(request-target)" };
+    }
+
+    /// <summary>
+    /// Normalizes a covered-component name to its canonical signed-name form:
+    /// <c>(request-target)</c> keeps its parentheses, other names are
+    /// lower-cased and any surrounding parentheses are stripped
+    /// (e.g. <c>(host)</c> -> <c>host</c>).
+    /// </summary>
+    private static string NormalizeHeaderName(string headerName)
+    {
+        var trimmed = headerName.Trim();
+        if (trimmed.Equals("(request-target)", StringComparison.OrdinalIgnoreCase))
+        {
+            return "(request-target)";
+        }
+
+        var start = trimmed.StartsWith('(') ? 1 : 0;
+        var end = trimmed.EndsWith(')') ? trimmed.Length - 1 : trimmed.Length;
+        var name = trimmed[start..end];
+        return name.Length == 0 ? trimmed.ToLowerInvariant() : name.ToLowerInvariant();
     }
 
     private string GetHeaderValue(HttpContext context, string headerName)
     {
-        headerName = headerName.ToLowerInvariant();
+        var normalized = NormalizeHeaderName(headerName);
 
-        switch (headerName)
+        switch (normalized)
         {
-            case "request-target":
-                var methodName = context.Request.Method?.ToUpperInvariant() ?? "GET";
-                var path = context.Request.Path.Value;
-                var queryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty;
-                return $"{methodName.ToLower()} {path}{queryString}";
+            case "(request-target)":
+                var method = (context.Request.Method ?? "GET").ToLowerInvariant();
+                var path = context.Request.Path.Value ?? string.Empty;
+                var query = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty;
+                return $"{method} {path}{query}";
 
             case "digest":
-                if (context.Request.Headers.TryGetValue("Digest", out StringValues digestValues))
-                {
-                    return digestValues.FirstOrDefault() ?? string.Empty;
-                }
-                return string.Empty;
-
-            case "created":
-            case "expires":
-                return context.Request.Headers.TryGetValue(headerName, out StringValues values) ? values.FirstOrDefault() ?? string.Empty : string.Empty;
+                return context.Request.Headers.TryGetValue("Digest", out var digestValues)
+                    ? digestValues.FirstOrDefault() ?? string.Empty
+                    : string.Empty;
 
             default:
-                if (context.Request.Headers.TryGetValue(headerName, out StringValues headerValues))
+                // 'created'/'expires' and ordinary headers are read by name.
+                if (context.Request.Headers.TryGetValue(normalized, out var values))
                 {
-                    return headerValues.FirstOrDefault() ?? string.Empty;
+                    return values.FirstOrDefault() ?? string.Empty;
                 }
+
                 return string.Empty;
         }
+    }
+
+    /// <summary>
+    /// Confirms the request body matches the <c>SHA-256=...</c> digest header.
+    /// </summary>
+    private async Task<bool> ValidateDigestAsync(HttpContext context)
+    {
+        if (!context.Request.Headers.TryGetValue("Digest", out var digestValues))
+        {
+            return false;
+        }
+
+        var digestHeader = digestValues.FirstOrDefault();
+        if (string.IsNullOrEmpty(digestHeader) ||
+            !digestHeader.StartsWith("SHA-256=", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var expectedDigest = digestHeader["SHA-256=".Length..];
+        var bodyBytes = await ReadBodyAsync(context);
+        var actualDigest = Convert.ToBase64String(SHA256.HashData(bodyBytes));
+        return string.Equals(expectedDigest, actualDigest, StringComparison.Ordinal);
+    }
+
+    private async Task<byte[]> ReadBodyAsync(HttpContext context)
+    {
+        var stream = context.Request.Body;
+        if (!stream.CanSeek)
+        {
+            return Array.Empty<byte>();
+        }
+
+        var position = stream.Position;
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        stream.Position = position;
+        return memoryStream.ToArray();
     }
 
     private bool VerifySignature(string content, string signature, string publicKeyPem)
@@ -306,16 +516,15 @@ public class HttpSignatureMiddleware
         try
         {
             var signatureBytes = Convert.FromBase64String(signature);
+            var contentBytes = Encoding.UTF8.GetBytes(content);
 
             using var rsa = RSA.Create();
             rsa.ImportFromPem(publicKeyPem);
 
-            var hashAlgorithm = SHA256.Create();
-            var contentBytes = Encoding.UTF8.GetBytes(content);
-            var hash = hashAlgorithm.ComputeHash(contentBytes);
-
-            // Verify using the hash (signature was computed on the hash)
-            return rsa.VerifyHash(hash, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            // The outbound signer (and standard ActivityPub implementations)
+            // sign the raw signed-content string with RSA-SHA256/PKCS#1, so the
+            // verifier must verify the same raw bytes — not a pre-computed hash.
+            return rsa.VerifyData(contentBytes, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
         catch (Exception ex)
         {

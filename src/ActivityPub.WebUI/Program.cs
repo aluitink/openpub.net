@@ -125,6 +125,12 @@ public class Program
         // "ApiRateLimit" section in appsettings.json.
         builder.Services.Configure<ActivityPub.Core.Options.ApiRateLimitOptions>(
             builder.Configuration.GetSection("ApiRateLimit"));
+
+        // ActivityPub federation options — configurable via the "ActivityPub"
+        // section in appsettings.json (e.g. EnableSignatureVerification,
+        // RequireSignatures). Binds over the defaults set by AddActivityPub.
+        builder.Services.Configure<ActivityPub.Core.Options.ActivityPubOptions>(
+            builder.Configuration.GetSection("ActivityPub"));
         builder.Services.AddMemoryCache();
         builder.Services.AddSignalR();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.INotificationService, ActivityPub.WebUI.Services.SignalRNotificationService>();
@@ -163,6 +169,13 @@ public class Program
         app.UseRouting();
         app.UseResponseCaching();
         app.UseAuthorization();
+
+        // Verify HTTP signatures on inbound ActivityPub activity deliveries
+        // (POST to inbox endpoints). Gated by ActivityPubOptions
+        // .EnableSignatureVerification / .RequireSignatures (see the
+        // "ActivityPub" config section).
+        app.UseMiddleware<ActivityPub.Core.Middleware.HttpSignatureMiddleware>();
+
         app.UseApiRateLimiting();
         app.MapStaticAssets();
 

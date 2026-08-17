@@ -48,12 +48,21 @@ public class KeyFetchingService : IKeyFetchingService
                 return null;
             }
 
-            var actorUrl = $"{actorUri}.jsonld";
-            var actorResponse = await _httpClient.GetAsync(actorUrl);
-            if (!actorResponse.IsSuccessStatusCode)
+            // The keyId's base URL is itself the actor's JSON-LD document
+            // (e.g. https://host/users/alice#main-key -> https://host/users/alice).
+            // Fetch it directly with an ActivityPub accept header.
+            using var request = new HttpRequestMessage(HttpMethod.Get, actorUri);
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/activity+json"));
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/ld+json"));
+
+            HttpResponseMessage actorResponse;
+            try
             {
-                actorUrl = $"{actorUri}.json";
-                actorResponse = await _httpClient.GetAsync(actorUrl);
+                actorResponse = await _httpClient.SendAsync(request);
+            }
+            catch (HttpRequestException)
+            {
+                return null;
             }
 
             if (!actorResponse.IsSuccessStatusCode)

@@ -58,6 +58,15 @@ public class ActivityPubOptions
     public bool EnableSignatureVerification { get; set; } = true;
 
     /// <summary>
+    /// When true (and <see cref="EnableSignatureVerification"/> is true), every
+    /// inbound activity delivery must carry a valid HTTP signature; unsigned
+    /// inbox POSTs are rejected with 401. When false, a present signature is
+    /// still verified (and rejected if invalid) but unsigned requests are
+    /// tolerated — the posture used for local development and testing.
+    /// </summary>
+    public bool RequireSignatures { get; set; } = false;
+
+    /// <summary>
     /// Enable ActivityPub federation
     /// </summary>
     public bool EnableFederation { get; set; } = false;
