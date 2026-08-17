@@ -107,6 +107,18 @@
             @RenderBody()
         </main>
     </div>
+    @if (User.Identity?.IsAuthenticated ?? false)
+    {
+        <a asp-controller="Compose" asp-action="Index" class="compose-fab" aria-label="Compose new post">+</a>
+        <nav class="mobile-bottom-nav" aria-label="Primary">
+            <ul>
+                <li><a asp-controller="Timeline" asp-action="Index" class="@(NavActive("Timeline") ? "active" : "")"><span class="mbn-icon" aria-hidden="true">&#8962;</span>Home</a></li>
+                <li><a asp-controller="Search" asp-action="Index" class="@(NavActive("Search") ? "active" : "")"><span class="mbn-icon" aria-hidden="true">&#9906;</span>Search</a></li>
+                <li><a asp-controller="Notifications" asp-action="Index" class="@(NavActive("Notifications") ? "active" : "")"><span class="mbn-icon" aria-hidden="true">&#9993;</span>Inbox</a></li>
+                <li><a asp-controller="Profile" asp-action="Index" class="@(NavActive("Profile") ? "active" : "")"><span class="mbn-icon" aria-hidden="true">&#9787;</span>Profile</a></li>
+            </ul>
+        </nav>
+    }
     <footer>
         <div class="footer-container">
             <div class="footer-tagline">
@@ -125,11 +137,12 @@
         </div>
     </footer>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <script src="~/js/app.js" asp-append-version="true"></script>
     @if (User.Identity?.IsAuthenticated ?? false)
     {
         <script src="https://cdn.jsdelivr.net/npm/%40microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+        <script src="~/js/menu.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)
-    <script src="~/js/app.js" asp-append-version="true"></script>
 </body>
 </html>

@@ -1467,7 +1467,8 @@ footer {
 
     .following-item {
         flex-direction: column;
-    text-align: center;
+        text-align: center;
+    }
 }
 
 .btn-report {
@@ -1542,6 +1543,7 @@ footer {
     border-radius: 4px;
 }
 
+@media (max-width: 768px) {
     .form-actions {
         flex-direction: column;
     }
@@ -1584,6 +1586,15 @@ footer {
 
     .profile-avatar {
         margin-top: -30px;
+    }
+
+    /* Sticky compose FAB replaces the in-header compose link on small screens */
+    .compose-fab {
+        display: flex;
+    }
+
+    .page-header-actions .compose-header-btn {
+        display: none;
     }
 }
 
@@ -3597,6 +3608,230 @@ footer {
 :root[data-theme="dark"] .text-danger,
 :root[data-theme="dark"] .text-error {
     color: #f38b8b;
+}
+
+/* ===== Compose FAB (mobile sticky action) ===== */
+
+.compose-fab {
+    display: none;
+    position: fixed;
+    right: 1rem;
+    bottom: 4.75rem;
+    z-index: 900;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+}
+
+.compose-fab:hover {
+    background: var(--color-accent-dark);
+}
+
+/* ===== Mobile bottom nav (Phase 47) =====
+   Shown at <=768px where the nav collapses into the drawer. Keeps the
+   primary destinations one tap away without opening the drawer. */
+
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    background: var(--color-nav);
+    border-top: 1px solid var(--color-border-light);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobile-bottom-nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-bottom-nav li {
+    flex: 1 1 0;
+}
+
+.mobile-bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-height: 44px;
+    padding: 0.4rem 0.25rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.mobile-bottom-nav a .mbn-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.mobile-bottom-nav a.active,
+.mobile-bottom-nav a:hover {
+    color: var(--color-accent);
+}
+
+/* Push page content above the fixed bottom nav on small screens */
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        display: block;
+    }
+
+    body {
+        padding-bottom: 4.5rem;
+    }
+
+    /* Touch targets: raise compact interactive elements to >=44px (WCAG 2.5.8) */
+    .nav-hamburger {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+    }
+
+    .theme-toggle {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+    }
+
+    .btn-action {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.5rem 0.6rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-more {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-unfollow {
+        min-height: 44px;
+        padding: 0.5rem 0.8rem;
+    }
+
+    .btn {
+        min-height: 44px;
+    }
+
+    .nav-group-toggle {
+        min-height: 44px;
+    }
+
+    .search-tab {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .filter-tab {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .cw-toggle-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.5rem 0.9rem;
+    }
+
+    .note-more-item {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Font-size floor: no text below 14px on mobile */
+    .note-username,
+    .note-timestamp,
+    .poll-votes,
+    .poll-timer,
+    .doc-name,
+    .form-help,
+    .handle-help,
+    .mobile-bottom-nav a {
+        font-size: 0.875rem;
+    }
+
+    /* Note cards: keep actions tappable when wrapped */
+    .note-card {
+        padding: 1rem;
+    }
+
+    /* Poll bars: full-width tappable rows */
+    .poll-bar {
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.95rem;
+        border: 1px solid var(--color-border-light);
+    }
+
+    .poll-option {
+        margin: 0.5rem 0;
+    }
+
+    .poll-widget form button,
+    .poll-widget .btn-sm {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Admin tables: horizontal scroll as the last-resort strategy */
+    .admin-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        white-space: nowrap;
+    }
+
+    /* Multi-attachment image grid on narrow screens */
+    .note-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* At phone width the drawer (320px) covers most of the viewport, so the
+       bottom nav hides to avoid covering drawer items; the hamburger remains. */
+    .mobile-bottom-nav {
+        display: none;
+    }
+
+    body {
+        padding-bottom: 0;
+    }
+
+    .note-content {
+        font-size: 0.95rem;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

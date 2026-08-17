@@ -29,10 +29,10 @@ Make the timeline and interactions feel instant.
  5. ✅ Consolidate all JS into a single `window.FB` module loader (`app.js`) + feature modules (`menu.js`, `compose.js`, `poll.js`, `search.js`, `suggestions.js`); `theme.js` bootstraps dark mode pre-SSR; SignalR CDN script deduped in the layout.
 
 ### Phase 47: Responsive & Mobile-First
-1. ⬜ Audit every page at 320 / 768 / 1024 / 1440px via delegated Playwright; fix overflow, touch-target (<44px), font-size issues.
-2. ⬜ Sticky compose FAB on mobile; bottom nav or collapsed drawer on small screens.
-3. ⬜ Mobile drawer + scrim keyboard- and screen-reader-operable (focus trap, `Esc` closes).
-4. ⬜ Media queries for note cards, poll bars, admin tables (horizontal scroll only as last resort).
+1. ✅ Audited pages at 320 / 768 / 1024 / 1440px via delegated Playwright; fixed horizontal overflow (none at any width) and raised touch-targets to ≥44px (`.btn`, `.btn-action`, `.btn-more`, `.btn-unfollow`, `.nav-hamburger`, `.theme-toggle`, `.nav-group-toggle`, `.search-tab`, `.filter-tab`, `.cw-toggle-btn`, `.note-more-item`). Also fixed a pre-existing malformed `site.css` where the `@media (max-width: 768px)` block was missing its opening brace, leaving `.form-actions`/`.hero-actions`/`.error-*`/`.profile-banner`/`.profile-avatar` un-scoped.
+2. ✅ Sticky compose FAB (`.compose-fab`, shown ≤768px, hides the in-header compose button) + mobile bottom nav (`.mobile-bottom-nav`, Home/Search/Inbox/Profile) shown ≤768px, hidden ≤480px where the drawer suffices; `body` gains bottom padding so content clears the fixed nav.
+3. ✅ Mobile drawer + scrim now keyboard- and screen-reader-operable: `Esc` closes, `aria-hidden` toggles, focus restored to trigger on close, Tab focus-trap, click-outside close. `menu.js` moved to `_Layout` (deduped from 4 views) and `app.js` now loads **before** `menu.js`/view scripts so `window.FB` exists (fixes pre-existing `ReferenceError: FB is not defined` on every module script).
+4. ✅ Media queries for note cards, poll bars, admin tables (`.admin-table` horizontal-scroll wrapper as last resort), attachment grids, font-size floors.
 
 ### Phase 48: Interaction & Real-Time UX
 1. ⬜ Live timeline refresh via SignalR (new notes prepend without reload) + SSE fallback.
