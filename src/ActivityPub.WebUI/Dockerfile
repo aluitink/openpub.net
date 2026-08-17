@@ -14,14 +14,16 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app .
 
-ENV ASPNETCORE_URLS=https://+:443;http://+:80
-ENV ASPNETCORE_ENVIRONMENT=Production
+RUN mkdir -p /data
 
+# Install debugging tools last so code changes don't invalidate the apt layer
 RUN apt-get update \
     && apt-get install -y --no-install-recommends sqlite3 sqlite3-tools \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /data
+ENV ASPNETCORE_URLS=https://+:443;http://+:80
+ENV ASPNETCORE_ENVIRONMENT=Production
+
 VOLUME [ "/data" ]
 
 EXPOSE 80 443
