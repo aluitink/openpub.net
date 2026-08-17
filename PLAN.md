@@ -1,191 +1,129 @@
-# ActivityPub.NET - Project Plan
+# ActivityPub.NET / Fediblog — Project Plan
 
 **Last Updated:** Aug 17, 2026
-**Status:** Phases 1-45 complete. **966/966 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done. Phase 37 T1 done: local Mastodon-compatible REST API under `/api/v1` (statuses/accounts/timelines, numeric status IDs, cookie-session auth, 10 API tests). Phase 37 T2 done: application registration (`POST`/`GET /api/v1/apps`) issuing ClientID/ClientSecret, backed by `OAuthClientEntity` + `IApplicationRepository` (5 API tests). Phase 37 T3 done: OAuth 2.0 PKCE for API auth (`/api/v1/oauth/authorize` + `/api/v1/oauth/token`, Bearer `BearerToken` scheme, 7 API tests). Phase 37 T4 done: API rate limiting per application (`ApiRateLimiter` + `ApiRateLimitingMiddleware`, `RateLimit-*` headers, 429, configurable + per-client_id overrides, 10 tests). Phase 37 T5 done: API docs — Swashbuckle Swagger UI at `/swagger` + OpenAPI JSON at `/swagger/v1/swagger.json`, Bearer+cookie security schemes, XML doc comments (3 tests). Phase 37 T6 done: webhook support — CRUD `POST/GET/DELETE /api/v1/webhooks` (HMAC secret), `post.created` deliveries queued on new posts, background delivery service with retries (8 tests). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding). Phase 38 T1 done: HTTP signature verification for incoming activities — rewrote `HttpSignatureMiddleware` (raw-bytes RSA-SHA256/PKCS#1 verify, replay + digest checks, options-driven posture), fixed `OutboundSigningService` + `KeyFetchingService`, wired into WebUI (16 tests). Phase 38 T2 done: delivery retry with exponential backoff — `DeliveryRetryOptions` + `NextRetryAt` backoff gate, config-driven retry in `SharedInboxService` (fixed latent bug where retries never re-attempted), 7 tests. Phase 38 T3 done: federation peer health tracking + auto-block — `FederationPeerEntity`/`PeerHealthOptions`/`IPeerHealthService`, auto-block on consecutive delivery failures & probe unreachability, auto-unblock on consecutive successes, outbound skip + inbound reject for blocked peers, `PeerHealthBackgroundService` periodic probes, 14 tests. Phase 38 T4 done: server-to-server federation testing — fixed critical outbound bugs (empty private key in `ProcessQueueAsync`, missing `created` signature parameter, inbox-URL HEAD-probing deadlock, WebFinger self-href missing scheme, inconsistent key ID), added `appsettings.json` to WebUI, 4 end-to-end sign→verify round-trip tests. Phase 38 T5 done: inbox processing error handling + dead letter queue — `InboxDeadLetterEntity`/`InboxDeadLetterStatus`, `InboxProcessingOptions` (retry + backoff + DLQ), `SharedInboxService.ProcessAndDistributeActivityAsync(username, activity, rawJson)` retry loop with `ProcessAndDistributeCoreAsync` single-attempt pipeline, `HandleInboxDeadLetterAsync` persists raw payload on exhaustion, `ProcessInboxDeadLettersAsync(batchSize)` replay, `InboxDeadLetterBackgroundService` periodic reprocess + prune, `ActorController.PostInbox` raw-body capture (reset position after `[FromBody]`), 400/500 semantics, admin `DeadLetterCount` card, 23 new tests. Phase 39 T1 done: Redis-backed distributed cache — `CacheOptions`/`CacheProvider` enum, `RedisFederationCache : IFederationCache` (JSON POCOs + Redis Set indices for domain/actor invalidation, four TTLs, SCAN-based Clear/Count), `StackExchange.Redis` 2.8.16, DI singleton factory branching on provider (reuses registered `IConnectionMultiplexer` if present), `appsettings.json` Cache section, 22 tests. Phase 39 T2 done: WebSocket scaling — Redis backplane (`Microsoft.AspNetCore.SignalR.StackExchangeRedis` 10.0.0, replaces obsolete 1.2.0), `RealtimeOptions` + appsettings section, `Program.cs` branches on `Realtime.Enabled` (singleton `IConnectionMultiplexer` + `AddStackExchangeRedis` + `RedisHubRateLimiter` vs in-memory), new `IHubRateLimiter` (in-memory sliding window + atomic-Lua Redis limiter), `NotificationHub` injects the limiter for globally-enforced per-connection rate limits, 12 tests.
+**Status:** Phases 1–45 complete. **966/966 tests passing.** Backend federation, API, and scalability infrastructure is now **feature-complete** — the focus shifts to the **WebUI**.
 
----
-
-## Testing Guidelines
-
-- **Browser/UI tests using Playwright** should be executed in delegated agents rather than inline, to isolate browser state and avoid conflicts with the main session.
-
-## Public Deployment / Integration Test Host
-
-The local Docker container for the WebUI is exposed publicly at:
-
-**https://openpub.luit.ink/**
-
-Configure and launch the stack for this public hostname (not just `localhost`) so we can test real-world integrations against a routable address — most importantly **following real users on other ActivityPub servers**, plus WebFinger, HTTP signatures, and external clients:
-
-1. **Docker compose** (`src/ActivityPub.WebUI/docker-compose.yml`): add the public host as a server name so the container serves and identifies as `openpub.luit.ink`.
-2. **ActivityPub domain**: set `ActivityPub:Domain` to `https://openpub.luit.ink` (via env var / config) so actor IDs, WebFinger, NodeInfo, and outbound federation use the public URL instead of `localhost`.
-3. **TLS**: the reverse proxy terminates HTTPS on `443`; map the container's `443` port (already exposed as `8443:443`) or adjust the proxy accordingly.
-4. Use this host for the Phase 38 federation testing and any real server-to-server integration work.
-5. **Real-world test target:** a real user we can follow and interact with for federation testing is **@RayvenMX@mastodon.world** — use them for follow/unfollow, reply, like, and inbox-delivery checks against a live server.
-
-## Iterative WebUI QA (Delegated Subagents)
-
-When making changes to `src/ActivityPub.WebUI/`, run QA via delegated subagents using Playwright tools. Do this after each meaningful change batch, before marking a phase/feature complete.
-
-**Workflow (delegate to a subagent, not inline):**
-1. **Launch:** Start the WebUI with `docker compose` from `src/ActivityPub.WebUI/`:
-   - `docker compose -f src/ActivityPub.WebUI/docker-compose.yml up -d --build`
-   - Wait for the service to be healthy (HTTP 200 on the base URL).
-2. **Test with Playwright:** Navigate to `http://localhost:8080` (or `https://openpub.luit.ink/` when validating federation) and exercise the changed flows (auth, compose, timeline, interactions, profiles, admin, etc.). Use Playwright navigation, snapshot, click, fill, and screenshot tools. Verify expected elements, text, and behavior. Evaluate screenshots.
-3. **Report:** Return a pass/fail summary with screenshots for failures and any console errors observed.
-
-**Localhost constraints & mocking:**
-- When QA runs against `localhost` there is **no real routability/federation** — do not expect cross-server delivery to succeed in that mode. (When the stack is pointed at the public host `https://openpub.luit.ink/`, real federation against remote servers — including following real users — is possible; see *Public Deployment / Integration Test Host*.)
-- Where a test needs remote/other-party data (remote actors, notes, follows, federation replies), **mock the entries directly in the DB** (SQLite files `/data/ap.db` and `/data/app.db` inside the `fediblog-data` volume) rather than attempting real federation. Insert rows for remote actors/activities and re-trigger inbox processing or seed fixtures as needed.
-- For inbox-driven flows, POST crafted ActivityPub payloads to the local inbox endpoint to simulate incoming federation.
-
-**Cleanup:** After QA, stop the stack with `docker compose -f src/ActivityPub.WebUI/docker-compose.yml down` (use `-v` only when you want to discard the DB fixtures).
+> **Direction:** We have enough backend infrastructure for now (federation, HTTP signatures, delivery retry + DLQ, peer health, Redis cache + backplane, PostgreSQL migration, REST API + OAuth, leak-free memory). The remainder of this plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
 
 ---
 
 ## Build State
 
 - **Build:** 0 errors
-- **Tests:** 798 passing, 0 failures
+- **Tests:** 966 passing, 0 failures
 - **Framework:** .NET 10.0
 - **Branch:** qwen3.6-27b-eval
-
-## Core Library Surface
-
-**Models:** Actor, Note, Create, Follow, Like, Announce, Article, Page, Video, Image, Collection, OrderedCollection, Activity, Accept, Reject, Undo, Delete, Tombstone, Update, Event, PublicKey, Endpoints, Poll + WebFinger/NodeInfo/HostMeta discovery types
-
-**Repository (`IActivityPubRepository`):** Actor CRUD, Activity CRUD, Outbox/Followers/Following/Liked collections, deduplication, shared inbox delivery queue, webhook delivery queue
-
-**Services:** ActivityPubService, InboxProcessorService, OutboundActivityService, OutboundSigningService, FederationDiscoveryService, KeyFetching/Generation, SharedInboxService, WebhookDelivery, WebFingerCache, ActivityValidation, MRFService, ActivityCache, ActivityPubEventDispatcher, FederationHealthService
-
-**Middleware:** RateLimiting, SecurityHeaders, HttpSignature, SigningVerification
-
-**Infrastructure:** EFCoreActivityPubRepository (InMemory/SQLite), MemoryFederationCache, CacheInvalidation, Logging, Telemetry, Metrics, ResponseCaching, API Versioning, Monitoring
-
-**DI Extension:** `AddActivityPub(Action<ActivityPubOptions>?)` — registers all services, DbContext, hosted services
-
-**Discovery Endpoints:** WebFinger, NodeInfo 2.1, HostMeta, Health
+- **WebUI:** `src/ActivityPub.WebUI/` — Razor MVC, SQLite, username/password auth, SignalR, vanilla JS (`wwwroot/js/`: `compose.js`, `menu.js`, `toast.js`), single `site.css` (~3.6k lines) with `:root` design tokens + `[data-theme=dark]` overrides.
 
 ---
 
-## Completed Phases
+## UI Testing Guidelines (read before touching the WebUI)
 
-### Core library (Phases 1-22)
+- **Browser/UI tests using Playwright** run in **delegated subagents**, not inline, to isolate browser state.
+- After each meaningful WebUI change batch, run QA via a delegated Playwright subagent **before** marking a feature complete.
 
-| # | Title | # | Title |
-|---|-------|---|-------|
-| 1 | Foundation - Directory structure | 12 | Code Quality - Nullable, packages |
-| 2 | Documentation - README, guides | 13 | Performance - Caching, batching |
-| 3 | Tooling - Build, CI/CD, quality | 14 | Security - Headers, validation |
-| 4 | Cleanup - Consolidation | 15 | Deployment - Docker, K8s |
-| 5 | Source Migration | 16 | Final Cleanup - .gitignore |
-| 6 | Structure Validation | 17 | CI/CD Pipeline - GitHub Actions |
-| 7 | Full Test Suite | 18 | Admin Dashboard - Razor Pages |
-| 8 | Migration Verification | 19 | CLI Tool - System.CommandLine |
-| 9 | Docs - API ref, migration | 20 | Integration Tests - 502 total |
-| 10 | Production Readiness | 21 | Benchmarks - BenchmarkDotNet |
-| 11 | Identity - JWT for DemoApp | 22 | Observatory Compliance - 32 tests |
+**Workflow (delegate to a subagent):**
+1. **Launch:** `docker compose -f src/ActivityPub.WebUI/docker-compose.yml up -d --build`; wait for HTTP 200 on the base URL.
+2. **Test with Playwright:** navigate to `http://localhost:8080` (or `https://openpub.luit.ink/` for federation), exercise the changed flows (auth, compose, timeline, interactions, profiles, admin, …) using navigation/snapshot/click/fill/screenshot tools. Verify elements, text, behavior; evaluate screenshots.
+3. **Report:** pass/fail summary with screenshots for failures + any console errors.
 
-### Fediblog WebUI (Phases 25-41)
+**Localhost constraints & mocking:**
+- Against `localhost` there is **no real routability/federation** — don't expect cross-server delivery. (Pointed at `https://openpub.luit.ink/`, real federation incl. following real users works.)
+- Where a test needs remote data (remote actors, notes, follows, federation replies), **mock rows directly in the DB** (SQLite `/data/ap.db` + `/data/app.db` in the `fediblog-data` volume) instead of real federation. For inbox-driven flows, POST crafted ActivityPub payloads to the local inbox endpoint.
 
-A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/password auth. Location: `src/ActivityPub.WebUI/`.
+**Cleanup:** `docker compose -f src/ActivityPub.WebUI/docker-compose.yml down` (add `-v` only to discard DB fixtures).
 
-| # | Title | # | Title |
-|---|-------|---|-------|
-| 25 | WebUI Foundation & Auth — registration, login, actor seeding, layout | 33 | Extended Federation — inbox processor, outbox pagination, articles, image uploads, polls, editable notes, Block |
-| 26 | Compose & Timeline — note creation, home/public timelines, delete | 34 | Real-time & Notifications — SignalR hub, SSE, push notifications, desktop alerts |
-| 27 | Follows & Federation — follow/unfollow, remote actor discovery | 35 | Content Discovery & Communities — suggestions, trending hashtags, content filtering, communities |
-| 28 | Interactions — Like, Reply, Boost with threading and counts | 40 | Navigation & Menu System — grouped dropdowns, mobile drawer, active-route highlight |
-| 29 | Profiles & Actor Endpoints — profile pages, outbox, followers/following, liked | 41 | Page Completeness & Navigation Audit — 32 RouteAuditTests, empty states, back-links, role-gating |
-| 30 | Polish & Production — responsive CSS, error pages, rate limiting, hashtags, search, Docker | 42 | Core UX Improvements — char counter, previews, optimistic like/boost, toasts, skeletons (inline reply completed in Phase 44 P1; 2 other tasks deferred to Phase 43) |
-| 31 | Performance — DB indexes, response caching, query optimization | 44 | WebUI Look & Feel Review — screenshot audit; P0/P1/P2 fixes applied (fresh-context QA re-sweep outstanding) |
-| 32 | Admin & Moderation — dashboard, roles, MRF, audit log, reports, federation health | 43 | (open — see Open Work) |
-| 45 | Consolidate All Code Under `src/` — Tests, Benchmarks, samples moved; solution, scripts, CI, docs updated | | |
-
-**Phase 44 fixes applied (summary):** P0-1 static-asset cache-busting wired via `app.MapStaticAssets()` (hashed routes 200 + immutable; `asp-append-version` still emits plain URLs — .NET 10 tag-helper behavior). P0-2 admin block-user style renamed `.btn-block` → `.btn-blockuser` so primary CTAs are purple again. P1 mobile drawer scrim, favicon (`/favicon.svg`), secondary-button outline restyle, **inline reply compose** (`/compose?replyTo=…` with reply-context banner, hidden `InReplyTo`, reply sets `Note.InReplyTo` + queues shared-inbox delivery to the target actor; note-card reply links now route to it; `ReplyComposeTests` added, 797 tests passing). P2 muted action-bar colors + Edit/Delete/Report moved to overflow menu, collapsed-by-default reply boxes, richer empty states, note-card avatars, `:root` design-token block in `site.css`.
+**Public deployment / integration host:** `https://openpub.luit.ink/` (Docker compose + reverse proxy terminates TLS). Set `ActivityPub:Domain=https://openpub.luit.ink`. Real-world federation test target: **@RayvenMX@mastodon.world** (follow/unfollow, reply, like, inbox delivery).
 
 ---
 
-## Open Work
+## Completed Work (summary)
 
-### Phase 43: Interface Buildout & Polish
+### Core library — Phases 1–22 (foundation, docs, tooling, tests, benchmarks, compliance)
+Foundation & directory structure; README/guides; build + CI/CD + quality; cleanup/consolidation; source migration; structure validation; full test suite (502 at the time); migration verification; API/migration docs; production readiness; JWT identity; code quality (nullable, packages); performance (caching, batching); security (headers, validation); deployment (Docker, K8s); .gitignore; GitHub Actions; admin dashboard (Razor Pages); CLI tool (System.CommandLine); integration tests; BenchmarkDotNet; Observatory compliance.
 
-**Goal:** Raise overall visual consistency and fill out the remaining rough edges.
+### Fediblog WebUI + federation + API + scale — Phases 25–45
 
-**Tasks:**
-1. ✅ Design pass: consistent spacing scale, font sizes, button styles across all pages (audit `site.css` for ad-hoc styles; the `:root` design-token block from Phase 44 is the starting point) — *type/spacing/component-metric tokens added and applied*
-2. ✅ Avatars: consistent sizing, fallback initial-avatar when no image — *all surfaces standardized (notes 40px, search/suggestions 48px, profile 90px) via a `--avatar-size` token + `.avatar-placeholder-lg`; fixed `Image.ToString()` bug (used `.Url`), added missing Suggestions fallback, synced identity `AvatarUrl` on profile edit, fixed EF `ToLowerInvariant` search bug + silent `[Required]` save failures*
-3. ✅ Profile pages: banner/avatar polish, follow/unfollow button state, stats row (notes/followers/following counts) — *added `GetNoteCountAsync` + `IsFollowingAsync` (Undo-aware) to repo; Profile page shows Notes/Followers/Following stats + Follow/Following toggle button (btn-primary/btn-secondary) for other users, Edit for own; new `Profile/Follow` + `Profile/Unfollow` POST endpoints (Undo + delete for unfollow); fixed broken `Profile/{username}` path by switching to `[Route("Profile")]` with `?username=` query param; Dockerfile now ships `sqlite3`*
-4. ✅ Communities: card grid view with member count and preview; community header with cover — *typed `Community.Icon`/`Image` to `Image?`; added `UpdateCommunityAsync` to `ICommunityService`/`CommunityServiceImpl` (JSON re-serialize + entity update); create form accepts optional `IconUrl`; Index/MyCommunities/Search render community cards (cover banner + icon w/ initial fallback + member count + owner/member badges); Show has a full header (cover + icon + summary + member count + join/leave/delete actions); CSS added incl. dark-mode overrides*
-5. ✅ Trends/Discover: visual cards for hashtags (tag + post count) rather than bare links — *replaced bare `<ol>` link list + inline `<style>` with trend cards (rank badge, hashtag, post count, relative last-used time) in a responsive grid; added `.filter-tabs`/`.filter-tab` + `.trend-card` CSS on design tokens; defined missing `--shadow-card-hover`. Also fixed a pre-existing bug found while verifying T4: community IDs are URLs containing `/`, which `[Route("{communityId}")]` could never match (every Show page 404'd) — moved `communityId` from the path to a query/form param (`/communities/show?communityId=`, Join/Leave/Delete via hidden form field)*
-6. ✅ Admin: consistent dashboard layout, stat cards, table styling — *Reports + AuditLog now use the shared `.admin-page` wrapper + `.admin-nav` + `.admin-table` + `.empty-state` (were bare `.table`, no container/nav); Reports actions moved into `.action-cell`/`.inline-form`; admin CSS switched from hardcoded colors to design tokens (`--card-radius`, `--shadow-card`, `--color-accent`, `--color-border(-light)`, `--color-danger` mix for blocked rows); defined the previously-missing `.admin-card`; added dark-theme overrides for `.admin-table`/`.stat-card`*
-7. ✅ Dark mode toggle (CSS custom properties, preference persisted in `localStorage`; token overrides under `[data-theme=dark]`) — *full dark palette + `[data-theme=dark]` overrides, toggle button + `localStorage` persistence in layout; mobile hamburger bars + hover states fixed*
- 8. ✅ Accessibility: contrast audit, focus-visible styles, alt text on images, form labels — *global `:focus-visible` outline rule (WCAG 2.4.7); note-card overflow trigger now has `aria-label` (plus `title`); placeholder-only inputs (MRF domain/word, Suggestions filter, FederationHealth domain) given `aria-label`; verified all 10 `<img>` have `alt` and theme-toggle/hamburger already carry `aria-label`+`aria-controls`; darkened `--color-text-muted` (#888→#6c6c6c) and `--color-text-faint` (#999→#606060) and `--dark-text-muted` (#80809a→#9a9ab5) to meet WCAG AA 4.5:1; added 6 `AccessibilityTests` (focus-visible, light+dark contrast, layout a11y names, btn-more name, img-alt sweep) — suite now 803/803*
- 9. ✅ Footer: useful links (about, help, server stats) instead of single tagline — *created a public `/about` page (Home/About + `Views/Home/About.cshtml`) with real content (what Fediblog is, capabilities, help, tech stack); footer now has a labeled `<nav aria-label="Footer">` with useful links (About, Trending, Communities, Home, and Server health when authenticated) on top of the tagline; footer text re-colored for WCAG AA contrast on the dark bar (#b9b9d6 tagline / #d0d0ea links). Note: the default route's `{controller=Home}` default only applies at `/`, so About needed an explicit `[Route("about")]`*
-10. ✅ Consistent page header pattern (title + primary action button) — *all 20 `.page-header` views standardized: title left (unified `<h1>`), actions right in `.page-header-actions`; CSS added; deferred from Phase 42*
+| Phase | Title (condensed) |
+|-------|-------------------|
+| 25 | WebUI foundation & auth — registration, login, actor seeding, layout |
+| 26 | Compose & timeline — note creation, home/public timelines, delete |
+| 27 | Follows & federation — follow/unfollow, remote actor discovery |
+| 28 | Interactions — like, reply, boost with threading + counts |
+| 29 | Profiles & actor endpoints — profile pages, outbox, followers/following/liked |
+| 30 | Polish & production — responsive CSS, error pages, rate limiting, hashtags, search, Docker |
+| 31 | Performance — DB indexes, response caching, query optimization |
+| 32 | Admin & moderation — dashboard, roles, MRF, audit log, reports, federation health |
+| 33 | Extended federation — inbox processor, outbox pagination, articles, image uploads, polls, editable notes, block |
+| 34 | Real-time & notifications — SignalR hub, SSE, push, desktop alerts |
+| 35 | Content discovery & communities — suggestions, trending hashtags, content filtering, communities |
+| 36 | Media & rich content — **deferred** (see Open Work; backend for most now exists) |
+| 37 | API & DX — Mastodon-compatible REST API, app registration, OAuth2 PKCE, rate limits, Swagger, webhooks |
+| 38 | Federation hardening — HTTP signature verification, delivery retry + backoff, peer health auto-block, real S2S testing, inbox DLQ |
+| 39 | Scalability — Redis cache, WebSocket backplane + distributed rate limiting, PostgreSQL migration, leak detection (T5 load testing deferred) |
+| 40 | Navigation & menu — grouped dropdowns, mobile drawer, active-route highlight |
+| 41 | Page completeness & navigation audit — RouteAuditTests, empty states, back-links, role-gating |
+| 42 | Core UX — char counter, previews, optimistic like/boost, toasts, skeletons, inline reply |
+| 43 | Interface buildout & polish — design tokens, avatars, profile stats, communities, trends, admin, dark mode, a11y, footer, page-header pattern |
+| 44 | Look & feel review — P0/P1/P2 screenshot-audit fixes (fresh-context QA re-sweep outstanding) |
+| 45 | Consolidate all code under `src/` — Tests, Benchmarks, samples moved; solution/scripts/CI/docs updated |
 
-**Acceptance criteria:**
-- No page uses one-off styling inconsistent with the rest of the app
-- Dark mode toggles without flicker and persists
-- All pages pass a basic accessibility pass (labels, contrast, focus order)
+**Core library surface (unchanged, stable):** Models (Actor, Note, Create, Follow, Like, Announce, Article, Page, Video, Image, collections, Activity + discovery types); `IActivityPubRepository` (actor/activity CRUD, outbox/followers/following/liked, dedup, shared-inbox + webhook queues); services (ActivityPubService, InboxProcessor, OutboundActivity/Signing, FederationDiscovery, KeyFetching/Generation, SharedInbox, WebhookDelivery, WebFingerCache, ActivityValidation, MRF, Cache, EventDispatcher, FederationHealth); middleware (RateLimiting, SecurityHeaders, HttpSignature, SigningVerification); EFCore repository (InMemory/SQLite/PostgreSQL); `AddActivityPub(Action<ActivityPubOptions>?)`; discovery endpoints (WebFinger, NodeInfo 2.1, HostMeta, Health).
 
-### Phase 44 (remaining): Fresh-context QA re-sweep
+---
 
-- ⬜ Delegated Playwright subagent re-sweeps the audited pages in a **fresh browser context** (to avoid the stale-cache artifact) and confirms each fix with a before/after screenshot.
+## Open Work — UI-Focused
 
-### Phase 36: Media & Rich Content
+The WebUI is functional end-to-end but reads as a competent prototype rather than a polished product. Priorities, in order:
 
-**Goal:** Enhanced media handling and rich content support.
+### Phase 46: UI Performance & Perceived Speed
+Make the timeline and interactions feel instant.
+1. ⬜ Client-side pagination / "load more" + infinite scroll on Timeline & Search (server already paginates; add a `?after=` cursor + JS loader).
+2. ⬜ Defer rendering of non-critical note cards; audit `fetchpriority`/`loading="lazy"` on images.
+3. ⬜ Wire `prefers-reduced-motion` and disable animation when set.
+4. ⬜ Measure with a delegated subagent: LCP/TTI on the home timeline, before/after screenshots + a small JS perf snapshot.
+5. ⬜ Consolidate the 3 JS files + inline layout scripts into a small module loader (no framework), dedupe the SignalR bootstrap.
 
-1. ⬜ Video uploads with thumbnail generation
-2. ⬜ Audio attachment support
-3. ⬜ Document/file attachment support (PDF, etc.)
-4. ⬜ Rich text editor (markdown preview, link previews)
-5. ⬜ OEmbed support for external media embedding
-6. ⬜ Content moderation for uploads (virus scan, size limits)
+### Phase 47: Responsive & Mobile-First Pass
+1. ⬜ Audit every page at 320 / 768 / 1024 / 1440px via delegated Playwright (screenshots per breakpoint); fix overflow, touch-target (<44px), and font-size issues.
+2. ⬜ Sticky compose FAB on mobile; bottom nav or collapsed drawer on small screens.
+3. ⬜ Ensure the mobile drawer + scrim is keyboard- and screen-reader-operable (focus trap, `Esc` closes).
+4. ⬜ Media queries for note cards, poll bars, and admin tables (horizontal scroll only as a last resort).
 
-### Phase 37: API & Developer Experience
+### Phase 48: Interaction & Real-Time UX
+1. ⬜ Live timeline refresh via the existing SignalR hub (new notes prepend without full reload) + SSE fallback.
+2. ⬜ Notifications inbox: real-time badge + unread counts, mark-as-read, relative timestamps, deep links to the source note.
+3. ⬜ Optimistic UI everywhere it is safe (like/boost/follow already partial) with rollback on failure; replace form-submit reloads with `fetch` + DOM patch where the round-trip is trivial.
+4. ⬜ Command palette / global search (`/` already focuses search) — fuzzy match across notes, users, hashtags, communities.
 
-**Goal:** Provide a local REST API for third-party clients and improve developer tooling.
+### Phase 49: Design System & Visual Consistency
+1. ⬜ Extract a small component kit from `site.css` (`.note-card`, `.btn*`, `.admin-card`, `.stat-card`, `.avatar-*`, `.empty-state`, `.page-header`) into clearly sectioned blocks; remove the remaining ad-hoc inline `<style>` and `style=""` attributes.
+2. ⬜ Standardize spacing/typography tokens; verify no page uses one-off metrics (extend the Phase 43 token set).
+3. ⬜ Icon consistency — replace mixed emoji/glyph action icons with a single inline-SVG set (keeps it dependency-free).
+4. ⬜ Empty states, skeletons, and loading affordances on every data-bearing page (extend Phase 42 work to Communities, Trends, Search, Notifications, Admin).
+5. ⬜ Error + 404/403/500 pages on-brand (extend Phase 44).
 
-1. ✅ Local REST API: `/api/v1/statuses`, `/api/v1/accounts`, `/api/v1/timelines` (Mastodon-compatible DTOs, numeric status IDs, cookie-session auth)
-2. ✅ Application registration flow (ClientID/ClientSecret): `POST /api/v1/apps` issues a client_id + one-time client_secret; `GET /api/v1/apps` lists the caller's apps (secret omitted). Backed by new `OAuthClientEntity` + `IApplicationRepository` (EF + InMemory). 5 API tests.
-3. ✅ OAuth 2.0 PKCE for API authentication: `GET /api/v1/oauth/authorize` (cookie-auth, issues single-use code, 302 redirect) + `POST /api/v1/oauth/token` (authorization_code + PKCE S256/plain, returns Bearer access_token). Username-keyed `OAuthCodeEntity`/`OAuthTokenEntity` + `IApplicationRepository` methods (EF + InMemory). `BearerToken` auth scheme (`BearerTokenAuthenticationHandler`) so API controllers accept cookie **or** Bearer. 7 API tests.
-4. ✅ API rate limiting with configurable limits per application: `ApiRateLimiter` (per-client fixed-window) + `ApiRateLimitingMiddleware` on `/api/v1/*`. Bucket key = OAuth `client_id` (Bearer) or username (cookie), else IP. Mastodon-style `RateLimit-Limit/-Remaining/-Reset` headers; 429 on exceed. Configurable via `ApiRateLimit` config section + `PerApplication` client_id overrides. 10 tests (unit + web).
-5. ✅ API documentation (Swagger/OpenAPI): Swashbuckle Swagger UI at `/swagger` + OpenAPI 3.x JSON at `/swagger/v1/swagger.json`. Advertise `Bearer` (OAuth 2.0) + `Cookies` security schemes; include XML doc comments from controllers. XML doc generation enabled in WebUI csproj; doc comments added to all `/api/v1` action methods. 3 web tests.
-6. ✅ Webhook support for external integrations: REST CRUD at `POST/GET/DELETE /api/v1/webhooks` (`ApiWebhooksController`, HMAC secret auto-generated). Wired `IWebhookDeliveryService` into `ComposeController.Post` so each new activity queues a `post.created` webhook delivery (try/catch — never blocks posting). Registered `AddWebhookServices()` + `WebhookDeliveryBackgroundService` in WebUI (10s poll, retries with backoff, max 5 attempts, HMAC-SHA256 signed payload). 8 API tests.
+### Phase 50: Accessibility & Polish (WCAG AA)
+1. ⬜ Full contrast re-audit across light **and** dark themes (extend the 6 `AccessibilityTests` to a sweep of all views).
+2. ⬜ Focus-visible + logical tab order on all interactive controls, including the note-more dropdown and poll options.
+3. ⬜ Screen-reader pass: `aria-*` on dropdowns/menus/modals, live regions for toasts + timeline inserts, `alt`/`aria-label` on every icon button.
+4. ⬜ Keyboard-only walkthrough of the entire app (login → compose → like/reply/boost → follow → admin) via a delegated subagent; fix any trap.
 
-### Phase 38: Federation Hardening
+### Phase 51: Rich Media in the UI (leverage existing backend)
+1. ⬜ Image lightbox with keyboard nav + prev/next; proper `alt` text.
+2. ⬜ Multi-image attachments in a grid (backend already stores multiple).
+3. ⬜ Video/audio/document rendering with native players + thumbnails (Phase 36 was deferred; surface what the backend already supports before adding new backend).
+4. ⬜ Link previews / OEmbed for outbound URLs (client-side, no backend change needed for v1).
+5. ⬜ Content-warnings: blur + reveal, per-note and global; respect in lightbox.
 
-**Goal:** Production-grade federation reliability. (Use the public host `https://openpub.luit.ink/` and @RayvenMX@mastodon.world for task 4.)
+### Deferred / lower priority (UI or backend)
+- Phase 36 remainder: OEmbed server-side, upload virus scan, size limits (only if/when UI needs them).
+- Phase 39 T5: load testing with 100+ concurrent users (backend).
+- Fresh-context Playwright QA re-sweep of the Phase 44 fixes (carried over).
 
-1. ✅ HTTP Signature verification for incoming activities: rewrote `HttpSignatureMiddleware` to verify W3C draft-cavage signatures over the raw signed-content bytes (`RSA-SHA256/PKCS#1`, `rsa.VerifyData`) instead of a pre-computed hash; normalized `(request-target)`/`(host)` component names; added replay protection (`created`/`expires`, 300s skew) and body-digest validation. Options-driven posture via `ActivityPubOptions.EnableSignatureVerification` + `RequireSignatures` (tolerates unsigned by default for local dev; `RequireSignatures=true` for full production). Fixed `OutboundSigningService` to keep its `headers` param and signed content in agreement (no double `digest`, `Date`/`Digest` set before signing). Fixed `KeyFetchingService` to fetch the keyId's base URL (actor JSON-LD doc). Wired the middleware into WebUI `Program.cs` after `UseAuthorization`. 16 new/updated tests (10 in `HttpSignatureVerificationTests` + 6 rewritten integration/middleware tests).
-2. ✅ Delivery retry with exponential backoff: added `DeliveryRetryOptions` to `ActivityPubOptions` (`MaxRetries`, `BaseRetryDelaySeconds`, `UseExponentialBackoff`, `MaxRetryDelaySeconds` cap). Added `NextRetryAt` backoff-gate column to `SharedInboxDeliveryEntity`. Made `GetPendingSharedInboxDeliveriesAsync` time-aware (a `Failed` row is only re-eligible once `NextRetryAt` has passed and `RetryCount < maxRetries`; max retries is now a parameter, no longer hardcoded to 3). Rewrote `SharedInboxService.ProcessQueueAsync` to use a config-driven `HandleDeliveryFailure` helper that increments the retry count, sets an exponential `NextRetryAt` (`base * 2^(n-1)`, capped), and moves items to the terminal `MaxRetriesExceeded` dead-letter state. **Fixed a latent bug:** previously failed items were fetched for retry but never transitioned back to `Processing`, so retries never actually re-attempted; now `Queued`/`Failed` both become `Processing`. 7 new tests in `SharedInboxDeliveryRetryTests`.
-3. ✅ Federation peer health tracking (auto-block unreliable servers): new `FederationPeerEntity` (keyed by domain) + `FederationPeers` DbSet tracks per-remote-server reliability (`ConsecutiveFailures`, `ConsecutiveSuccesses`, `TotalDeliveries`, `TotalFailures`, `ConsecutiveProbeFailures`, `IsBlocked`, `BlockedAt`, `BlockedReason`, liveness-probe fields). New `PeerHealthOptions` on `ActivityPubOptions` (`Enabled`, `AutoBlockThreshold`=5, `AutoUnblockSuccessThreshold`=3, `AutoBlockProbeFailureThreshold`=3, `ProbeIntervalMinutes`=5). New `IPeerHealthService`/`PeerHealthService` records delivery + probe outcomes and auto-blocks a peer at the failure threshold, auto-re-admits it after enough consecutive successes, and auto-blocks on sustained probe unreachability; also exposes manual `BlockDomainAsync`/`UnblockDomainAsync` + `IsDomainBlockedAsync`. Wired into `SharedInboxService`: `ProcessQueueAsync` skips (and backoff-requeues, without contacting the sender or recording a failure) deliveries to blocked peers and records delivery outcomes for peer health; `ProcessAndDistributeActivityAsync` rejects inbound activities whose origin domain is blocked. New `PeerHealthBackgroundService` periodically probes known peers via WebFinger and records reachability. Repository methods added to the interface + EF + in-memory impls. 14 new tests (`PeerHealthServiceTests` + `PeerHealthDeliveryIntegrationTests`).
-4. ✅ Server-to-server federation testing with remote ActivityPub servers: fixed the critical bugs that prevented real outbound federation. (a) **Critical bug:** `SharedInboxService.ProcessQueueAsync` called `SendActivityAsync` with `string.Empty` as the private key, so every delivery threw `ArgumentNullException` and dead-lettered; now it retrieves the sender's private key from the local actor's `AdditionalProperties["privateKeyPem"]` via a new `GetPrivateKeyPemAsync`/`ExtractUsernameFromActorId` helpers, and gracefully fails with a clear reason when no key is available. (b) Added the required W3C `created` signature parameter to `OutboundSigningService` (Mastodon and most servers expect it). (c) Removed the `BuildInboxUrl` HEAD-probing loop (sync-over-async `.Result` deadlock risk + treated 404 as valid); now uses the stable `endpoint/inbox` path. (d) Fixed `WebFingerController.GetActivityPubEndpoint` to include the scheme+host in the `self` href (was `localhost/users/x`, now `https://host/users/x`) so remote servers can resolve our actors. (e) Fixed inconsistent key ID (`/#main-key` → `#main-key`) in `ActorController.GetActor`. Added `appsettings.json` to WebUI so `Domain`/`EnableFederation` are configurable. 4 new end-to-end tests in `OutboundFederationEndToEndTests` verify the sign→verify round-trip (outbound signer produces a valid signature accepted by our inbound `HttpSignatureMiddleware`), the `created` parameter, private-key retrieval from the actor record, and graceful failure when no key exists.
-5. ✅ Inbox processing error handling and dead letter queue: new `InboxDeadLetterEntity` (keyed by `Id`, stores `ActivityId`, `RawJson`, `Username`, `Status`, `AttemptCount`, `FailureReason`, `LastAttemptAt`, timestamps) + `InboxDeadLetterStatus` enum (`DeadLettered`, `Processing`, `Failed`, `Replayed`). New `InboxProcessingOptions` on `ActivityPubOptions` (`Enabled`, `MaxAttempts`=3, `BaseRetryDelaySeconds`, `UseExponentialBackoff`, `MaxRetryDelaySeconds` cap). Rewrote `SharedInboxService.ProcessAndDistributeActivityAsync(username, activity, rawJson)` with a retry loop: validates activity, rejects blocked peers, then retries `ProcessAndDistributeCoreAsync` up to `MaxAttempts` with exponential backoff; on exhaustion calls `HandleInboxDeadLetterAsync` to persist the raw payload to the DLQ and returns `true` so the remote server stops redelivering. Added `ProcessInboxDeadLettersAsync(batchSize)` to replay DLQ items (re-process, mark `Replayed` on success / `Failed` on failure). New `InboxDeadLetterBackgroundService` periodically reprocesses + prunes stale DLQ items. `ActorController.PostInbox` now captures the exact raw request body (resetting `Request.Body.Position` after `[FromBody]` model binding consumed it) and passes it to the service for DLQ replay; returns 400 for client-side rejections (missing fields, unsupported type, blocked peer) and 500 for server-side failures. Repository methods (`AddInboxDeadLetterAsync`, `GetInboxDeadLetterAsync`, `GetReprocessableInboxDeadLettersAsync`, `UpdateInboxDeadLetterAsync`, `GetInboxDeadLetterCountAsync`) added to the interface + EF + in-memory impls. `FederationDeadLetters` DbSet registered in `ActivityPubDbContext.OnModelCreating`. Admin dashboard shows a `DeadLetterCount` card. 18 new `InboxDeadLetterTests` + 5 controller unit tests (including raw-body capture verification).
-
-### Phase 39: Scalability
-
-**Goal:** Prepare for large-scale deployment.
-
-1. ✅ Redis-backed distributed cache: new `CacheOptions` + `CacheProvider` enum (`Memory`/`Redis`) on `ActivityPubOptions` (`Provider`, `RedisConnection`, `CachePrefix`). New `RedisFederationCache : IFederationCache` (JSON-serializes `Actor`/`Activity`/`WebFingerResponse`, stores strings for inbox responses, uses Redis Sets as domain/actor indices for efficient `Invalidate*ByDomain/Actor`, honors the four TTLs, best-effort `ClearAsync`/`Count` via `SCAN`). Added `StackExchange.Redis` 2.8.16 to Core csproj. DI now registers `IFederationCache` via a singleton factory that branches on the configured provider at resolution time (so appsettings.json binding is respected); when Redis is the provider it reuses an already-registered `IConnectionMultiplexer` if present (testable) else creates one, and uses the singleton `RedisFederationCache`; otherwise the scoped `MemoryFederationCache`. Added `"Cache"` sub-section to WebUI `appsettings.json`. 22 new tests (`RedisFederationCacheTests`: options defaults, DI provider branching with a mocked connection, actor/activity/webfinger/inbox Get/Set/Remove + domain/actor invalidation, edge cases).
-2. ✅ WebSocket scaling: Redis backplane + distributed rate limiting. Replaced the obsolete `Microsoft.AspNetCore.SignalR` 1.2.0 metapackage in WebUI with `Microsoft.AspNetCore.SignalR.StackExchangeRedis` 10.0.0. New `RealtimeOptions` (`Enabled`, `RedisConnection`, `ChannelPrefix`, `MaxMessagesPerWindow`, `Window`) on `ActivityPubOptions` + `"Realtime"` section in `appsettings.json`. `Program.cs` now branches on `Realtime.Enabled`: when on, it registers a singleton `IConnectionMultiplexer`, enables the Redis backplane via `AddSignalR().AddStackExchangeRedis(...)` (channel prefix + `abortConnect=false`), and registers the distributed `RedisHubRateLimiter`; otherwise it uses the in-process `InMemoryHubRateLimiter`. New `IHubRateLimiter` abstraction with two implementations — `InMemoryHubRateLimiter` (process-local, sliding window) and `RedisHubRateLimiter` (atomic Lua script: window-reset + increment + check in one server-side round-trip, keys TTL'd to 2× window). `NotificationHub` now injects `IHubRateLimiter` + `RealtimeOptions` so per-connection rate limiting is enforced globally across instances (previously a static in-process `ConcurrentDictionary` that would under-enforce when a connection migrated instances). Sticky sessions: with the backplane enabled, any instance can deliver to any connection, so a load balancer needs only standard TCP/WebSocket affinity; the distributed limiter removes the one correctness dependency on stickiness. 12 new tests (`HubRateLimiterTests`: in-memory allow/block/independence/clear/window-expiry, Redis script key+args verification, over-limit, clear, `RealtimeOptions` defaults + JSON binding). Phase 39 T3 done: PostgreSQL migration path (Npgsql provider, provider-aware default SQL, `DatabaseMigrationService` provider-agnostic copy + `db migrate` CLI, 14 tests). Phase 39 T4 done: memory profiling and leak detection — audited and bounded all long-lived singleton/static structures (idle-eviction sweeps on `ApiRateLimiter` + `RateLimitingMiddleware` + `InMemoryHubRateLimiter`, TTL-aware index pruning on `MemoryFederationCache`, bounded ring on `AuditLogService`, bounded resolve-evicting store on `UserReportService`, timer disposal in the 3 background services), 7 leak-detection tests.
-3. ✅ PostgreSQL migration path from SQLite: new `DatabaseProvider` enum (`Sqlite`/`Postgresql`) + `DatabaseOptions` (`Provider`, `IdentityConnection`, `FederationConnection`, `DataDirectory`, `IdentityDatabaseFile`, `FederationDatabaseFile`, `GetIdentityConnectionString()`, `GetFederationConnectionString()`) on `ActivityPubOptions.Database`. Added `Npgsql.EntityFrameworkCore.PostgreSQL` 9.0.4 to Core + WebUI csproj and bumped all EF 9.0.0 packages to 9.0.1 (required by the Npgsql provider). Made the two `HasDefaultValueSql("datetime('now')")` calls provider-aware via a `NowDefaultSql()` helper (`now()` on PostgreSQL, `datetime('now')` on SQLite) — 17 call sites. New `DbProviderExtensions` (`ConfigureDatabaseProvider`, `AddActivityPubDbContext`, `AddConfiguredDbContext<T>`) so both `ApplicationDbContext` (Identity) and `ActivityPubDbContext` (federation) are configured provider-aware in WebUI `Program.cs`; `appsettings.json` gained a `"Database"` section. New `DatabaseMigrationService` (Core `Migration/`) — provider-agnostic data copy preserving primary keys, entities inserted in FK dependency order (topo sort via `OrderEntityTypes`), batched `SaveChanges` by `BatchSize`, `EnsureCreated` on the target, graceful skip (with reason) of entities whose table/column is missing in an older-schema source, `IProgress<MigrationProgress>` reporting. New CLI command `db migrate` (`DbCommand`) wired into `Program.cs`. 14 new tests (`DatabaseMigrationTests`: `DatabaseOptions` defaults + connection resolution, provider-conditional `CreatedAt` default SQL, SQLite→SQLite actor/activity copy with key preservation, empty source, FK ordering, provider selection, schema-drift skip).
-4. ✅ Memory profiling and leak detection: audited every long-lived (singleton/static) in-memory structure for unbounded growth and fixed each genuine leak, then added leak-detection tests that assert the structures stay bounded under sustained load. (a) `ApiRateLimiter` — added `LastSeenUtc` per `WindowState` and an amortized `SweepIdle()` (every 30s, idle-evict after 5 min) so the singleton no longer keeps one entry per distinct client that ever connected; exposed `TrackedClientCount`. (b) `MemoryFederationCache` — the parallel key index (used for domain/actor invalidation) only shrank on explicit remove/clear, so it accumulated every distinct key ever cached; changed it to `ConcurrentDictionary<string,KeyExpiry>` (`TrackKey`/`ForgetKey`/`PruneExpired` every 10s, `Count` prunes first) so the index is pruned in lockstep with the TTL'd cache values. (c) `AuditLogService` — the static audit queue grew without bound; now a bounded ring (`MaxEntries=10_000`) that trims the oldest beyond the bound, `GetRecentEntriesAsync` returns the most-recent `limit` (view re-sorts, so order-agnostic). (d) `UserReportService` — the static report queue mutated status but never removed entries; now a bounded `ConcurrentDictionary<int,UserReport>` (`MaxReports=10_000`) whose `TrimResolved()` evicts the oldest resolved (non-pending) reports when over bound, never evicting pending ones. (e) `RateLimitingMiddleware` — added `LastSeenUtc` to `RateLimitState` + the same amortized idle sweep + `TrackedClientCount`. (f) `InMemoryHubRateLimiter` — added a `LastSeenUtc`-based idle sweep so connections that drop abruptly (no clean `ClearAsync`) are reclaimed. (g) The three `System.Timers.Timer`-driven background services (`SharedInboxBackgroundService`, `PeerHealthBackgroundService`, `InboxDeadLetterBackgroundService`) now `Dispose()` their timer in `ExecuteAsync`'s `finally` and `StopAsync`, so the timer and its delegate closure can be reclaimed. 7 new tests (`Memory/LeakDetectionTests`: rate-limiter idle sweep empties + keeps active clients, cache index prunes after TTL + keeps live entries, audit ring bounded drops-oldest via unique probes, user-report store keeps newest pending probes — the static-state services are asserted with unique markers rather than absolute counts because xunit runs collections in parallel and the static stores are process-wide).
-5. ⬜ Load testing with 100+ concurrent users
-
-### Phase 45: Consolidate All Code Under `src/` — COMPLETE
-
-**Goal:** Move the remaining top-level code projects into `src/` so `src/` is the single home for all code (production, tests, benchmarks, samples), leaving only docs, config, scripts, and CI at the repo root.
-
-**Done (commit a880e37 + 062075f):**
-1. ✅ Moved `ActivityPub.Tests/` → `src/ActivityPub.Tests/` (git mv, history preserved)
-2. ✅ Moved `ActivityPub.Benchmarks/` → `src/ActivityPub.Benchmarks/` and added it to `ActivityPub.sln` (newly included, nested under the `src` solution folder)
-3. ✅ Moved `samples/` → `src/samples/` (internal structure kept: BotApp, ConsoleClient, DemoApp, FederationApp, quickstart, advanced)
-4. ✅ `ActivityPub.sln`: all project paths fixed; Benchmarks project + 12 config entries added; Tests/Benchmarks nested under `src`
-5. ✅ Fixed `ProjectReference` paths in Tests, Benchmarks, and all 4 sample csproj files
-6. ✅ `scripts/build.sh` + `scripts/test.sh` point at `src/…` paths
-7. ✅ `.github/workflows/ci.yml`: build-artifact path → `src/ActivityPub.Tests/bin/Release/`
-8. ✅ Docs updated: README (directory tree + `cd src/samples/quickstart`), directory-structure, testing, overview, state-report
-9. ✅ Verified: `dotnet build` 0 errors, `dotnet test` 798/798 passing, `scripts/build.sh` + `scripts/test.sh` succeed end-to-end
+**Acceptance criteria for the UI push:**
+- No page uses one-off styling inconsistent with the rest of the app.
+- Dark mode toggles without flicker and persists; both themes pass WCAG AA.
+- Every page is usable by keyboard alone and at 320px width.
+- Timeline feels instant: new notes appear without a full reload; pagination is client-driven.
+- All changes verified by a delegated Playwright subagent with before/after screenshots.
