@@ -18,7 +18,7 @@
     <div class="mb-3">
         <h3>Blocked Domains</h3>
         <div class="input-group mb-2">
-            <input type="text" name="NewDomain" class="form-control" placeholder="Add domain to block..." value="@Model.NewDomain" />
+            <input type="text" name="NewDomain" class="form-control" placeholder="Add domain to block..." aria-label="Domain to block" value="@Model.NewDomain" />
             <button type="submit" name="action" value="addDomain" class="btn btn-secondary">Add</button>
         </div>
         <ul class="list-group">
@@ -35,7 +35,7 @@
     <div class="mb-3">
         <h3>Prohibited Words</h3>
         <div class="input-group mb-2">
-            <input type="text" name="NewWord" class="form-control" placeholder="Add prohibited word..." value="@Model.NewWord" />
+            <input type="text" name="NewWord" class="form-control" placeholder="Add prohibited word..." aria-label="Prohibited word" value="@Model.NewWord" />
             <button type="submit" name="action" value="addWord" class="btn btn-secondary">Add</button>
         </div>
         <ul class="list-group">
