@@ -72,6 +72,12 @@ public interface IActivityPubRepository
     Task<bool> DeleteActivityAsync(string activityId);
 
     /// <summary>
+    /// Returns every stored activity ID (its ActivityPub URL). Used by the REST
+    /// API to translate numeric status IDs back to their canonical URL.
+    /// </summary>
+    Task<ICollection<string>> GetAllActivityIdsAsync();
+
+    /// <summary>
     /// Checks if an activity has been seen before (deduplication)
     /// </summary>
     /// <param name="activityId">The activity ID to check</param>

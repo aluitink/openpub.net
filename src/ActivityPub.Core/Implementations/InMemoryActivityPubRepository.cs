@@ -45,6 +45,11 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
     }
 
     /// <inheritdoc />
+    public Task<ICollection<string>> GetAllActivityIdsAsync()
+    {
+        return Task.FromResult<ICollection<string>>(_activities.Keys.ToList());
+    }
+
     public Task<Activity?> GetActivityAsync(string activityId)
     {
         if (_activities.TryGetValue(activityId, out Activity? activity))

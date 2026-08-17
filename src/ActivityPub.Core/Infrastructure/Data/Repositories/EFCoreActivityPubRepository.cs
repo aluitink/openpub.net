@@ -96,6 +96,13 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         return true;
     }
 
+    public async Task<ICollection<string>> GetAllActivityIdsAsync()
+    {
+        return await _context.Activities
+            .Select(a => a.ActivityId)
+            .ToListAsync();
+    }
+
     public async Task<Activity?> GetActivityAsync(string activityId)
     {
         var entity = await _context.Activities

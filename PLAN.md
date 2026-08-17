@@ -1,7 +1,7 @@
 # ActivityPub.NET - Project Plan
 
 **Last Updated:** Aug 17, 2026
-**Status:** Phases 1-45 complete. **806/806 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done: T1 design tokens, T2 avatars, T3 profile, T4 communities, T5 trends/discover (+ community Show-route fix), T6 admin layout, T7 dark mode, T8 accessibility (WCAG AA contrast + focus-visible + aria-labels + 6 a11y tests), T9 footer + public `/about` page, T10 page-header pattern. Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding).
+**Status:** Phases 1-45 complete. **816/816 tests passing.** Phase 43 (Interface Buildout & Polish) **complete** — all 10 tasks done. Phase 37 T1 done: local Mastodon-compatible REST API under `/api/v1` (statuses/accounts/timelines, numeric status IDs, cookie-session auth, 10 API tests). Phase 44 P0/P1/P2 fixes + inline reply compose applied (fresh-context QA re-sweep outstanding).
 
 ---
 
@@ -148,7 +148,7 @@ A Mastodon-like microblogging app built on ActivityPub.NET. SQLite, username/pas
 
 **Goal:** Provide a local REST API for third-party clients and improve developer tooling.
 
-1. ⬜ Local REST API: `/api/v1/statuses`, `/api/v1/accounts`, `/api/v1/timelines`
+1. ✅ Local REST API: `/api/v1/statuses`, `/api/v1/accounts`, `/api/v1/timelines` (Mastodon-compatible DTOs, numeric status IDs, cookie-session auth)
 2. ⬜ Application registration flow (ClientID/ClientSecret)
 3. ⬜ OAuth 2.0 PKCE for API authentication
 4. ⬜ API rate limiting with configurable limits per application
