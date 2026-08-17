@@ -176,6 +176,49 @@ public class CacheOptions
 }
 
 /// <summary>
+/// Configuration for real-time (SignalR) scaling across multiple application
+/// instances. When <see cref="Enabled"/> is true, a Redis backplane is used so
+/// that hub messages broadcast on one instance are delivered to clients connected
+/// to any other instance in the pool, and per-connection rate limiting is shared
+/// across instances. When <see cref="Enabled"/> is false (the default), SignalR
+/// runs in single-process mode with in-memory rate limiting.
+/// </summary>
+public class RealtimeOptions
+{
+    /// <summary>
+    /// Whether to enable the Redis-based SignalR backplane (scale-out). Defaults to
+    /// <see langword="false"/> for single-instance deployments.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Redis connection string for the SignalR backplane (e.g. "localhost:6379" or
+    /// "redis.example.com:6379,abortConnect=false"). Defaults to the same value as the
+    /// federation cache so a single Redis instance can serve both. Only used when
+    /// <see cref="Enabled"/> is true.
+    /// </summary>
+    public string RedisConnection { get; set; } = "localhost:6379";
+
+    /// <summary>
+    /// Prefix for the Redis pub/sub channel used by the SignalR backplane. Useful when
+    /// multiple SignalR applications share a single Redis instance. Defaults to
+    /// "activitypub:signalr:".
+    /// </summary>
+    public string ChannelPrefix { get; set; } = "activitypub:signalr:";
+
+    /// <summary>
+    /// Maximum number of messages per connection per sliding window before the
+    /// connection is rate-limited. Defaults to 50.
+    /// </summary>
+    public int MaxMessagesPerWindow { get; set; } = 50;
+
+    /// <summary>
+    /// Length of the rate-limit sliding window. Defaults to 1 minute.
+    /// </summary>
+    public TimeSpan Window { get; set; } = TimeSpan.FromMinutes(1);
+}
+
+/// <summary>
 /// Configuration options for ActivityPub
 /// </summary>
 public class ActivityPubOptions
@@ -266,4 +309,9 @@ public class ActivityPubOptions
     /// Federation cache backend configuration (see <see cref="CacheOptions"/>).
     /// </summary>
     public CacheOptions Cache { get; set; } = new();
+
+    /// <summary>
+    /// Real-time (SignalR) scale-out configuration (see <see cref="RealtimeOptions"/>).
+    /// </summary>
+    public RealtimeOptions Realtime { get; set; } = new();
 }

@@ -132,7 +132,47 @@ public class Program
         builder.Services.Configure<ActivityPub.Core.Options.ActivityPubOptions>(
             builder.Configuration.GetSection("ActivityPub"));
         builder.Services.AddMemoryCache();
-        builder.Services.AddSignalR();
+
+        // SignalR scale-out. When the Redis backplane is enabled
+        // (ActivityPub:Realtime:Enabled in appsettings.json), hub messages are
+        // broadcast across all instances via a shared Redis connection, and a
+        // distributed (Redis-backed) rate limiter enforces per-connection limits
+        // globally. Otherwise SignalR runs in single-process mode with an
+        // in-memory rate limiter.
+        var realtimeOpts = builder.Configuration
+            .GetSection("ActivityPub:Realtime")
+            .Get<ActivityPub.Core.Options.RealtimeOptions>()
+            ?? new ActivityPub.Core.Options.RealtimeOptions();
+
+        if (realtimeOpts.Enabled)
+        {
+            // Singleton IConnectionMultiplexer used by the distributed rate
+            // limiter. The SignalR backplane below opens its own connection from
+            // the same connection string (managed by the backplane's lifetime),
+            // so both the backplane and rate limiting talk to the same Redis.
+            builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp =>
+                StackExchange.Redis.ConnectionMultiplexer.Connect(realtimeOpts.RedisConnection));
+
+            // Enable the Redis backplane so hub messages broadcast on one
+            // instance reach clients connected to any other instance.
+            var serverBuilder = builder.Services.AddSignalR();
+            serverBuilder.AddStackExchangeRedis(realtimeOpts.RedisConnection, redisOptions =>
+            {
+                redisOptions.Configuration = new StackExchange.Redis.ConfigurationOptions
+                {
+                    AbortOnConnectFail = false,
+                    ChannelPrefix = StackExchange.Redis.RedisChannel.Literal(realtimeOpts.ChannelPrefix)
+                };
+            });
+
+            builder.Services.AddSingleton<ActivityPub.WebUI.Hubs.IHubRateLimiter, ActivityPub.WebUI.Hubs.RedisHubRateLimiter>();
+        }
+        else
+        {
+            builder.Services.AddSignalR();
+            builder.Services.AddSingleton<ActivityPub.WebUI.Hubs.IHubRateLimiter, ActivityPub.WebUI.Hubs.InMemoryHubRateLimiter>();
+        }
+
         builder.Services.AddScoped<ActivityPub.WebUI.Services.INotificationService, ActivityPub.WebUI.Services.SignalRNotificationService>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IPushNotificationService, ActivityPub.WebUI.Services.PushNotificationService>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IAuditLogService, ActivityPub.WebUI.Services.AuditLogService>();
