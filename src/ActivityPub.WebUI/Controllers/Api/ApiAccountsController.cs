@@ -19,6 +19,10 @@ public class ApiAccountsController : ControllerBase
         _repository = repository;
     }
 
+    /// <summary>
+    /// Looks up an account by <c>acct</c> (e.g. <c>alice</c> or
+    /// <c>alice@host</c>). Public (no auth required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("accounts")]
@@ -44,6 +48,10 @@ public class ApiAccountsController : ControllerBase
         return Ok(account);
     }
 
+    /// <summary>
+    /// Returns a single account by its id (preferred username or remote actor
+    /// URL). Public (no auth required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("accounts/{id}")]
@@ -65,6 +73,10 @@ public class ApiAccountsController : ControllerBase
         return Ok(account);
     }
 
+    /// <summary>
+    /// Returns an account's statuses (their outbox), newest first. Public (no
+    /// auth required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("accounts/{id}/statuses")]
@@ -94,6 +106,10 @@ public class ApiAccountsController : ControllerBase
         return Ok(statuses);
     }
 
+    /// <summary>
+    /// Returns the accounts that follow the given account. Public (no auth
+    /// required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("accounts/{id}/followers")]
@@ -123,6 +139,10 @@ public class ApiAccountsController : ControllerBase
         return Ok(accounts);
     }
 
+    /// <summary>
+    /// Returns the accounts the given account follows. Public (no auth
+    /// required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("accounts/{id}/following")]

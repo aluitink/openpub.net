@@ -57,6 +57,70 @@ public class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddResponseCaching();
 
+        // API documentation (Swagger UI + OpenAPI JSON) for the local
+        // Mastodon-shaped REST API under /api/v1.
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+            {
+                Title = "ActivityPub.NET REST API",
+                Version = "v1",
+                Description = "Mastodon-compatible local REST API (/api/v1): statuses, accounts, " +
+                              "timelines, application registration, and OAuth 2.0 (PKCE) for API auth.",
+            });
+
+            // Pick up XML doc comments from the controllers/DTOs.
+            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (System.IO.File.Exists(xmlPath))
+                options.IncludeXmlComments(xmlPath);
+
+            // Advertise both authentication mechanisms the API accepts:
+            // a Bearer access token (OAuth 2.0) and the cookie session.
+            options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Description = "OAuth 2.0 Bearer access token (from POST /api/v1/oauth/token).",
+                Name = "Authorization",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+            });
+            options.AddSecurityDefinition("Cookies", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Description = "Authenticated browser cookie session.",
+                Name = "Cookie",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Cookie,
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+            });
+            options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
+                {
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer",
+                        }
+                    },
+                    Array.Empty<string>()
+                },
+                {
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Cookies",
+                        }
+                    },
+                    Array.Empty<string>()
+                },
+            });
+        });
+
         // API (Mastodon REST) rate limiting — configurable via the
         // "ApiRateLimit" section in appsettings.json.
         builder.Services.Configure<ActivityPub.Core.Options.ApiRateLimitOptions>(
@@ -103,6 +167,18 @@ public class Program
         });
 
         app.MapControllers();
+
+        // Swagger UI + OpenAPI JSON for the REST API. The OpenAPI document is
+        // public (it describes the API contract); the Swagger UI at /swagger
+        // links to it. Both live outside /api/v1, so they are exempt from the
+        // API rate limiter.
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            // Swashbuckle serves the OpenAPI JSON at /swagger/{doc}/swagger.json.
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "REST API v1");
+            options.DocumentTitle = "ActivityPub.NET REST API";
+        });
 
         app.MapControllerRoute(
             name: "default",

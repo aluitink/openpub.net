@@ -22,6 +22,11 @@ public class ApiTimelinesController : ControllerBase
         _repository = repository;
     }
 
+    /// <summary>
+    /// Returns the authenticated user's home timeline (the union of their
+    /// outbox and inbox), newest first. Supports <c>max_id</c> (page to older
+    /// items) and <c>since_id</c> (only newer items) for cursor pagination.
+    /// </summary>
     [HttpGet]
     [Route("timelines/home")]
     [ResponseCache(Duration = 3, VaryByHeader = "Cookie", Location = ResponseCacheLocation.Client)]

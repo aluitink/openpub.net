@@ -21,6 +21,12 @@ public class ApiStatusesController : ControllerBase
         _repository = repository;
     }
 
+    /// <summary>
+    /// Returns an account's public statuses (their outbox), newest first.
+    /// Pass <c>account</c> (e.g. <c>alice</c> or <c>alice@host</c>) as a query
+    /// parameter. Supports <c>max_id</c>/<c>since_id</c> cursor pagination.
+    /// Public (no auth required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("statuses")]
@@ -66,6 +72,10 @@ public class ApiStatusesController : ControllerBase
         return Ok(statuses);
     }
 
+    /// <summary>
+    /// Returns a single status by its numeric API id. Public (no auth
+    /// required).
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     [Route("statuses/{id}")]
@@ -83,6 +93,10 @@ public class ApiStatusesController : ControllerBase
         return Ok(status);
     }
 
+    /// <summary>
+    /// Deletes a status by its numeric API id. Requires authentication as the
+    /// author (cookie session or Bearer token).
+    /// </summary>
     [HttpDelete]
     [Authorize(AuthenticationSchemes = BearerTokenAuthConstants.BothSchemes)]
     [Route("statuses/{id}")]
