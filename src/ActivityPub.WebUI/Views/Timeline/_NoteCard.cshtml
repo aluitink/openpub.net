@@ -11,7 +11,7 @@
     }
 }
 
-<div class="note-card@(Model.InReplyTo != null ? " note-reply" : "")">
+<div class="note-card@(Model.InReplyTo != null ? " note-reply" : "")" data-activity-id="@Model.ActivityId">
     @if (Model.ActivityType == "Announce")
     {
         <div class="boost-banner">Boosted by @Model.AuthorName</div>

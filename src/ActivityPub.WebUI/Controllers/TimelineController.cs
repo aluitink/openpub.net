@@ -32,6 +32,9 @@ public class TimelineController : Controller
 
         var allIds = new HashSet<string>(outboxIds);
         allIds.UnionWith(inboxIds);
+        // The timeline ends only when both feeds run short: each query is
+        // independent, so a full page from either one still has a next page.
+        var pageFull = outboxIds.Count == pageSize && inboxIds.Count == pageSize;
 
         var activities = new List<TimelineActivityItem>();
         foreach (var id in allIds)
@@ -79,7 +82,7 @@ public class TimelineController : Controller
 
         activities.Sort((a, b) => b.Published.CompareTo(a.Published));
         ViewBag.Page = page;
-        ViewBag.HasMore = activities.Count == pageSize;
+        ViewBag.HasMore = pageFull;
         ViewBag.ComposeSuccess = TempData["ComposeSuccess"];
         ViewBag.InteractionSuccess = TempData["InteractionSuccess"];
         ViewBag.InteractionError = TempData["InteractionError"];

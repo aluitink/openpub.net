@@ -35,7 +35,7 @@
 {
     var topLevel = Model.Where(x => x.InReplyTo == null).ToList();
     var replies = Model.Where(x => x.InReplyTo != null).ToList();
-    var page = (int)(ViewBag.Page ?? 1);
+    var pageNum = (int)(ViewBag.Page ?? 1);
     var hasMore = (bool)(ViewBag.HasMore ?? false);
 
     <div class="timeline-feed">
@@ -57,10 +57,10 @@
 
     @if (hasMore)
     {
-        <div class="load-more-container">
-            <a href="?page=@(page + 1)" class="btn btn-secondary load-more-btn">Load more</a>
+        <div class="load-more-container" data-page="@pageNum" data-next="@Url.Action("Index", new { page = pageNum + 1 })">
+            <a href="?page=@(pageNum + 1)" class="btn btn-secondary load-more-btn" role="button">Load more</a>
         </div>
-        <div id="load-more-skeleton" class="timeline-loading">
+        <div id="load-more-skeleton" class="timeline-loading" aria-hidden="true">
             <div class="skeleton-note-card">
                 <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
                     <div class="skeleton skeleton-avatar"></div>
@@ -110,10 +110,69 @@ else
 
     var loadMoreBtn = document.querySelector('.load-more-btn');
     var loadSkeleton = document.getElementById('load-more-skeleton');
-    if (loadMoreBtn && loadSkeleton) {
-        loadMoreBtn.addEventListener('click', function() {
-            loadSkeleton.classList.add('active');
-        });
+    var loadContainer = document.querySelector('.load-more-container');
+    if (loadMoreBtn && loadSkeleton && loadContainer) {
+        var loading = false;
+        var nextUrl = loadContainer.getAttribute('data-next');
+        function setLoading(state) {
+            loading = state;
+            loadSkeleton.classList.toggle('active', state);
+            loadMoreBtn.disabled = state;
+            loadMoreBtn.textContent = state ? 'Loading…' : 'Load more';
+        }
+        function injectFeed(html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var feed = doc.querySelector('.timeline-feed');
+            if (!feed) return;
+            var existing = new Set();
+            document.querySelectorAll('.note-card[data-activity-id]').forEach(function(c) {
+                existing.add(c.getAttribute('data-activity-id'));
+            });
+            var frag = document.createDocumentFragment();
+            feed.querySelectorAll('.note-card').forEach(function(card) {
+                var id = card.getAttribute('data-activity-id');
+                if (id && existing.has(id)) return;
+                if (id) existing.add(id);
+                frag.appendChild(card.cloneNode(true));
+            });
+            if (frag.childNodes.length) {
+                document.querySelector('.timeline-feed').appendChild(frag);
+            }
+            var next = doc.querySelector('.load-more-container');
+            var noMore = !doc.querySelector('.load-more-btn');
+            if (next && next.getAttribute('data-next')) {
+                loadContainer.setAttribute('data-page', next.getAttribute('data-page'));
+                loadContainer.setAttribute('data-next', next.getAttribute('data-next'));
+                nextUrl = next.getAttribute('data-next');
+                loadMoreBtn.href = nextUrl;
+            } else if (noMore) {
+                loadContainer.remove();
+                loadSkeleton.remove();
+            }
+        }
+        async function loadMore(e) {
+            if (e) e.preventDefault();
+            if (loading) return;
+            if (!nextUrl) return;
+            setLoading(true);
+            try {
+                var res = await fetch(nextUrl, { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('load failed');
+                injectFeed(await res.text());
+            } catch (err) {
+                showToast('Could not load more posts', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadMoreBtn.addEventListener('click', loadMore);
+        var feedEl = document.querySelector('.timeline-feed');
+        if (feedEl && 'IntersectionObserver' in window) {
+            var observer = new IntersectionObserver(function(entries) {
+                if (entries[0] && entries[0].isIntersecting) loadMore(null);
+            }, { rootMargin: '600px 0px' });
+            observer.observe(loadSkeleton);
+        }
     }
 
     document.querySelectorAll('.btn-like, .btn-boost').forEach(function(btn) {
