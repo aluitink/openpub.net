@@ -67,6 +67,11 @@ public static class ActivityPubServiceCollectionExtensions
 
         services.AddScoped<IActivityPubRepository, EFCoreActivityPubRepository>();
         services.AddScoped<IApplicationRepository, EFCoreApplicationRepository>();
+
+        // API (Mastodon REST) rate limiting. The limiter holds shared
+        // in-memory per-client window state, so it must be a singleton; the
+        // options are read through IOptions so appsettings.json can tune it.
+        services.AddSingleton<Core.Services.ApiRateLimiter>();
         services.AddScoped<ActivityPubEventDispatcher>();
         services.AddScoped<IKeyFetchingService, KeyFetchingService>();
         services.AddScoped<IKeyGenerationService, KeyGenerationService>();

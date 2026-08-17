@@ -11,6 +11,7 @@ public static class BearerTokenAuthConstants
 {
     public const string SchemeName = "BearerToken";
     public const string ScopeClaim = "api.scope";
+    public const string ClientIdClaim = "api.client_id";
 
     /// <summary>
     /// Comma-separated scheme list accepting the cookie (Identity.Application)
@@ -70,6 +71,7 @@ public class BearerTokenAuthenticationHandler : AuthenticationHandler<Authentica
         {
             new(ClaimTypes.Name, entity.Username),
             new(BearerTokenAuthConstants.ScopeClaim, entity.Scopes),
+            new(BearerTokenAuthConstants.ClientIdClaim, entity.ClientId),
         };
         var identity = new ClaimsIdentity(claims, Scheme.Name,
             nameType: ClaimTypes.Name, roleType: ClaimTypes.Role);

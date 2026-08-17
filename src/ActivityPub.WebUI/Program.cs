@@ -56,6 +56,11 @@ public class Program
         builder.Services.AddRazorPages();
         builder.Services.AddControllersWithViews();
         builder.Services.AddResponseCaching();
+
+        // API (Mastodon REST) rate limiting — configurable via the
+        // "ApiRateLimit" section in appsettings.json.
+        builder.Services.Configure<ActivityPub.Core.Options.ApiRateLimitOptions>(
+            builder.Configuration.GetSection("ApiRateLimit"));
         builder.Services.AddMemoryCache();
         builder.Services.AddSignalR();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.INotificationService, ActivityPub.WebUI.Services.SignalRNotificationService>();
@@ -87,6 +92,7 @@ public class Program
         app.UseRouting();
         app.UseResponseCaching();
         app.UseAuthorization();
+        app.UseApiRateLimiting();
         app.MapStaticAssets();
 
         app.UseRateLimiting(options =>
