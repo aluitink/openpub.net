@@ -133,6 +133,49 @@ public class PeerHealthOptions
 }
 
 /// <summary>
+/// The cache backend to use for federation caching.
+/// </summary>
+public enum CacheProvider
+{
+    /// <summary>
+    /// In-memory cache (per-process). Default for development and single-instance deployments.
+    /// </summary>
+    Memory = 0,
+
+    /// <summary>
+    /// Redis-backed distributed cache. Use for multi-instance deployments where all instances
+    /// must share the same cached state.
+    /// </summary>
+    Redis = 1
+}
+
+/// <summary>
+/// Configuration for the federation cache backend. When <see cref="Provider"/> is
+/// <see cref="CacheProvider.Redis"/>, the cache is stored in Redis and shared across
+/// all application instances; when <see cref="CacheProvider.Memory"/> (the default),
+/// each process keeps its own in-memory cache.
+/// </summary>
+public class CacheOptions
+{
+    /// <summary>
+    /// The cache backend to use. Defaults to <see cref="CacheProvider.Memory"/>.
+    /// </summary>
+    public CacheProvider Provider { get; set; } = CacheProvider.Memory;
+
+    /// <summary>
+    /// Redis connection string (e.g. "localhost:6379" or "redis.example.com:6379,abortConnect=false").
+    /// Only used when <see cref="Provider"/> is <see cref="CacheProvider.Redis"/>.
+    /// </summary>
+    public string RedisConnection { get; set; } = "localhost:6379";
+
+    /// <summary>
+    /// Optional prefix applied to all cache keys stored in Redis. Useful when multiple
+    /// applications share a single Redis instance. Defaults to "activitypub:".
+    /// </summary>
+    public string CachePrefix { get; set; } = "activitypub:";
+}
+
+/// <summary>
 /// Configuration options for ActivityPub
 /// </summary>
 public class ActivityPubOptions
@@ -218,4 +261,9 @@ public class ActivityPubOptions
     /// (see <see cref="InboxProcessingOptions"/>).
     /// </summary>
     public InboxProcessingOptions InboxProcessing { get; set; } = new();
+
+    /// <summary>
+    /// Federation cache backend configuration (see <see cref="CacheOptions"/>).
+    /// </summary>
+    public CacheOptions Cache { get; set; } = new();
 }

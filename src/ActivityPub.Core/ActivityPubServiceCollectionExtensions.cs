@@ -84,7 +84,30 @@ public static class ActivityPubServiceCollectionExtensions
         services.AddScoped<IActivityValidationService, ActivityValidationService>();
         services.AddScoped<ActivityPubService>();
         services.AddScoped<ISharedInboxService, SharedInboxService>();
-        services.AddScoped<IFederationCache, MemoryFederationCache>();
+
+        // Federation cache: the provider is read at resolution time via a
+        // factory so that options bound from configuration (appsettings.json)
+        // are respected. When the provider is Redis, a singleton
+        // ConnectionMultiplexer (one shared connection across all scopes) and a
+        // singleton RedisFederationCache are used. Otherwise the in-memory
+        // implementation is used.
+        services.AddSingleton<IFederationCache>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<ActivityPubOptions>>().Value;
+            if (opts.Cache.Provider == Options.CacheProvider.Redis)
+            {
+                // Use an already-registered ConnectionMultiplexer if present
+                // (e.g. a mock in tests); otherwise create a real one.
+                var connection = sp.GetService<StackExchange.Redis.IConnectionMultiplexer>()
+                    ?? StackExchange.Redis.ConnectionMultiplexer.Connect(opts.Cache.RedisConnection);
+                return new RedisFederationCache(
+                    connection,
+                    sp.GetRequiredService<IOptions<ActivityPubOptions>>(),
+                    sp.GetService<ILogger<RedisFederationCache>>());
+            }
+            return new MemoryFederationCache(
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>());
+        });
         services.AddScoped<CacheInvalidationService>();
         services.AddScoped<Core.Services.IMRFService, Core.Services.MRFService>();
         services.AddScoped<IFederationHealthService, FederationHealthService>();
