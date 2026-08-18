@@ -322,4 +322,18 @@ public interface IActivityPubRepository
     /// (the unread count for the notification badge).
     /// </summary>
     Task<int> GetUnreadNotificationCountAsync(string username, DateTime? after);
+
+    // ---- Display preferences ------------------------------------------------
+
+    /// <summary>
+    /// Gets the user's "blur sensitive media" display preference. Returns the
+    /// stored value, or <c>null</c> when the user has never set it (callers
+    /// should default to <c>true</c> — blur sensitive media — matching Mastodon).
+    /// </summary>
+    Task<bool?> GetBlurSensitiveMediaAsync(string username);
+
+    /// <summary>
+    /// Sets the user's "blur sensitive media" display preference (upsert).
+    /// </summary>
+    Task SetBlurSensitiveMediaAsync(string username, bool value);
 }

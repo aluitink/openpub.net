@@ -213,6 +213,7 @@
                 setTimeout(function () { card.classList.remove('note-card-new'); }, 4000);
 
                 if (window.FB.linkPreviewInit) window.FB.linkPreviewInit(card);
+                if (window.FB.cwInit) window.FB.cwInit(card);
 
                 var author = card.querySelector('.note-username');
                     var contentEl = card.querySelector('.note-content');
@@ -518,6 +519,7 @@
                     if (skeleton) skeleton.remove();
                 }
                 if (window.FB.linkPreviewInit) window.FB.linkPreviewInit(frag);
+                if (window.FB.cwInit) window.FB.cwInit(frag);
             }
 
             async function loadMore(e) {
@@ -642,6 +644,7 @@
                         currentBtn.parentNode.replaceChild(freshBtn, currentBtn);
                         syncNoteButtons(noteCard, isLike ? '.btn-like' : '.btn-boost');
                         if (window.FB.linkPreviewInit) window.FB.linkPreviewInit(noteCard);
+                        if (window.FB.cwInit) window.FB.cwInit(noteCard);
                     }
                     if (currentBtn) currentBtn.disabled = false;
                 })
@@ -778,20 +781,50 @@
 
         document.addEventListener('click', closeAllMoreMenus);
 
-        document.querySelectorAll('.cw-toggle-btn').forEach(function(btn) {
-            var noteCard = btn.closest('.note-card');
-            if (noteCard && btn.getAttribute('aria-expanded') !== 'true') {
-                noteCard.classList.add('cw-hidden');
-            }
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (!noteCard) return;
-                var isExpanded = btn.getAttribute('aria-expanded') === 'true';
-                noteCard.classList.toggle('cw-hidden', isExpanded);
-                btn.textContent = isExpanded ? 'Show' : 'Hide';
-                btn.setAttribute('aria-expanded', String(!isExpanded));
+        // ---- Content-warning blur / reveal ----------------------------------
+        //
+        // A note card with a content warning (or sensitive media) starts blurred
+        // when the viewer's global "blur sensitive media" preference is on
+        // (the default). The card's `data-cw-blur="true"` attribute — computed
+        // server-side from the note's sensitive/CW flag AND the viewer's pref —
+        // tells us whether to apply the initial blur. The banner's Show/Hide
+        // button reveals/hides on demand.
+        //
+        // This is re-runnable via window.FB.cwInit(root) so dynamically inserted
+        // cards (live timeline prepend, load-more) get their initial blur state
+        // and a working toggle without duplicating handlers.
+        window.FB.cwInit = function(root) {
+            var scope = root || document;
+            scope.querySelectorAll('.note-card[data-cw-blur]').forEach(function(noteCard) {
+                var btn = noteCard.querySelector('.cw-toggle-btn');
+                if (!btn) return;
+
+                // Idempotence guard: only wire the toggle once per button.
+                if (!btn.getAttribute('data-cw-bound')) {
+                    btn.setAttribute('data-cw-bound', '1');
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var isExpanded = btn.getAttribute('aria-expanded') === 'true';
+                        noteCard.classList.toggle('cw-hidden', isExpanded);
+                        btn.textContent = isExpanded ? 'Show' : 'Hide';
+                        btn.setAttribute('aria-expanded', String(!isExpanded));
+                    });
+                }
+
+                // Apply the initial blurred state exactly once (unless the user
+                // has already toggled it, in which case aria-expanded reflects
+                // the current state and we leave it alone).
+                if (btn.getAttribute('data-cw-applied')) return;
+                btn.setAttribute('data-cw-applied', '1');
+                var shouldBlur = noteCard.getAttribute('data-cw-blur') === 'true';
+                var alreadyExpanded = btn.getAttribute('aria-expanded') === 'true';
+                if (shouldBlur && !alreadyExpanded) {
+                    noteCard.classList.add('cw-hidden');
+                }
             });
-        });
+        };
+
+        FB.cwInit(document);
     });
 
     // ---- Optimistic follow/unfollow (profile page) --------------------------

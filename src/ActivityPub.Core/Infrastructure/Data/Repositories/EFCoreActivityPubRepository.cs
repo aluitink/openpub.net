@@ -868,6 +868,53 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         await _context.SaveChangesAsync();
     }
 
+    // ---- Display preferences ------------------------------------------------
+
+    private static readonly string BlurSensitiveMediaKey = "blur_sensitive_media";
+
+    public async Task<bool?> GetBlurSensitiveMediaAsync(string username)
+    {
+        var actor = await GetActorEntityAsync(username);
+        if (actor == null)
+            return null;
+
+        var pref = await _context.UserPreferences
+            .Where(p => p.ActorId == actor.Id && p.Key == BlurSensitiveMediaKey)
+            .FirstOrDefaultAsync();
+
+        if (pref == null)
+            return null;
+        return bool.TryParse(pref.Value, out var v) ? v : null;
+    }
+
+    public async Task SetBlurSensitiveMediaAsync(string username, bool value)
+    {
+        var actor = await GetActorEntityAsync(username);
+        if (actor == null)
+            return;
+
+        var existing = await _context.UserPreferences
+            .Where(p => p.ActorId == actor.Id && p.Key == BlurSensitiveMediaKey)
+            .FirstOrDefaultAsync();
+
+        if (existing != null)
+        {
+            existing.Value = value ? "true" : "false";
+        }
+        else
+        {
+            await _context.UserPreferences.AddAsync(new UserPreferenceEntity
+            {
+                ActorId = actor.Id,
+                Key = BlurSensitiveMediaKey,
+                Value = value ? "true" : "false",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<int> GetUnreadNotificationCountAsync(string username, DateTime? after)
     {
         var actor = await GetUserActorAsync(username);

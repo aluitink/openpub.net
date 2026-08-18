@@ -11,7 +11,14 @@
     }
 }
 
-<div class="note-card@(Model.InReplyTo != null ? " note-reply" : "")" data-activity-id="@Model.ActivityId">
+@{
+    // A single, consistent "this note carries a content warning / sensitive
+    // media" flag, used to blur text + every attachment the same way. (Previously
+    // the text blurred only on sensitive-without-CW and images only on
+    // sensitive, so a CW-only note's images showed unblurred.)
+    var hasCw = Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning);
+}
+<div class="note-card@(Model.InReplyTo != null ? " note-reply" : "")" data-activity-id="@Model.ActivityId" data-cw-blur="@(hasCw && Model.BlurSensitive ? "true" : "false")">
     @if (Model.ActivityType == "Announce")
     {
         <div class="boost-banner">Boosted by @Model.AuthorName</div>
@@ -40,7 +47,7 @@
         <div class="reply-indicator">↩ Reply</div>
     }
 
-    @if (Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning))
+    @if (hasCw)
     {
         <div class="cw-banner">
             <span class="cw-label">&#9888; @(Model.ContentWarning ?? "Content Warning")</span>
@@ -48,7 +55,7 @@
         </div>
     }
 
-    <div class="note-content@(Model.Sensitive && string.IsNullOrEmpty(Model.ContentWarning) ? " note-content-blurred" : "")"@((Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning)) ? " data-cw-content" : "")>@Html.Raw(Model.Content)</div>
+    <div class="note-content"@(hasCw ? " data-cw-content" : "")>@Html.Raw(Model.Content)</div>
 
     @{
         var images = (Model.ImageAttachments is { Count: > 0 })
@@ -59,7 +66,7 @@
     }
     @if (images.Count > 0)
     {
-        <div class="note-attachment note-images note-images-@images.Count@(Model.Sensitive ? " note-attachment-blurred" : "")" data-lightbox-group="@Model.ActivityId"@((Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning)) ? " data-cw-content" : "")>
+        <div class="note-attachment note-images note-images-@images.Count@(hasCw ? " note-attachment-blurred" : "")" data-lightbox-group="@Model.ActivityId"@(hasCw ? " data-cw-content" : "")>
             @for (var i = 0; i < images.Count; i++)
             {
                 var img = images[i];
@@ -70,7 +77,6 @@
 
     @if (Model.MediaAttachments is { Count: > 0 })
     {
-        var cw = Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning);
         <div class="note-media">
             @foreach (var m in Model.MediaAttachments)
             {
@@ -78,7 +84,7 @@
                 var videoPosterAttr = string.IsNullOrEmpty(m.Preview) ? "" : " poster=\"" + m.Preview + "\"";
                 if (m.Kind == "video")
                 {
-                    <div class="note-media-item note-media-video@(cw ? " note-attachment-blurred" : "")"@(cw ? " data-cw-content" : "")>
+                    <div class="note-media-item note-media-video@(hasCw ? " note-attachment-blurred" : "")"@(hasCw ? " data-cw-content" : "")>
                         <video class="note-video" controls preload="metadata" playsinline@(Html.Raw(videoPosterAttr))>
                             <source src="@m.Url" type="@(m.Media ?? "video/mp4")" />
                             <a href="@m.Url">Download video</a>
@@ -87,7 +93,7 @@
                 }
                 else if (m.Kind == "audio")
                 {
-                    <div class="note-media-item note-media-audio@(cw ? " note-attachment-blurred" : "")"@(cw ? " data-cw-content" : "")>
+                    <div class="note-media-item note-media-audio@(hasCw ? " note-attachment-blurred" : "")"@(hasCw ? " data-cw-content" : "")>
                         <div class="note-audio">
                             <span class="note-audio-icon" aria-hidden="true">&#9835;</span>
                             <audio class="note-audio-player" controls preload="metadata" aria-label="@label">

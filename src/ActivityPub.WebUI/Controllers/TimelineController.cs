@@ -36,6 +36,8 @@ public class TimelineController : Controller
         // independent, so a full page from either one still has a next page.
         var pageFull = outboxIds.Count == pageSize && inboxIds.Count == pageSize;
 
+        var blurSensitive = await GetBlurPrefAsync(username);
+
         var activities = new List<TimelineActivityItem>();
         foreach (var id in allIds)
         {
@@ -72,6 +74,7 @@ public class TimelineController : Controller
                         ImageAttachments = ExtractImageAttachments(note),
                         Sensitive = ExtractSensitive(note),
                         ContentWarning = ExtractContentWarning(note),
+                        BlurSensitive = blurSensitive,
                         DocumentAttachments = ExtractDocumentAttachments(note),
                         MediaAttachments = ExtractMediaAttachments(note),
                         PollQuestion = ExtractPollQuestion(note),
@@ -126,6 +129,7 @@ public class TimelineController : Controller
         var isLiked = await _repository.IsLikedByActorAsync(username, activityId);
         var isBoosted = await _repository.IsBoostedByActorAsync(username, activityId);
 
+        var blurSensitive = await GetBlurPrefAsync(username);
         var item = new TimelineActivityItem
         {
             ActivityId = activityId,
@@ -145,6 +149,7 @@ public class TimelineController : Controller
             ImageAttachments = ExtractImageAttachments(note),
             Sensitive = ExtractSensitive(note),
             ContentWarning = ExtractContentWarning(note),
+            BlurSensitive = blurSensitive,
             DocumentAttachments = ExtractDocumentAttachments(note),
             MediaAttachments = ExtractMediaAttachments(note),
             PollQuestion = ExtractPollQuestion(note),
@@ -497,6 +502,16 @@ public class TimelineController : Controller
         var username = actorId.Split('/').Last();
         return await _repository.GetUserActorAsync(username);
     }
+
+    /// <summary>
+    /// Resolves the viewer's "blur sensitive media" preference, defaulting to
+    /// true (blur) when it has never been set.
+    /// </summary>
+    async Task<bool> GetBlurPrefAsync(string username)
+    {
+        var pref = await _repository.GetBlurSensitiveMediaAsync(username);
+        return pref ?? true;
+    }
 }
 
 public class TimelineActivityItem
@@ -518,6 +533,13 @@ public class TimelineActivityItem
     public List<NoteImageItem>? ImageAttachments { get; set; }
     public bool Sensitive { get; set; }
     public string? ContentWarning { get; set; }
+    /// <summary>
+    /// The viewer's global "blur sensitive media" preference. When false the
+    /// client should NOT auto-hide sensitive/CW content (the banner still shows
+    /// so the user can blur it manually); when true (the default) sensitive/CW
+    /// content starts blurred.
+    /// </summary>
+    public bool BlurSensitive { get; set; } = true;
     public List<DocumentAttachmentItem>? DocumentAttachments { get; set; }
     public List<MediaAttachmentItem>? MediaAttachments { get; set; }
     public string? PollQuestion { get; set; }

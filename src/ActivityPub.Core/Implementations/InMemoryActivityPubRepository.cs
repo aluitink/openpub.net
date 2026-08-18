@@ -588,4 +588,19 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .Count();
         return Task.FromResult(count);
     }
+
+    // ---- Display preferences ------------------------------------------------
+
+    private readonly Dictionary<string, bool> _blurSensitiveMedia = new();
+
+    public Task<bool?> GetBlurSensitiveMediaAsync(string username)
+    {
+        return Task.FromResult(_blurSensitiveMedia.TryGetValue(username, out var v) ? (bool?)v : null);
+    }
+
+    public Task SetBlurSensitiveMediaAsync(string username, bool value)
+    {
+        _blurSensitiveMedia[username] = value;
+        return Task.CompletedTask;
+    }
 }

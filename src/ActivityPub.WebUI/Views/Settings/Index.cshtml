@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Settings";
+    ViewData["PageClass"] = "settings";
+}
+@model SettingsViewModel
+
+<div class="settings-container">
+    <div class="page-header">
+        <h1>Settings</h1>
+    </div>
+
+    @if (TempData["SettingsSuccess"] != null)
+    {
+        <div class="settings-success" role="status">@TempData["SettingsSuccess"]</div>
+    }
+
+    <form asp-controller="Settings" asp-action="UpdateDisplay" method="post" class="settings-form">
+        @Html.AntiForgeryToken()
+
+        <fieldset class="settings-group">
+            <legend>Content &amp; media</legend>
+
+            <label class="settings-toggle">
+                <input type="checkbox" name="blurSensitiveMedia" value="true"
+                       checked="@(Model.BlurSensitiveMedia ? "checked" : null)" />
+                <span class="settings-toggle-text">
+                    <strong>Blur sensitive media</strong>
+                    <small>
+                        Automatically hide the text and media of notes that are marked
+                        sensitive or carry a content warning. You can always tap
+                        &ldquo;Show&rdquo; on a note to reveal it.
+                    </small>
+                </span>
+            </label>
+        </fieldset>
+
+        <div class="settings-actions">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+    </form>
+</div>

@@ -2412,6 +2412,84 @@ footer {
     margin-left: auto;
 }
 
+/* ---- Settings page -------------------------------------------------------- */
+
+.settings-container {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.settings-success {
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+    background: var(--color-success-soft, #d1e7dd);
+    color: var(--color-success-text, #0f5132);
+    border: 1px solid var(--color-success, #198754);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.settings-group {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    margin: 0;
+}
+
+.settings-group legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.settings-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.settings-toggle input[type="checkbox"] {
+    margin-top: 0.2rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--color-accent);
+    flex: 0 0 auto;
+}
+
+.settings-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.settings-toggle-text strong {
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+.settings-toggle-text small {
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+[data-theme="dark"] .settings-success {
+    background: color-mix(in srgb, var(--color-success, #2ecc71) 18%, var(--dark-surface, #1e1e2e));
+    color: var(--color-success, #2ecc71);
+    border-color: var(--color-success, #2ecc71);
+}
+
 .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -3038,53 +3116,87 @@ footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: #fff3cd;
-    border: 1px solid #ffc107;
-    border-radius: 6px;
+    background: var(--color-warning-soft, #fff3cd);
+    border: 1px solid var(--color-warning, #ffc107);
+    border-radius: var(--radius-md);
     margin-bottom: 0.5rem;
     font-size: 0.85rem;
 }
 
 .cw-label {
-    color: #856404;
+    color: var(--color-warning-text, #856404);
     font-weight: 500;
 }
 
 .cw-toggle-btn {
     background: none;
-    border: 1px solid #856404;
-    color: #856404;
+    border: 1px solid var(--color-warning-text, #856404);
+    color: var(--color-warning-text, #856404);
     padding: 0.2rem 0.6rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.8rem;
     cursor: pointer;
 }
 
 .cw-toggle-btn:hover {
-    background: #856404;
+    background: var(--color-warning-text, #856404);
     color: #fff;
 }
 
+.cw-toggle-btn:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Legacy class kept for backwards compatibility with older cards. */
 .note-content-blurred {
     filter: blur(8px);
     user-select: none;
     transition: filter 0.3s;
 }
 
-.note-attachment-blurred img {
-    filter: blur(20px);
-    transition: filter 0.3s;
+/* Blur every hidden CW element — images, video, and audio alike. The
+   `note-attachment-blurred` wrapper marks a media group that carries a CW. */
+.note-card.cw-hidden [data-cw-content] {
+    filter: blur(14px);
+    user-select: none;
 }
 
-.note-card.cw-hidden [data-cw-content] {
-    filter: blur(10px);
-    user-select: none;
+.note-card.cw-hidden [data-cw-content] img,
+.note-card.cw-hidden [data-cw-content] video,
+.note-card.cw-hidden [data-cw-content] audio {
+    filter: blur(24px);
 }
 
 .note-card:not(.cw-hidden) [data-cw-content] {
     filter: none;
     user-select: auto;
+}
+
+/* The media elements stay interactive while blurred (so the lightbox gate can
+   still inspect them); we just make the blur obvious. */
+.note-attachment-blurred img,
+.note-attachment-blurred video,
+.note-attachment-blurred audio {
+    transition: filter 0.3s;
+}
+
+/* Dark theme: the light amber banner is unreadable on dark surfaces. */
+[data-theme="dark"] .cw-banner {
+    background: color-mix(in srgb, var(--color-warning, #f39c12) 18%, var(--dark-surface, #1e1e2e));
+    border-color: var(--color-warning, #f39c12);
+}
+
+[data-theme="dark"] .cw-label,
+[data-theme="dark"] .cw-toggle-btn {
+    color: var(--color-warning, #f39c12);
+}
+
+[data-theme="dark"] .cw-toggle-btn:hover {
+    background: var(--color-warning, #f39c12);
+    color: #1e1e2e;
 }
 
 .image-preview-container {
@@ -4394,6 +4506,51 @@ footer {
 }
 
 body.lightbox-open { overflow: hidden; }
+
+/* Content-warning / sensitive gate for the lightbox: the image stays blurred
+   until the reader explicitly reveals it. */
+.lightbox-img-blurred {
+    filter: blur(28px);
+    cursor: pointer;
+}
+
+.lightbox-cw-gate {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    max-width: min(20rem, 84vw);
+    text-align: center;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.72);
+    border: 1px solid var(--color-warning, #ffc107);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card-hover);
+}
+.lightbox-cw-gate[hidden] { display: none; }
+.lightbox-cw-label { font-size: 1.75rem; color: var(--color-warning, #ffc107); line-height: 1; }
+.lightbox-cw-text { font-size: 0.9rem; }
+.lightbox-cw-reveal {
+    padding: 0.4rem 1.1rem;
+    border: 1px solid var(--color-warning, #ffc107);
+    border-radius: var(--radius-sm);
+    background: var(--color-warning, #ffc107);
+    color: #1e1e2e;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.lightbox-cw-reveal:hover { opacity: 0.9; }
+.lightbox-cw-reveal:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}
 
 @media (max-width: 768px) {
     .lightbox-img { max-width: 100vw; max-height: 80vh; }

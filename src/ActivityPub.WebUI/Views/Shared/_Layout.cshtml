@@ -86,6 +86,7 @@
                                 <li><a asp-controller="Follow" asp-action="Following" class="nav-dropdown-link@(NavActive("Follow", "Following") ? " active" : "")" role="menuitem">Following</a></li>
                                 <li><a asp-controller="Follow" asp-action="Followers" class="nav-dropdown-link@(NavActive("Follow", "Followers") ? " active" : "")" role="menuitem">Followers</a></li>
                                 <li><a asp-controller="Poll" asp-action="New" class="nav-dropdown-link@(NavActive("Poll") ? " active" : "")" role="menuitem">New Poll</a></li>
+                                <li><a asp-controller="Settings" asp-action="Index" class="nav-dropdown-link@(NavActive("Settings") ? " active" : "")" role="menuitem">Settings</a></li>
                             </ul>
                         </li>
                         <li class="nav-item nav-item-user">
@@ -147,6 +148,11 @@
             <button type="button" class="lightbox-nav lightbox-prev" data-lightbox-prev aria-label="Previous image">&#10094;</button>
             <img class="lightbox-img" id="lightbox-img" src="" alt="" />
             <button type="button" class="lightbox-nav lightbox-next" data-lightbox-next aria-label="Next image">&#10095;</button>
+            <div class="lightbox-cw-gate" id="lightbox-cw-gate" hidden>
+                <span class="lightbox-cw-label" aria-hidden="true">&#9888;</span>
+                <span class="lightbox-cw-text">This image is marked sensitive. Tap to reveal.</span>
+                <button type="button" class="lightbox-cw-reveal" data-lightbox-cw-reveal>Reveal</button>
+            </div>
             <div class="lightbox-counter" id="lightbox-counter" aria-live="polite"></div>
         </div>
     </div>

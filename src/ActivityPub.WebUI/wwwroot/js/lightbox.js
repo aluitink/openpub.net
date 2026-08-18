@@ -5,6 +5,8 @@ FB.register('lightbox', function() {
     var dialog = document.querySelector('.lightbox-dialog');
     var img = document.getElementById('lightbox-img');
     var counter = document.getElementById('lightbox-counter');
+    var cwGate = document.getElementById('lightbox-cw-gate');
+    var cwReveal = cwGate ? cwGate.querySelector('[data-lightbox-cw-reveal]') : null;
     var closeBtn = document.querySelector('[data-lightbox-close]');
     var prevBtn = document.querySelector('[data-lightbox-prev]');
     var nextBtn = document.querySelector('[data-lightbox-next]');
@@ -14,6 +16,10 @@ FB.register('lightbox', function() {
     var items = [];
     var index = 0;
     var lastFocused = null;
+    // True while the opened image group is still blurred under its content
+    // warning / sensitive gate. Cleared as soon as the reader reveals it.
+    var cwGated = false;
+    var cwSourceCard = null;
 
     function focusables() {
         return Array.prototype.slice.call(
@@ -30,6 +36,36 @@ FB.register('lightbox', function() {
         var multi = items.length > 1;
         if (prevBtn) { prevBtn.hidden = !multi; }
         if (nextBtn) { nextBtn.hidden = !multi; }
+        applyCwGate();
+    }
+
+    function applyCwGate() {
+        if (!cwGate) return;
+        if (cwGated) {
+            img.classList.add('lightbox-img-blurred');
+            cwGate.hidden = false;
+            dialog.setAttribute('data-cw-gated', 'true');
+        } else {
+            img.classList.remove('lightbox-img-blurred');
+            cwGate.hidden = true;
+            dialog.removeAttribute('data-cw-gated');
+        }
+    }
+
+    function revealCw() {
+        if (!cwGated) return;
+        cwGated = false;
+        // Reveal the lightbox image and, since it's the same note, the source
+        // card's content in the timeline too.
+        if (cwSourceCard) {
+            cwSourceCard.classList.remove('cw-hidden');
+            var btn = cwSourceCard.querySelector('.cw-toggle-btn');
+            if (btn) {
+                btn.setAttribute('aria-expanded', 'true');
+                btn.textContent = 'Hide';
+            }
+        }
+        applyCwGate();
     }
 
     function show(i) {
@@ -43,6 +79,11 @@ FB.register('lightbox', function() {
         items = Array.prototype.map.call(imgs, function(el) {
             return { url: el.currentSrc || el.src, alt: el.getAttribute('alt') || 'Attached image' };
         });
+        // Respect the source note's content warning / sensitive state: if the
+        // card is still blurred (cw-hidden), open the lightbox in gated mode so
+        // the image isn't revealed without an explicit "Reveal" action.
+        cwSourceCard = triggerEl ? triggerEl.closest('.note-card') : null;
+        cwGated = !!(cwSourceCard && cwSourceCard.classList.contains('cw-hidden'));
         // Remember where to return focus. A mouse-click on an <img> does not
         // move document.activeElement, so fall back to the clicked image.
         lastFocused = (document.activeElement && document.activeElement !== document.body)
@@ -55,7 +96,9 @@ FB.register('lightbox', function() {
         dialog.setAttribute('aria-hidden', 'false');
         document.body.classList.add('lightbox-open');
         render();
-        requestAnimationFrame(function() { (closeBtn || img).focus(); });
+        requestAnimationFrame(function() {
+            (cwGated && cwReveal) ? cwReveal.focus() : (closeBtn || img).focus();
+        });
     }
 
     function open(group, startIndex) {
@@ -66,11 +109,14 @@ FB.register('lightbox', function() {
     function close() {
         if (!isOpen) return;
         isOpen = false;
+        cwGated = false;
+        cwSourceCard = null;
         overlay.hidden = true;
         overlay.setAttribute('aria-hidden', 'true');
         dialog.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('lightbox-open');
         img.removeAttribute('src');
+        img.classList.remove('lightbox-img-blurred');
         if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
     }
 
@@ -104,6 +150,13 @@ FB.register('lightbox', function() {
     if (closeBtn) closeBtn.addEventListener('click', close);
     if (prevBtn) prevBtn.addEventListener('click', function() { show(index - 1); });
     if (nextBtn) nextBtn.addEventListener('click', function() { show(index + 1); });
+
+    // Reveal the gated (CW/sensitive) image. The dedicated button is the
+    // primary affordance; clicking the blurred image itself also reveals.
+    if (cwReveal) cwReveal.addEventListener('click', function(e) { e.stopPropagation(); revealCw(); });
+    img.addEventListener('click', function(e) {
+        if (cwGated) { e.stopPropagation(); revealCw(); }
+    });
 
     // Click on the backdrop (not the dialog) closes.
     overlay.addEventListener('mousedown', function(e) {
