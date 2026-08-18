@@ -467,6 +467,39 @@ public class AccessibilityTests : IClassFixture<WebUIFactory>
         Assert.Contains("menuitem", js, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task NavDropdowns_SupportArrowKeyNavigationAndEscapeRefocus()
+    {
+        var client = await GetAuthenticatedClient();
+        var js = await (await client.GetAsync("/js/app.js")).Content.ReadAsStringAsync();
+        // Nav dropdowns (Discover/Account) implement the same menuitem keyboard
+        // pattern as the note-more menu: arrow keys move between items, Home/End
+        // jump, Escape closes and returns focus to the toggle.
+        Assert.Contains("navDropdownLinks", js, StringComparison.Ordinal);
+        Assert.Contains("ArrowDown", js, StringComparison.Ordinal);
+        Assert.Contains("ArrowUp", js, StringComparison.Ordinal);
+        Assert.Contains("Home", js, StringComparison.Ordinal);
+        Assert.Contains("End", js, StringComparison.Ordinal);
+        Assert.Contains("Escape", js, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DropdownMenus_OpenOnKeyboardEnter_NotImmediatelyClosed()
+    {
+        var client = await GetAuthenticatedClient();
+        var js = await (await client.GetAsync("/js/app.js")).Content.ReadAsStringAsync();
+        // The toggle click handlers run in the CAPTURE phase (", true) third arg) so
+        // their stopPropagation blocks the global document click handler (bubble
+        // phase) from immediately re-closing the just-opened menu. Without this,
+        // Enter/click opens then instantly closes the menu (verified in a live
+        // keyboard-only walkthrough).
+        Assert.Contains(", true);", js, StringComparison.Ordinal);
+        // Both the note-more toggle and the nav-group toggle register capture-phase
+        // click handlers.
+        Assert.Contains("note-more-menu", js, StringComparison.Ordinal);
+        Assert.Contains("nav-group", js, StringComparison.Ordinal);
+    }
+
     // ---------- helpers ----------
 
     private async Task<HttpClient> GetAuthenticatedClient()

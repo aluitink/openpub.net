@@ -1029,19 +1029,55 @@
                     var first = group.querySelector('.nav-dropdown-link');
                     if (first) first.focus();
                 }
-            });
+            }, true);
 
             btn.addEventListener('keydown', function(e) {
-                if (e.key !== 'ArrowDown') return;
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
                 e.preventDefault();
                 var group = btn.closest('.nav-group');
-                if (!group || !group.classList.contains('open')) {
+                if (!group) return;
+                if (!group.classList.contains('open')) {
                     btn.click();
                     return;
                 }
-                var first = group.querySelector('.nav-dropdown-link');
-                if (first) first.focus();
+                var links = navDropdownLinks(group);
+                if (links.length) links[e.key === 'ArrowDown' ? 0 : links.length - 1].focus();
             });
+
+            // Once open, arrow keys move between menuitems; Escape returns focus
+            // to the toggle (same pattern as the note-more menu).
+            var navGroup = btn.closest('.nav-group');
+            var dropdown = navGroup ? navGroup.querySelector('.nav-dropdown') : null;
+            if (dropdown) {
+                dropdown.addEventListener('keydown', function(e) {
+                    var links = navDropdownLinks(navGroup);
+                    if (!links.length) return;
+                    var idx = links.indexOf(document.activeElement);
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        links[Math.min(idx + 1, links.length - 1)].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        links[idx <= 0 ? 0 : idx - 1].focus();
+                    } else if (e.key === 'Home') {
+                        e.preventDefault();
+                        links[0].focus();
+                    } else if (e.key === 'End') {
+                        e.preventDefault();
+                        links[links.length - 1].focus();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        navGroup.classList.remove('open');
+                        btn.setAttribute('aria-expanded', 'false');
+                        btn.focus();
+                    }
+                });
+            }
+        }
+
+        function navDropdownLinks(group) {
+            return Array.prototype.slice.call(group.querySelectorAll('.nav-dropdown-link'))
+                .filter(function(el) { return el.offsetParent !== null; });
         }
 
         document.querySelectorAll('.nav-group-toggle').forEach(wireGroup);
@@ -1068,6 +1104,8 @@
             var btn = menu.querySelector('.btn-more');
             var dropdown = menu.querySelector('.note-more-dropdown');
             if (!btn || !dropdown) return;
+            // Capture-phase so stopPropagation below blocks the global document
+            // click handler (bubble phase) from immediately re-closing the menu.
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 var isOpen = btn.getAttribute('aria-expanded') === 'true';
@@ -1079,7 +1117,7 @@
                     var first = dropdown.querySelector('[role="menuitem"]');
                     if (first) first.focus();
                 }
-            });
+            }, true);
             // Open the menu with ArrowUp/ArrowDown and land on first/last item.
             btn.addEventListener('keydown', function(e) {
                 if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
