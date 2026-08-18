@@ -1,7 +1,7 @@
 # Fediblog — UI & UX Plan
 
 **Last Updated:** Aug 18, 2026
-**Status:** Backend federation, API, and scalability infrastructure is **feature-complete** (Phases 1–45, 1008/1008 tests passing). This plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
+**Status:** Backend federation, API, and scalability infrastructure is **feature-complete** (Phases 1–45, 1015/1015 tests passing). This plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
 
 **WebUI:** `src/ActivityPub.WebUI/` — Razor MVC, SignalR, vanilla JS (`wwwroot/js/`: `compose.js`, `menu.js`, `toast.js`), single `site.css` with `:root` design tokens + `[data-theme=dark]` overrides.
 
@@ -38,7 +38,7 @@ Make the timeline and interactions feel instant.
 1. ✅ Live timeline refresh via SignalR (new notes prepend without reload) + SSE fallback.
 2. ✅ Notifications: real-time badge + unread counts (server-seeded via `/notifications/badge`), mark-as-read (persisted unread cursor in `UserPreferences`), relative timestamps, deep links to source note (`/timeline?note=<id>` → scroll + flash). Likes/boosts/replies now address the target author in their `to`, so they land in the recipient's inbox; `NewNotification` SignalR event emitted on like/boost/reply/follow.
 3. ✅ Optimistic UI everywhere safe, with rollback on failure; replace form-submit reloads with `fetch` + DOM patch. Like/boost now reconcile with the server-rendered card fragment (`/timeline/card/<id>`) after a mutation (single delegated handler, safe for live-inserted cards). Follow/unfollow (profile) and community join/leave are optimistic toggles with rollback + server reconciliation (`/Profile/State`, `/communities/show`). Fixed `ExtractNote` to rehydrate the `Object` property from stored `JsonData` (JsonElement), so boosted/rehydrated notes render with correct interaction counts; fixed `GetFollowerCountAsync` to exclude `Undo` activities so the follower count drops after an unfollow.
-4. ⬜ Command palette / global search — fuzzy match across notes, users, hashtags, communities.
+4. ✅ Command palette / global search — Ctrl+K / ⌘K overlay (or the header "⌘ Ctrl K" trigger) fuzzy-matches notes, people, hashtags, and communities in one box with keyboard nav (↑/↓ + Enter + Esc). Results come from a new compact `GET /search/json?q=` endpoint and are fuzzy-scored client-side (ordered-subsequence match with position/recency + substring bonuses); groups render capped at 6 each with match highlighting. Selecting navigates to the deep link (note → `/timeline?note=<id>`, user → `/Profile?username=<u>`, community → `/communities/show?communityId=<id>`, hashtag → `/search?tab=hashtags`); with no match, Enter opens the full search page. New `wwwroot/js/palette.js` (FB module, loaded globally for authenticated users) + overlay markup in `_Layout.cshtml` + `.palette-*` styles.
 
 ### Phase 49: Design System & Visual Consistency
 1. ⬜ Extract component kit from `site.css` (`.note-card`, `.btn*`, `.admin-card`, `.stat-card`, `.avatar-*`, `.empty-state`, `.page-header`); remove ad-hoc inline `<style>`/`style=""`.

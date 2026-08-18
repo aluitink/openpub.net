@@ -13,12 +13,14 @@ public class SearchController : Controller
 {
     private readonly IActivityPubRepository _repository;
     private readonly ApplicationDbContext _identityDb;
+    private readonly ICommunityService _communityService;
     private readonly ILogger<SearchController> _logger;
 
-    public SearchController(IActivityPubRepository repository, ApplicationDbContext identityDb, ILogger<SearchController> logger)
+    public SearchController(IActivityPubRepository repository, ApplicationDbContext identityDb, ICommunityService communityService, ILogger<SearchController> logger)
     {
         _repository = repository;
         _identityDb = identityDb;
+        _communityService = communityService;
         _logger = logger;
     }
 
@@ -61,6 +63,76 @@ public class SearchController : Controller
         }
 
         return View(model);
+    }
+
+    /// <summary>
+    /// Compact JSON search for the command palette. Returns a few top matches
+    /// across notes, users, hashtags, and communities so the client can do
+    /// fuzzy scoring and render results inline (no full page navigation).
+    /// </summary>
+    [HttpGet]
+    [Route("search/json")]
+    public async Task<IActionResult> SearchJson(string q = "")
+    {
+        if (string.IsNullOrWhiteSpace(q))
+        {
+            return Json(new { notes = new List<PaletteNoteResult>(), users = new List<PaletteUserResult>(), hashtags = new List<PaletteHashtagResult>(), communities = new List<PaletteCommunityResult>() });
+        }
+
+        var (notes, _) = await SearchNotesAsync(q, 1);
+        var users = await SearchUsersAsync(q);
+
+        var result = new
+        {
+            notes = notes.Take(8).Select(n => new PaletteNoteResult
+            {
+                ActivityId = n.ActivityId,
+                Content = n.Content,
+                AuthorName = n.AuthorName,
+                AuthorUsername = n.AuthorUsername
+            }),
+            users = users.Take(8).Select(u => new PaletteUserResult
+            {
+                Username = u.Username,
+                DisplayName = u.DisplayName ?? "",
+                Bio = u.Bio ?? ""
+            }),
+            hashtags = ExtractHashtagsFromNotes(notes).Take(8).Select(h => new PaletteHashtagResult
+            {
+                Tag = h.Tag,
+                Count = h.Count
+            }),
+            communities = (await SearchCommunitiesAsync(q)).Select(c => new PaletteCommunityResult
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Summary = c.Summary ?? ""
+            }).ToList()
+        };
+
+        return Json(result);
+    }
+
+    async Task<List<PaletteCommunityResult>> SearchCommunitiesAsync(string query)
+    {
+        try
+        {
+            var results = await _communityService.SearchCommunitiesAsync(query);
+            return results
+                .Take(8)
+                .Select(c => new PaletteCommunityResult
+                {
+                    Id = c.Id,
+                    Name = c.Name ?? "",
+                    Summary = c.Summary ?? ""
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching communities for query: {Query}", query);
+            return new List<PaletteCommunityResult>();
+        }
     }
 
     async Task<List<SearchUserResult>> SearchUsersAsync(string query)
@@ -256,4 +328,33 @@ public class SearchHashtagResult
 {
     public string Tag { get; set; } = "";
     public int Count { get; set; }
+}
+
+// Compact result shapes for the command palette's JSON search endpoint.
+public class PaletteNoteResult
+{
+    public string ActivityId { get; set; } = "";
+    public string Content { get; set; } = "";
+    public string AuthorName { get; set; } = "";
+    public string AuthorUsername { get; set; } = "";
+}
+
+public class PaletteUserResult
+{
+    public string Username { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Bio { get; set; } = "";
+}
+
+public class PaletteHashtagResult
+{
+    public string Tag { get; set; } = "";
+    public int Count { get; set; }
+}
+
+public class PaletteCommunityResult
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Summary { get; set; } = "";
 }
