@@ -1669,6 +1669,60 @@ footer {
     white-space: nowrap;
 }
 
+/* Rich media (video / audio / document) attachments. */
+.note-media {
+    margin: 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.note-media-item {
+    width: 100%;
+}
+
+.note-video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    max-height: 480px;
+    background: #000;
+    border-radius: var(--radius-md);
+}
+.note-video:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+.note-audio {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    background: #f4f4f8;
+    border: 1px solid #e0e0e8;
+    border-radius: var(--radius-md);
+}
+.note-audio-icon {
+    font-size: 1.3rem;
+    color: var(--color-accent, #574fd6);
+    flex-shrink: 0;
+}
+.note-audio-player {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 40px;
+}
+.note-audio-name {
+    font-size: 0.85rem;
+    color: var(--color-text);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .report-form-container {
     margin: 1rem 0;
     padding: 1rem;

@@ -68,15 +68,45 @@
         </div>
     }
 
-    @if (Model.DocumentAttachments != null && Model.DocumentAttachments.Count > 0)
+    @if (Model.MediaAttachments is { Count: > 0 })
     {
-        <div class="note-attachments">
-            @foreach (var doc in Model.DocumentAttachments)
+        var cw = Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning);
+        <div class="note-media">
+            @foreach (var m in Model.MediaAttachments)
             {
-                <a href="@doc.Url" download class="doc-attachment">
-                    <span class="doc-icon">&#128196;</span>
-                    <span class="doc-name">@(string.IsNullOrEmpty(doc.Name) ? "Download" : doc.Name)</span>
-                </a>
+                var label = string.IsNullOrEmpty(m.Name) ? (m.Kind == "video" ? "Video attachment" : m.Kind == "audio" ? "Audio attachment" : "Attachment") : m.Name;
+                var videoPosterAttr = string.IsNullOrEmpty(m.Preview) ? "" : " poster=\"" + m.Preview + "\"";
+                if (m.Kind == "video")
+                {
+                    <div class="note-media-item note-media-video@(cw ? " note-attachment-blurred" : "")"@(cw ? " data-cw-content" : "")>
+                        <video class="note-video" controls preload="metadata" playsinline@(Html.Raw(videoPosterAttr))>
+                            <source src="@m.Url" type="@(m.Media ?? "video/mp4")" />
+                            <a href="@m.Url">Download video</a>
+                        </video>
+                    </div>
+                }
+                else if (m.Kind == "audio")
+                {
+                    <div class="note-media-item note-media-audio@(cw ? " note-attachment-blurred" : "")"@(cw ? " data-cw-content" : "")>
+                        <div class="note-audio">
+                            <span class="note-audio-icon" aria-hidden="true">&#9835;</span>
+                            <audio class="note-audio-player" controls preload="metadata" aria-label="@label">
+                                <source src="@m.Url" type="@(m.Media ?? "audio/mpeg")" />
+                                <a href="@m.Url">Download audio</a>
+                            </audio>
+                            <span class="note-audio-name">@label</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="note-media-item note-media-doc">
+                        <a href="@m.Url" download class="doc-attachment">
+                            <span class="doc-icon" aria-hidden="true">&#128196;</span>
+                            <span class="doc-name">@label</span>
+                        </a>
+                    </div>
+                }
             }
         </div>
     }

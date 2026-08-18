@@ -73,6 +73,7 @@ public class TimelineController : Controller
                         Sensitive = ExtractSensitive(note),
                         ContentWarning = ExtractContentWarning(note),
                         DocumentAttachments = ExtractDocumentAttachments(note),
+                        MediaAttachments = ExtractMediaAttachments(note),
                         PollQuestion = ExtractPollQuestion(note),
                         PollOptions = ExtractPollOptions(note),
                         PollEndTime = ExtractPollEndTime(note),
@@ -145,6 +146,7 @@ public class TimelineController : Controller
             Sensitive = ExtractSensitive(note),
             ContentWarning = ExtractContentWarning(note),
             DocumentAttachments = ExtractDocumentAttachments(note),
+            MediaAttachments = ExtractMediaAttachments(note),
             PollQuestion = ExtractPollQuestion(note),
             PollOptions = ExtractPollOptions(note),
             PollEndTime = ExtractPollEndTime(note),
@@ -164,13 +166,31 @@ public class TimelineController : Controller
         {
             ActivityPub.Core.Models.Object o => o,
             JsonElement je when je.ValueKind == JsonValueKind.Object
-                => DeserializeObject(je),
+                => SafeDeserializeObject(je),
             _ => null
         };
 
         if (note == null)
             return null;
         return note.Type == "Tombstone" ? null : note;
+    }
+
+    /// <summary>
+    /// Deserializes a stored note, tolerating malformed / foreign activity
+    /// (e.g. a remote instance sending a note that is missing a required field).
+    /// A single bad activity must not 500 the whole timeline, so any parse
+    /// failure yields null and the activity is simply skipped.
+    /// </summary>
+    static ActivityPub.Core.Models.Object? SafeDeserializeObject(JsonElement element)
+    {
+        try
+        {
+            return DeserializeObject(element);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     static ActivityPub.Core.Models.Object? DeserializeObject(JsonElement element)
@@ -214,6 +234,12 @@ public class TimelineController : Controller
         return null;
     }
 
+    /// <summary>
+    /// Legacy single-image URL. Only ever returns a real Image attachment — the
+    /// old "first attachment" fallback is gone because non-image media (video /
+    /// audio / document) is now surfaced separately and must not be mis-rendered
+    /// as an &lt;img&gt;.
+    /// </summary>
     static string? ExtractImageUrl(ActivityPub.Core.Models.Object obj)
     {
         var elem = GetAttachmentElement(obj);
@@ -228,15 +254,9 @@ public class TimelineController : Controller
                         return urlProp.GetString();
                 }
             }
-        if (att.GetArrayLength() > 0)
-        {
-            var first = att[0];
-            if (first.ValueKind == JsonValueKind.Object && first.TryGetProperty("url", out var urlProp))
-                return urlProp.GetString();
         }
+        return null;
     }
-    return null;
-}
 
     static List<NoteImageItem>? ExtractImageAttachments(ActivityPub.Core.Models.Object obj)
     {
@@ -325,6 +345,78 @@ public class TimelineController : Controller
             });
         }
         return docs.Count > 0 ? docs : null;
+    }
+
+    /// <summary>
+    /// Extracts every non-image attachment (Video / Audio / Document) so the UI can
+    /// render native players and download cards. Images are handled separately by
+    /// <see cref="ExtractImageAttachments"/>. The wire shape is not fully under our
+    /// control (remote instances), so each field is read defensively.
+    /// </summary>
+    static List<MediaAttachmentItem>? ExtractMediaAttachments(ActivityPub.Core.Models.Object obj)
+    {
+        var elem = GetAttachmentElement(obj);
+        if (elem is not { } att)
+            return null;
+
+        var media = new List<MediaAttachmentItem>();
+        foreach (var item in att.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+
+            var type = item.TryGetProperty("type", out var t) ? t.GetString() : null;
+            if (string.IsNullOrWhiteSpace(type))
+                continue;
+
+            var kind = type.ToLowerInvariant();
+            if ("image".Equals(kind, StringComparison.Ordinal) || "gif".Equals(kind, StringComparison.Ordinal))
+                continue; // handled by the image extractor / lightbox
+
+            var mediaType = item.TryGetProperty("mediaType", out var mt) ? mt.GetString() : null;
+
+            // Refine the kind from the mediaType prefix when the ActivityPub type is
+            // generic (e.g. "Document" carrying a video/* stream).
+            if (mediaType != null)
+            {
+                if (mediaType.StartsWith("video", StringComparison.OrdinalIgnoreCase)) kind = "video";
+                else if (mediaType.StartsWith("audio", StringComparison.OrdinalIgnoreCase)) kind = "audio";
+                else if (kind == "document") kind = "document";
+            }
+
+            var url = GetAttachmentUrl(item);
+            if (string.IsNullOrWhiteSpace(url))
+                continue;
+
+            var name = item.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? "" : "";
+            var preview = GetAttachmentUrl(item, "preview");
+
+            media.Add(new MediaAttachmentItem
+            {
+                Kind = kind,
+                Url = url,
+                Name = name,
+                Media = mediaType,
+                Preview = preview
+            });
+        }
+        return media.Count > 0 ? media : null;
+    }
+
+    /// <summary>
+    /// Reads a string attachment property (e.g. "url") that may be a plain string
+    /// or an object with a "href" (strict ActivityPub Link form).
+    /// </summary>
+    static string? GetAttachmentUrl(JsonElement item, string prop = "url")
+    {
+        if (!item.TryGetProperty(prop, out var p))
+            return null;
+        return p.ValueKind switch
+        {
+            JsonValueKind.String => p.GetString(),
+            JsonValueKind.Object => p.TryGetProperty("href", out var h) ? h.GetString() : null,
+            _ => null
+        };
     }
 
     static JsonElement? GetPollElement(ActivityPub.Core.Models.Object obj)
@@ -427,6 +519,7 @@ public class TimelineActivityItem
     public bool Sensitive { get; set; }
     public string? ContentWarning { get; set; }
     public List<DocumentAttachmentItem>? DocumentAttachments { get; set; }
+    public List<MediaAttachmentItem>? MediaAttachments { get; set; }
     public string? PollQuestion { get; set; }
     public List<PollOptionItem>? PollOptions { get; set; }
     public DateTime? PollEndTime { get; set; }
@@ -444,6 +537,21 @@ public class DocumentAttachmentItem
 {
     public string Url { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// A non-image attachment (video, audio, or document) on a note, rendered with
+/// a native &lt;video&gt;/&lt;audio&gt; player or a download card.
+/// </summary>
+public class MediaAttachmentItem
+{
+    /// <summary>"video", "audio", or "document" (also "gifv" for animated gifs).</summary>
+    public string Kind { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? Media { get; set; }
+    /// <summary>Optional poster/thumbnail image (Mastodon "preview" property).</summary>
+    public string? Preview { get; set; }
 }
 
 public class NoteImageItem
