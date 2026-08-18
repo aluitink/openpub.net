@@ -44,13 +44,13 @@
 
     @if (Model.InReplyTo != null)
     {
-        <div class="reply-indicator">↩ Reply</div>
+        <div class="reply-indicator"><icon name="reply" /> Reply</div>
     }
 
     @if (hasCw)
     {
         <div class="cw-banner">
-            <span class="cw-label">&#9888; @(Model.ContentWarning ?? "Content Warning")</span>
+            <span class="cw-label"><icon name="warning" /> @(Model.ContentWarning ?? "Content Warning")</span>
             <button type="button" class="cw-toggle-btn" aria-expanded="false">Show</button>
         </div>
     }
@@ -95,7 +95,7 @@
                 {
                     <div class="note-media-item note-media-audio@(hasCw ? " note-attachment-blurred" : "")"@(hasCw ? " data-cw-content" : "")>
                         <div class="note-audio">
-                            <span class="note-audio-icon" aria-hidden="true">&#9835;</span>
+                            <span class="note-audio-icon"><icon name="audio" /></span>
                             <audio class="note-audio-player" controls preload="metadata" aria-label="@label">
                                 <source src="@m.Url" type="@(m.Media ?? "audio/mpeg")" />
                                 <a href="@m.Url">Download audio</a>
@@ -108,7 +108,7 @@
                 {
                     <div class="note-media-item note-media-doc">
                         <a href="@m.Url" download class="doc-attachment">
-                            <span class="doc-icon" aria-hidden="true">&#128196;</span>
+                            <span class="doc-icon"><icon name="doc" /></span>
                             <span class="doc-name">@label</span>
                         </a>
                     </div>
@@ -158,19 +158,19 @@
         <form asp-controller="Interaction" asp-action="@(Model.IsLiked ? "Unlike" : "Like")" method="post" style="display:inline;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
-            <button type="submit" class="btn-action btn-like@(Model.IsLiked ? " active" : "")" title="Like" aria-pressed="@(Model.IsLiked ? "true" : "false")">♥ @Model.LikeCount<span class="sr-only"> likes</span></button>
+            <button type="submit" class="btn-action btn-like@(Model.IsLiked ? " active" : "")" title="Like" aria-pressed="@(Model.IsLiked ? "true" : "false")"><icon name="like" /> @Model.LikeCount<span class="sr-only"> likes</span></button>
         </form>
 
         <form asp-controller="Interaction" asp-action="@(Model.IsBoosted ? "Unboost" : "Boost")" method="post" style="display:inline;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
-            <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost" aria-pressed="@(Model.IsBoosted ? "true" : "false")">↻ @Model.BoostCount<span class="sr-only"> boosts</span></button>
+            <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost" aria-pressed="@(Model.IsBoosted ? "true" : "false")"><icon name="boost" /> @Model.BoostCount<span class="sr-only"> boosts</span></button>
         </form>
 
-        <button type="button" class="btn-action btn-reply" data-reply-target="reply-@Model.ActivityId" title="Reply">💬 @Model.ReplyCount<span class="sr-only"> replies</span></button>
+        <button type="button" class="btn-action btn-reply" data-reply-target="reply-@Model.ActivityId" title="Reply"><icon name="comment" /> @Model.ReplyCount<span class="sr-only"> replies</span></button>
 
         <div class="note-more-menu">
-            <button type="button" id="more-toggle-@Model.ActivityId" class="btn-action btn-more" title="More actions" aria-label="More actions" aria-haspopup="menu" aria-controls="more-menu-@Model.ActivityId" aria-expanded="false">&#8943;</button>
+            <button type="button" id="more-toggle-@Model.ActivityId" class="btn-action btn-more" title="More actions" aria-label="More actions" aria-haspopup="menu" aria-controls="more-menu-@Model.ActivityId" aria-expanded="false"><icon name="more" /></button>
             <div id="more-menu-@Model.ActivityId" class="note-more-dropdown" role="menu" aria-labelledby="more-toggle-@Model.ActivityId">
                 <button type="button" class="note-more-item" data-action="copy-link" data-url="@Url.Action("Show", "Timeline", new { id = Model.ActivityId })" role="menuitem">Copy link</button>
                 <a asp-controller="Compose" asp-action="Index" asp-route-replyTo="@Model.ActivityId" class="note-more-item" role="menuitem">Reply via Compose</a>
@@ -193,7 +193,7 @@
 
     <div id="reply-@Model.ActivityId" class="reply-form-container" hidden>
         <div class="reply-context-banner">
-            <span class="reply-context-icon">&#8617;</span>
+            <span class="reply-context-icon"><icon name="reply" /></span>
             <span class="reply-context-text">Replying to <strong>@Model.AuthorDisplayName</strong> (@Model.AuthorName)</span>
             <span class="reply-context-snippet">"@(Model.Content.Length > 80 ? Model.Content.Substring(0, 80) + "…" : Model.Content)"</span>
         </div>

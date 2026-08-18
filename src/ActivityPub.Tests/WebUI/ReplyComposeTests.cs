@@ -3,6 +3,7 @@ using ActivityPub.WebUI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace ActivityPub.Tests.WebUI;
@@ -169,7 +170,9 @@ public class ReplyComposeTests : IClassFixture<WebUIFactory>
 
         var newTimeline = await client.GetAsync("/timeline");
         var newBody = await newTimeline.Content.ReadAsStringAsync();
-        Assert.Contains($"💬 1", newBody);
+        // Phase 49.3: reply count follows the inline-SVG icon, not a glyph.
+        var m = Regex.Match(newBody, @"btn-reply\b[^>]*>\s*<span[^>]*class=""fb-icon""[\s\S]*?</span>\s*1\b");
+        Assert.True(m.Success, "reply count 1 not found on target note's reply button");
     }
 
     [Fact]

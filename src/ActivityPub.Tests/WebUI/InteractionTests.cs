@@ -25,6 +25,25 @@ public class InteractionTests : IClassFixture<WebUIFactory>
 
     HttpClient CreateClient() => _factory.CreateClient();
 
+    /// <summary>
+    /// Asserts the like/boost/reply button with the given CSS class renders the
+    /// given count. Phase 49.3: the count now follows an inline-SVG icon
+    /// (<span class="fb-icon">…</span>) instead of a literal glyph (♥/↻/💬), so
+    /// the old "♥ 1" substring no longer appears.
+    /// </summary>
+    static void AssertActionButtonCount(string html, string btnClass, int count)
+    {
+        // The button's class attr is "btn-action btn-like" (etc.); match the
+        // class token anywhere in the attribute, then the icon span, then the
+        // count that follows it.
+        // The tag helper emits <span aria-hidden="true" class="fb-icon">, so
+        // match the span with class="fb-icon" in any attribute order.
+        var pattern = $@"class=""[^""]*\b{btnClass}\b[^""]*""[^>]*>\s*<span[^>]*class=""fb-icon""[\s\S]*?</span>\s*{count}\b";
+        var m = System.Text.RegularExpressions.Regex.Match(html, pattern);
+        Assert.True(m.Success,
+            $"Expected a button with class '{btnClass}' showing count {count}.");
+    }
+
     async Task RegisterUser(HttpClient client, string username)
     {
         var registerResponse = await client.PostAsync("/auth/register", CreateFormContent(new Dictionary<string, string>
@@ -96,7 +115,7 @@ public class InteractionTests : IClassFixture<WebUIFactory>
 
         var afterLike = await client.GetAsync("/timeline");
         var afterLikeBody = await afterLike.Content.ReadAsStringAsync();
-        Assert.Contains("♥ 1", afterLikeBody);
+        AssertActionButtonCount(afterLikeBody, "btn-like", 1);
     }
 
     [Fact]
@@ -151,7 +170,7 @@ public class InteractionTests : IClassFixture<WebUIFactory>
         }));
 
         var afterLike = await client.GetAsync("/timeline");
-        Assert.Contains("♥ 1", await afterLike.Content.ReadAsStringAsync());
+        AssertActionButtonCount(await afterLike.Content.ReadAsStringAsync(), "btn-like", 1);
 
         await client.PostAsync("/interaction/unlike", CreateFormContent(new Dictionary<string, string>
         {
@@ -160,7 +179,7 @@ public class InteractionTests : IClassFixture<WebUIFactory>
 
         var afterUnlike = await client.GetAsync("/timeline");
         var afterUnlikeBody = await afterUnlike.Content.ReadAsStringAsync();
-        Assert.Contains("♥ 0", afterUnlikeBody);
+        AssertActionButtonCount(afterUnlikeBody, "btn-like", 0);
     }
 
     [Fact]
@@ -188,7 +207,7 @@ public class InteractionTests : IClassFixture<WebUIFactory>
 
         var afterBoost = await client.GetAsync("/timeline");
         var afterBoostBody = await afterBoost.Content.ReadAsStringAsync();
-        Assert.Contains("↻ 1", afterBoostBody);
+        AssertActionButtonCount(afterBoostBody, "btn-boost", 1);
     }
 
     [Fact]
@@ -249,7 +268,7 @@ public class InteractionTests : IClassFixture<WebUIFactory>
 
         var afterUnboost = await client.GetAsync("/timeline");
         var afterUnboostBody = await afterUnboost.Content.ReadAsStringAsync();
-        Assert.Contains("↻ 0", afterUnboostBody);
+        AssertActionButtonCount(afterUnboostBody, "btn-boost", 0);
     }
 
     [Fact]
@@ -280,7 +299,7 @@ public class InteractionTests : IClassFixture<WebUIFactory>
         var afterReplyBody = await afterReply.Content.ReadAsStringAsync();
         Assert.Contains("This is my reply", afterReplyBody);
         Assert.Contains("Reply", afterReplyBody);
-        Assert.Contains("💬 1", afterReplyBody);
+        AssertActionButtonCount(afterReplyBody, "btn-reply", 1);
     }
 
     [Fact]
@@ -415,8 +434,8 @@ public class InteractionTests : IClassFixture<WebUIFactory>
 
         var afterBoth = await client.GetAsync("/timeline");
         var afterBothBody = await afterBoth.Content.ReadAsStringAsync();
-        Assert.Contains("♥ 1", afterBothBody);
-        Assert.Contains("↻ 1", afterBothBody);
+        AssertActionButtonCount(afterBothBody, "btn-like", 1);
+        AssertActionButtonCount(afterBothBody, "btn-boost", 1);
     }
 
     static string? ExtractActivityId(string html)

@@ -284,12 +284,15 @@ public class OptimisticUiTests : IClassFixture<WebUIFactory>
         Assert.True(cardHtml.Contains(marker), "card fragment missing note text");
         Assert.True(cardHtml.Contains("note-card"), "card fragment missing note-card element");
 
-        var likeCountMatch = Regex.Match(cardHtml, @"btn-like[^>]*>\s*♥\s*(\d+)");
+        // Phase 49.3: the count follows the inline-SVG icon span, not a glyph.
+        // The tag helper emits <span aria-hidden="true" class="fb-icon">…</span>,
+        // so match the span with class="fb-icon" in any attribute order.
+        var likeCountMatch = Regex.Match(cardHtml, @"btn-like\b[^>]*>\s*<span[^>]*class=""fb-icon""[\s\S]*?</span>\s*(\d+)");
         Assert.True(likeCountMatch.Success, "like count not found on card fragment");
         Assert.True(int.Parse(likeCountMatch.Groups[1].Value) >= 1,
             $"Expected at least 1 like, got {likeCountMatch.Groups[1].Value}");
 
-        var boostCountMatch = Regex.Match(cardHtml, @"btn-boost[^>]*>\s*↻\s*(\d+)");
+        var boostCountMatch = Regex.Match(cardHtml, @"btn-boost\b[^>]*>\s*<span[^>]*class=""fb-icon""[\s\S]*?</span>\s*(\d+)");
         Assert.True(boostCountMatch.Success, "boost count not found on card fragment");
         Assert.True(int.Parse(boostCountMatch.Groups[1].Value) >= 1,
             $"Expected at least 1 boost, got {boostCountMatch.Groups[1].Value}");

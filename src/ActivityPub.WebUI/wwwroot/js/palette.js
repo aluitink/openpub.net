@@ -113,7 +113,7 @@
                 if (score > 0) {
                     out.push({
                         group: 'Communities',
-                        icon: '⌘',
+                        icon: 'cmd',
                         title: c.name || '',
                         sub: c.summary || '',
                         count: '',
@@ -149,7 +149,7 @@
                 if (score > 0) {
                     out.push({
                         group: 'Notes',
-                        icon: '❝',
+                        icon: 'quote',
                         title: n.content || '',
                         sub: n.authorName ? 'by ' + n.authorName : '',
                         count: '',
@@ -205,7 +205,13 @@
                     var icon = document.createElement('span');
                     icon.className = 'palette-item-icon';
                     icon.setAttribute('aria-hidden', 'true');
-                    icon.textContent = it.icon;
+                    // Icon names render as the shared SVG set; plain text
+                    // chars (e.g. "@" or "#") render as-is.
+                    if (window.FB && FB.icons && FB.icons[it.icon]) {
+                        icon.innerHTML = FB.icon(it.icon);
+                    } else {
+                        icon.textContent = it.icon;
+                    }
 
                     var main = document.createElement('span');
                     main.className = 'palette-item-main';

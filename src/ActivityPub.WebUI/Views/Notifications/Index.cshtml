@@ -51,17 +51,17 @@
                         <div class="notification-item @(item.NotificationType)" data-notification-id="@item.ActivityId">
                             <div class="notification-icon">
                                 @{
-                                    var icon = item.NotificationType switch
+                                    var iconName = item.NotificationType switch
                                     {
-                                        "follow" => "&#10133;",
-                                        "follow_accept" => "&#10003;",
-                                        "like" => "&#10084;",
-                                        "boost" => "&#128264;",
-                                        "reply" => "&#10148;",
-                                        _ => "&#9889;"
+                                        "follow" => "plus",
+                                        "follow_accept" => "check",
+                                        "like" => "like",
+                                        "boost" => "redo",
+                                        "reply" => "comment",
+                                        _ => "bolt"
                                     };
                                 }
-                                <span>@icon</span>
+                                <span><icon name="@iconName" /></span>
                             </div>
                             <div class="notification-content">
                                 <p class="notification-title">

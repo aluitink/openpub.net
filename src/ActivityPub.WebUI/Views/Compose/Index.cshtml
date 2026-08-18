@@ -28,7 +28,7 @@
             @if (Model.ReplyTarget != null)
             {
                 <div class="reply-context-banner">
-                    <span class="reply-context-icon">&#8617;</span>
+                    <span class="reply-context-icon"><icon name="reply" /></span>
                     <span class="reply-context-text">Replying to <a href="/actors/@Model.ReplyTarget.AuthorName"><strong>@Model.ReplyTarget.AuthorDisplayName</strong></a> (@Model.ReplyTarget.AuthorName)</span>
                     @if (!string.IsNullOrEmpty(Model.ReplyTarget.Snippet))
                     {
@@ -58,7 +58,7 @@
                     <input type="file" name="Image" id="Image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
                     <div id="image-preview-container" class="image-preview-container" style="display:none">
                         <img id="image-preview" class="image-preview" alt="Preview" />
-                        <button type="button" id="image-remove" class="image-remove-btn" title="Remove image">&#10005; Remove</button>
+                        <button type="button" id="image-remove" class="image-remove-btn" title="Remove image"><icon name="close" /> Remove</button>
                     </div>
                 </div>
 

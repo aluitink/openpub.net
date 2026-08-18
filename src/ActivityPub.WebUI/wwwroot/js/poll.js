@@ -36,7 +36,8 @@ FB.register('poll', function() {
                 div.querySelector('.poll-option-label').textContent = o;
                 previewOptions.appendChild(div);
             });
-            previewDuration.textContent = '⏱ ' + durationLabel(parseInt(duration.value, 10));
+            previewDuration.innerHTML = (window.FB ? FB.icon('clock') : '') + '<span class="poll-duration-text"></span>';
+            previewDuration.querySelector('.poll-duration-text').textContent = ' ' + durationLabel(parseInt(duration.value, 10));
             previewMultiselect.style.display = multiselect.checked ? 'inline' : 'none';
             if (multiselect.checked) previewMultiselect.textContent = ' · Multiple choices allowed';
             preview.style.display = 'block';

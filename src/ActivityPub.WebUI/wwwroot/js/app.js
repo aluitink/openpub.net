@@ -55,9 +55,52 @@
                 if (isNaN(d.getTime())) return;
                 el.textContent = FB.timeAgo(d);
             });
+        },
+
+        // ---- Icon set (mirrors the server-side Icons / <icon> tag helper) --
+        // Returns the inline SVG string for a named icon so client-side swaps
+        // (optimistic like/boost, toasts, theme, palette) stay byte-for-byte
+        // consistent with the server-rendered set. Unknown names -> "".
+        icon: function(name) {
+            var svg = FB.icons[name];
+            if (!svg) return '';
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + svg + '</svg>';
         }
     };
     window.FB = FB;
+
+    // Inner <path>/<circle>/<rect> fragments for each icon (the <svg> wrapper
+    // is added by FB.icon). Must match src/ActivityPub.WebUI/TagHelpers/Icons*.cs.
+    FB.icons = {
+        reply:   '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v3"/>',
+        like:    '<path d="M12 20s-7-4.35-9.5-8.5C1 8.5 2.5 5 6 5c2 0 3.2 1.1 4 2.3C10.8 6.1 12 5 14 5c3.5 0 5 3.5 3.5 6.5C19 15.65 12 20 12 20Z"/>',
+        boost:   '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"/><path d="M4 20v-4h4"/>',
+        comment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
+        more:    '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
+        warning: '<path d="M10.3 4.3 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"/><path d="M12 9v5"/><path d="M12 17h.01"/>',
+        search:  '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+        caret:   '<path d="m6 9 6 6 6-6"/>',
+        home:    '<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>',
+        inbox:   '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
+        profile: '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/>',
+        prev:    '<path d="m15 6-6 6 6 6"/>',
+        next:    '<path d="m9 6 6 6-6 6"/>',
+        close:   '<path d="M6 6l12 12"/><path d="M18 6 6 18"/>',
+        audio:   '<path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+        doc:     '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>',
+        moon:    '<path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5Z"/>',
+        sun:     '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+        plus:    '<path d="M12 5v14"/><path d="M5 12h14"/>',
+        check:   '<path d="m5 12 5 5 9-11"/>',
+        redo:    '<path d="M17 2l4 4-4 4"/><path d="M3 12V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 12v3a4 4 0 0 1-4 4H3"/>',
+        bolt:    '<path d="M13 2 4 14h6l-1 8 9-12h-6Z"/>',
+        info:    '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+        cmd:     '<path d="M9 9V6a3 3 0 1 0-3 3h3Zm0 0v6m0-6h6m-6 6v3a3 3 0 1 1-3-3h3Zm6-6h3a3 3 0 1 0-3-3v3Zm0 6v3a3 3 0 1 0 3-3h-3Zm0 0H9"/><path d="M9 9h6v6H9Z"/>',
+        quote:   '<path d="M7 7H4v6h3l-1 4"/><path d="M18 7h-3v6h3l-1 4"/>',
+        clock:   '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        video:   '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3Z"/>',
+        link:    '<path d="M9 12h6"/><path d="M10 8H8a4 4 0 0 0 0 8h2"/><path d="M14 8h2a4 4 0 0 1 0 8h-2"/>'
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() { FB.ready(); });
@@ -80,10 +123,10 @@
             toast.className = 'toast toast-' + type;
             toast.setAttribute('role', 'status');
 
-            var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ';
             // Icon is decorative (aria-hidden) so screen readers announce only
             // the message; the container's role="status" live region does the rest.
-            toast.innerHTML = '<span class="toast-icon" aria-hidden="true">' + icon + '</span><span class="toast-msg"></span>';
+            var iconName = type === 'success' ? 'check' : type === 'error' ? 'close' : type === 'warning' ? 'warning' : 'info';
+            toast.innerHTML = '<span class="toast-icon" aria-hidden="true">' + FB.icon(iconName) + '</span><span class="toast-msg"></span>';
             toast.querySelector('.toast-msg').textContent = message;
 
             container.appendChild(toast);
@@ -119,7 +162,8 @@
         function paint(btn) {
             if (!btn) return;
             var icon = btn.querySelector('.theme-toggle-icon');
-            if (icon) icon.textContent = currentTheme() === 'dark' ? '☀' : '☾';
+            // Swap the inner SVG (not textContent, which would shred it).
+            if (icon) icon.innerHTML = FB.icon(currentTheme() === 'dark' ? 'sun' : 'moon');
             btn.setAttribute('aria-pressed', currentTheme() === 'dark' ? 'true' : 'false');
             btn.setAttribute('aria-label', currentTheme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
         }
@@ -577,18 +621,23 @@
             var noteCard = btn.closest('.note-card');
             var activityId = noteCard ? noteCard.getAttribute('data-activity-id') : null;
             var isLike = btn.classList.contains('btn-like');
-            var icon = isLike ? '♥' : '↻';
+            var iconName = isLike ? 'like' : 'boost';
+            var label = isLike ? 'likes' : 'boosts';
 
             // Capture the original button markup for rollback.
             var origHtml = btn.outerHTML;
 
             // Optimistic update: toggle the active state and adjust the count.
-            var text = btn.textContent;
-            var parts = text.split(/\s+/);
-            var count = parseInt(parts[parts.length - 1], 10) || 0;
+            // Track the count in data-count (the SVG's path data would
+            // otherwise pollute textContent). First read falls back to the
+            // visible number for server-rendered buttons.
+            var stored = btn.getAttribute('data-count');
+            var count = (stored !== null && stored !== '') ? parseInt(stored, 10)
+                       : ((btn.textContent || '').match(/\d+/) || [0])[0] | 0;
             var isActive = btn.classList.contains('active');
             var newCount = Math.max(0, isActive ? count - 1 : count + 1);
-            btn.textContent = icon + ' ' + newCount;
+            btn.innerHTML = FB.icon(iconName) + ' ' + newCount + '<span class="sr-only"> ' + label + '</span>';
+            btn.setAttribute('data-count', String(newCount));
             btn.classList.toggle('active', !isActive);
             btn.disabled = true;
 
@@ -662,11 +711,15 @@
             var buttons = card.querySelectorAll(selector);
             if (buttons.length < 2) return;
             var first = buttons[0];
-            var text = first.textContent;
+            // Mirror the full inner markup (icon SVG + count + sr-only label);
+            // textContent would drop the SVG and leak its path data.
+            var html = first.innerHTML;
             var active = first.classList.contains('active');
+            var dataCount = first.getAttribute('data-count');
             buttons.forEach(function(b) {
                 if (b === first) return;
-                b.textContent = text;
+                b.innerHTML = html;
+                if (dataCount !== null) b.setAttribute('data-count', dataCount);
                 b.classList.toggle('active', active);
             });
         }

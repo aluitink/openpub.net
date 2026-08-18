@@ -4637,3 +4637,96 @@ body.lightbox-open { overflow: hidden; }
 @media (max-width: 768px) {
     .link-preview-image { width: 72px; height: 56px; }
 }
+
+/* ------------------------------------------------------------------ *
+ * Icon set (.fb-icon)
+ * Single dependency-free inline-SVG set rendered by the <icon> tag
+ * helper (and mirrored in JS by FB.icon()). Every glyph is 24x24,
+ * stroke-based, fill="none" stroke="currentColor", so it inherits its
+ * colour from the host element's `color` and scales to 1em by default.
+ * Widget classes below only override width/height where the icon is
+ * larger than the surrounding text.
+ * ------------------------------------------------------------------ */
+.fb-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    color: inherit;
+    vertical-align: -0.125em; /* optically centre an inline 1em icon on the text baseline */
+}
+
+.fb-icon svg {
+    width: 1em;
+    height: 1em;
+    flex: none;
+}
+
+/* Note action buttons: icon sits just left of the count. */
+.btn-action .fb-icon {
+    margin-right: 0.25em;
+}
+
+/* Reply indicator / context banner: a touch larger than body text. */
+.reply-indicator .fb-icon,
+.reply-context-icon.fb-icon {
+    width: 1.1em;
+    height: 1.1em;
+    margin-right: 0.25em;
+}
+
+/* Content-warning label. */
+.cw-label .fb-icon {
+    margin-right: 0.3em;
+}
+
+/* Media attachment glyphs (audio note, document). */
+.note-audio-icon.fb-icon,
+.doc-icon.fb-icon {
+    width: 1.2em;
+    height: 1.2em;
+    margin-right: 0.4em;
+}
+
+/* Mobile bottom-nav + palette + toast: fixed-pixel icons. */
+.mbn-icon.fb-icon {
+    width: 22px;
+    height: 22px;
+}
+.palette-trigger-icon.fb-icon,
+.palette-search-icon.fb-icon {
+    width: 1em;
+    height: 1em;
+}
+.palette-item-icon.fb-icon {
+    width: 18px;
+    height: 18px;
+}
+.toast-icon.fb-icon {
+    width: 1.1em;
+    height: 1.1em;
+    margin-right: 0.4em;
+}
+
+/* Notification badges (36px round): the inner .fb-icon inherits the badge's
+   1.5rem font-size, so its 1em svg is already 24px and centred by the badge
+   flexbox — no extra sizing needed. */
+
+/* Lightbox controls: larger, high-contrast tap targets. */
+.lightbox-close .fb-icon,
+.lightbox-nav .fb-icon {
+    width: 1.4em;
+    height: 1.4em;
+}
+.lightbox-cw-label .fb-icon {
+    width: 1.4em;
+    height: 1.4em;
+    margin-right: 0.4em;
+}
+
+/* Nav-group caret: small (rotation on open is handled by the existing
+   .nav-group.open .caret rule above). */
+.caret.fb-icon {
+    width: 0.8em;
+    height: 0.8em;
+}

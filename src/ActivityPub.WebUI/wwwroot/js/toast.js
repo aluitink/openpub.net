@@ -14,8 +14,9 @@
         toast.className = 'toast toast-' + type;
         toast.setAttribute('role', 'status');
 
-        var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ';
-        toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-msg"></span>';
+        var iconName = type === 'success' ? 'check' : type === 'error' ? 'close' : type === 'warning' ? 'warning' : 'info';
+        var icon = (window.FB && FB.icon) ? FB.icon(iconName) : iconName;
+        toast.innerHTML = '<span class="toast-icon" aria-hidden="true">' + icon + '</span><span class="toast-msg"></span>';
         toast.querySelector('.toast-msg').textContent = message;
 
         container.appendChild(toast);
