@@ -249,6 +249,107 @@ public class AccessibilityTests : IClassFixture<WebUIFactory>
             "Palette trigger should expose its open state via aria-expanded. Got: " + trigger);
     }
 
+    // ---------- Phase 50.2 — focus-visible + logical tab order ----------
+
+    [Fact]
+    public async Task SiteCss_NavDropdownLinks_KeepFocusVisibleOutline()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        // The nav dropdown link must not swallow its focus outline. A :focus-visible
+        // rule must restore a visible ring (WCAG 2.4.7), so an 'outline: none' on the
+        // :focus state alone is insufficient.
+        Assert.Contains(".nav-dropdown-link:focus-visible", css, StringComparison.Ordinal);
+        var rule = Regex.Match(css, @"\.nav-dropdown-link:focus-visible\s*\{[^}]*outline\s*:\s*[^;]+;", RegexOptions.Multiline);
+        Assert.True(rule.Success, "Expected '.nav-dropdown-link:focus-visible' to declare an outline ring");
+        Assert.DoesNotContain("outline: none", rule.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SiteCss_SearchInputs_HaveFocusVisibleRing()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        // Both search inputs set outline:none on :focus; a :focus-visible ring is
+        // required so keyboard focus remains visible.
+        Assert.Contains(".search-input:focus-visible", css, StringComparison.Ordinal);
+        Assert.Contains(".nav-search-input:focus-visible", css, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SiteCss_NoteMoreMenuItems_HaveFocusVisibleRing()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        Assert.Contains(".note-more-item:focus-visible", css, StringComparison.Ordinal);
+        var rule = Regex.Match(css, @"\.note-more-item:focus-visible\s*\{[^}]*outline\s*:\s*[^;]+;", RegexOptions.Multiline);
+        Assert.True(rule.Success, "Expected '.note-more-item:focus-visible' to declare an outline ring");
+    }
+
+    [Fact]
+    public async Task SiteCss_NoControlRemovesFocusOutlineWithoutRing()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        // Every control that sets 'outline: none' must be paired with a :focus-visible
+        // (or :focus) ring, otherwise keyboard focus disappears. We assert the known
+        // offenders each have a focus-visible ring nearby.
+        Assert.True(css.Contains(".form-control:focus"), "form-control focus ring expected");
+        Assert.True(css.Contains(".search-input:focus-visible"), "search-input focus-visible ring expected");
+        Assert.True(css.Contains(".nav-search-input:focus-visible"), "nav-search-input focus-visible ring expected");
+    }
+
+    [Fact]
+    public async Task NoteMoreMenu_ItemsAreLogicalTabOrder_NoNegativeTabindex()
+    {
+        var client = await GetAuthenticatedClient();
+        await client.PostAsync("/compose/post", new System.Net.Http.StringContent(
+            $"Content={Uri.EscapeDataString("a11y tab order note")}",
+            System.Text.Encoding.UTF8, "application/x-www-form-urlencoded"));
+        var html = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        var cardStart = html.IndexOf("class=\"note-card", StringComparison.Ordinal);
+        Assert.True(cardStart > 0, "Expected a .note-card on the timeline");
+
+        // Slice out this card: from its start to the start of the next card, bounded
+        // by the layout footer (which holds the command palette) so we don't sweep in
+        // unrelated page chrome.
+        var nextCard = html.IndexOf("class=\"note-card", cardStart + 1);
+        var footerIdx = html.IndexOf("<footer", cardStart);
+        var end = int.MaxValue;
+        if (nextCard > 0) end = nextCard;
+        if (footerIdx > 0) end = Math.Min(end, footerIdx);
+        if (end == int.MaxValue) end = html.Length;
+        var card = html.Substring(cardStart, end - cardStart);
+
+        // The note card's interactive controls must rely on natural DOM order for tab
+        // order (WCAG 2.4.3) — no negative tabindex to reorder focus.
+        Assert.DoesNotContain("tabindex=\"-1\"", card, StringComparison.Ordinal);
+        Assert.DoesNotContain("tabindex='-1'", card, StringComparison.Ordinal);
+
+        // The more-menu toggle precedes its menu items in source order.
+        var toggleIdx = card.IndexOf("more-toggle-", StringComparison.Ordinal);
+        var firstItemIdx = card.IndexOf("role=\"menuitem\"", StringComparison.Ordinal);
+        Assert.True(toggleIdx > 0 && firstItemIdx > 0 && toggleIdx < firstItemIdx,
+            "The more-menu toggle should appear before its menu items in DOM order");
+    }
+
+    [Fact]
+    public async Task NoteMoreMenu_SupportsArrowKeyNavigation()
+    {
+        var client = await GetAuthenticatedClient();
+        await client.PostAsync("/compose/post", new System.Net.Http.StringContent(
+            $"Content={Uri.EscapeDataString("a11y arrow key note")}",
+            System.Text.Encoding.UTF8, "application/x-www-form-urlencoded"));
+        // The keyboard-nav code lives in app.js: arrow keys move between menuitems
+        // and Escape returns focus to the toggle.
+        var js = await (await client.GetAsync("/js/app.js")).Content.ReadAsStringAsync();
+        Assert.Contains("ArrowDown", js, StringComparison.Ordinal);
+        Assert.Contains("ArrowUp", js, StringComparison.Ordinal);
+        Assert.Contains("Escape", js, StringComparison.Ordinal);
+        Assert.Contains("menuitem", js, StringComparison.Ordinal);
+    }
+
     // ---------- helpers ----------
 
     private async Task<HttpClient> GetAuthenticatedClient()

@@ -49,7 +49,7 @@ Make the timeline and interactions feel instant.
 
 ### Phase 50: Accessibility (WCAG AA)
 1. ⬜ Contrast re-audit across light **and** dark themes (all views).
-2. ⬜ Focus-visible + logical tab order on all interactive controls (incl. note-more dropdown, poll options).
+2. ✅ Focus-visible + logical tab order on all interactive controls (incl. note-more dropdown, poll options). Global `:focus-visible` ring (WCAG 2.4.7) was present but several controls swallowed it with `outline:none` — restored visible rings for `.nav-dropdown-link`, `.search-input`, `.nav-search-input` (each now has a `:focus-visible` box-shadow/outline) and added explicit `.note-more-item:focus-visible` rings; dark-theme overrides included. Note-more dropdown now supports the WAI-ARIA menuitem keyboard pattern: ArrowDown/ArrowUp open + move between items, Home/End jump, Escape closes and returns focus to the toggle, focus moves into the menu on open, Tab is trapped inside. Poll options are display-only (the single Vote button is the only tab stop). No negative `tabindex` on note cards — DOM order equals tab order (WCAG 2.4.3). 6 new a11y tests (1033 total).
 3. ✅ Screen-reader pass: `aria-*` on dropdowns/menus/modals (note-more + nav dropdowns carry `aria-controls`/`aria-haspopup="menu"`/`aria-labelledby`), live region for toasts (`role="status"` + `aria-atomic`), `aria-pressed` on like/boost, `aria-label` on icon buttons, labelled poll options, palette `aria-controls`/`aria-expanded` + Tab focus trap. 6 new a11y tests (1027 total).
 4. ⬜ Keyboard-only walkthrough of entire app via delegated subagent; fix any trap.
 

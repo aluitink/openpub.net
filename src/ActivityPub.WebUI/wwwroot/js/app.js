@@ -1074,22 +1074,66 @@
                 closeAllMoreMenus();
                 btn.setAttribute('aria-expanded', String(!isOpen));
                 dropdown.classList.toggle('open', !isOpen);
+                if (!isOpen) {
+                    // Move focus into the menu so keyboard users can arrow through it.
+                    var first = dropdown.querySelector('[role="menuitem"]');
+                    if (first) first.focus();
+                }
+            });
+            // Open the menu with ArrowUp/ArrowDown and land on first/last item.
+            btn.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    closeAllMoreMenus();
+                    btn.setAttribute('aria-expanded', 'true');
+                    dropdown.classList.add('open');
+                    var items = menuItems(dropdown);
+                    if (items.length) {
+                        items[e.key === 'ArrowDown' ? 0 : items.length - 1].focus();
+                    }
+                }
             });
             dropdown.addEventListener('keydown', function(e) {
-                if (e.key !== 'Tab') return;
-                var items = focusables(dropdown);
+                var items = menuItems(dropdown);
                 if (!items.length) return;
-                var first = items[0];
-                var last = items[items.length - 1];
-                if (e.shiftKey && document.activeElement === first) {
+                var idx = items.indexOf(document.activeElement);
+                if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    last.focus();
-                } else if (!e.shiftKey && document.activeElement === last) {
+                    items[Math.min(idx + 1, items.length - 1)].focus();
+                } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    first.focus();
+                    items[idx <= 0 ? 0 : idx - 1].focus();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    items[0].focus();
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    items[items.length - 1].focus();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeAllMoreMenus();
+                    btn.focus();
+                } else if (e.key === 'Tab') {
+                    var first = items[0];
+                    var last = items[items.length - 1];
+                    if (e.shiftKey && document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    } else if (!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
                 }
             });
         });
+
+        function menuItems(dropdown) {
+            return Array.prototype.slice.call(
+                dropdown.querySelectorAll('[role="menuitem"]:not([hidden])')
+            ).filter(function(el) {
+                return el.offsetParent !== null;
+            });
+        }
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {

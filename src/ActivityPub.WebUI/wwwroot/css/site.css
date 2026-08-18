@@ -308,7 +308,13 @@ body.nav-open {
 .nav-dropdown-link:focus {
     background-color: var(--color-nav-hover);
     color: var(--color-text);
-    outline: none;
+}
+
+/* Keyboard focus ring for dropdown links (the hover/focus hover styles above
+   must not swallow the outline, or keyboard users lose focus visibility). */
+.nav-dropdown-link:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
 }
 
 .nav-dropdown-link.active {
@@ -1758,6 +1764,10 @@ footer {
     border-color: #6c63ff;
 }
 
+.search-input:focus-visible {
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.35);
+}
+
 .search-tabs {
     display: flex;
     gap: 0.5rem;
@@ -2687,6 +2697,10 @@ footer {
     width: 220px;
 }
 
+.nav-search-input:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+
 @media (max-width: 768px) {
     .nav-search-input {
         width: 100px;
@@ -2880,6 +2894,12 @@ footer {
 }
 
 .note-more-item:hover {
+    background: var(--color-surface-alt);
+}
+
+.note-more-item:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
     background: var(--color-surface-alt);
 }
 
@@ -3179,6 +3199,11 @@ footer {
 :root[data-theme="dark"] .nav-dropdown-link:focus {
     background-color: var(--dark-nav-hover);
     color: var(--color-on-dark);
+}
+
+:root[data-theme="dark"] .nav-dropdown-link:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
 }
 
 :root[data-theme="dark"] .nav-link.active,
