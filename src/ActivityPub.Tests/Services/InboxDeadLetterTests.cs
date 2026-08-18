@@ -103,6 +103,43 @@ public class InboxDeadLetterTests
         repo.Verify(r => r.AddInboxDeadLetterAsync(It.IsAny<InboxDeadLetterEntity>()), Times.Never);
     }
 
+    // --- End-to-end dedup against the REAL repository --------------------
+    // The test above proves the *service* skips a save when the repo says
+    // "already seen," but it mocks the repo. This drives the real
+    // InMemoryActivityPubRepository through the same public entry point twice
+    // with the identical activity and proves the federation-health guarantee:
+    // a redelivered activity is stored EXACTLY once (no duplicates), and both
+    // deliveries are accepted (no loss / no spurious rejection).
+    [Fact]
+    public async Task DuplicateInboundActivity_RealRepository_StoredExactlyOnce()
+    {
+        var repo = new InMemoryActivityPubRepository();
+        var service = new SharedInboxService(
+            repo,
+            Mock.Of<IOutboundActivityService>(),
+            new MemoryCache(new MemoryCacheOptions()),
+            Mock.Of<IFederationCache>(),
+            Mock.Of<ILogger<SharedInboxService>>(),
+            Options.Create(new ActivityPubOptions { InboxProcessing = InboxOptions() }));
+
+        var activity = CreateActivity("https://remote.example/notes/42");
+        var first = await service.ProcessAndDistributeActivityAsync(InboxUser, activity);
+        // The remote redelivers the very same activity (e.g. at-least-once
+        // transport, or a retry after a flaky network).
+        var second = await service.ProcessAndDistributeActivityAsync(InboxUser, activity);
+
+        // Both deliveries are accepted (the duplicate is a no-op success, not
+        // an error), and the activity ends up stored exactly once.
+        Assert.True(first);
+        Assert.True(second);
+        var ids = await repo.GetAllActivityIdsAsync();
+        Assert.Single(ids);
+        Assert.Equal("https://remote.example/notes/42", Assert.Single(ids).ToString());
+        var stored = await repo.GetActivityAsync("https://remote.example/notes/42");
+        Assert.NotNull(stored);
+        Assert.True(await repo.HasSeenActivityAsync("https://remote.example/notes/42"));
+    }
+
     // ------------------------------------------------------------------
     // Client-side rejections (no retry, no DLQ — the payload itself is bad)
     // ------------------------------------------------------------------
