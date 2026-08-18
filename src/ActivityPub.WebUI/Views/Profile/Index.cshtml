@@ -59,6 +59,7 @@
                     <form asp-action="Unfollow" method="post" class="inline-form">
                         <input type="hidden" name="actorId" value="@Model.TargetActorId" />
                         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                        <input type="hidden" name="target-username" value="@Model.Username" />
                         <button type="submit" class="btn btn-secondary btn-follow-state">Following</button>
                     </form>
                 }
@@ -67,6 +68,7 @@
                     <form asp-action="Follow" method="post" class="inline-form">
                         <input type="hidden" name="actorId" value="@Model.TargetActorId" />
                         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                        <input type="hidden" name="target-username" value="@Model.Username" />
                         <button type="submit" class="btn btn-primary btn-follow-state">Follow</button>
                     </form>
                 }

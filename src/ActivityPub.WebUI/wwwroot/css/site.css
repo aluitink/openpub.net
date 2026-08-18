@@ -747,6 +747,14 @@ footer {
     background-color: var(--color-surface-hover);
 }
 
+/* While an optimistic action is in flight the button is disabled; dim it so
+   the pending state is visible without blocking the rest of the card. */
+.btn-action:disabled,
+.btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
 .btn-delete {
     color: var(--color-danger);
 }

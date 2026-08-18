@@ -543,34 +543,124 @@
 
     // ---- Note card interactions (like/boost/delete/reply/copy) -------------
     FB.register('notes', function() {
-        document.querySelectorAll('.btn-like, .btn-boost').forEach(function(btn) {
-            var form = btn.closest('form');
-            if (!form) return;
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var text = btn.textContent;
-                var parts = text.split(/\s+/);
-                var count = parseInt(parts[parts.length - 1], 10) || 0;
-                var isActive = btn.classList.contains('active');
-                var isLike = btn.classList.contains('btn-like');
-                var newCount = isActive ? count - 1 : count + 1;
-                var icon = isLike ? '♥' : '↻';
-                btn.textContent = icon + ' ' + newCount;
-                btn.classList.toggle('active', !isActive);
-                var fd = new FormData(form);
-                fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(function(r) {
-                        if (!r.ok) throw new Error('Failed');
-                        var msg = isLike ? (isActive ? 'Unlike successful' : 'Liked') : (isActive ? 'Unboosted' : 'Boosted');
-                        showToast(msg, 'success');
-                    })
-                    .catch(function() {
-                        btn.textContent = text;
-                        btn.classList.toggle('active', isActive);
-                        showToast('Action failed. Please try again.', 'error');
-                    });
+        // Optimistic like/boost with server-authoritative reconciliation.
+        //
+        // A single delegated submit handler is attached to the document for all
+        // .btn-like / .btn-boost forms. Because reconciliation splices fresh
+        // server-rendered buttons (and their forms) into the live DOM, a
+        // delegate is the only binding that keeps working for dynamically
+        // inserted cards without accumulating duplicate handlers.
+        //
+        // On submit we:
+        //   1. Optimistically toggle the active state + count by one.
+        //   2. Fire the POST.
+        //   3. On success, reconcile the button's count + active state with the
+        //      authoritative server fragment at /timeline/card/<id> so a stale
+        //      or concurrent page self-corrects.
+        //   4. On failure, roll the button back to its captured original HTML.
+        document.addEventListener('submit', function(e) {
+            var btn = e.target && e.target.closest
+                ? e.target.closest('.btn-like, .btn-boost')
+                : null;
+            if (!btn || !e.target.matches || !e.target.matches('form')) return;
+            e.preventDefault();
+            if (btn.disabled) return;
+
+            var form = e.target;
+            var noteCard = btn.closest('.note-card');
+            var activityId = noteCard ? noteCard.getAttribute('data-activity-id') : null;
+            var isLike = btn.classList.contains('btn-like');
+            var icon = isLike ? '♥' : '↻';
+
+            // Capture the original button markup for rollback.
+            var origHtml = btn.outerHTML;
+
+            // Optimistic update: toggle the active state and adjust the count.
+            var text = btn.textContent;
+            var parts = text.split(/\s+/);
+            var count = parseInt(parts[parts.length - 1], 10) || 0;
+            var isActive = btn.classList.contains('active');
+            var newCount = Math.max(0, isActive ? count - 1 : count + 1);
+            btn.textContent = icon + ' ' + newCount;
+            btn.classList.toggle('active', !isActive);
+            btn.disabled = true;
+
+            var fd = new FormData(form);
+            fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed');
+                    var msg = isLike ? (isActive ? 'Unlike successful' : 'Liked') : (isActive ? 'Unboosted' : 'Boosted');
+                    showToast(msg, 'success');
+
+                    // Reconcile with the authoritative server state.
+                    if (activityId && window.FB.reconcileNoteCard) {
+                        return window.FB.reconcileNoteCard(activityId, btn, noteCard, isLike);
+                    }
+                    btn.disabled = false;
+                })
+                .catch(function() {
+                    // Roll back the optimistic change.
+                    if (noteCard) {
+                        var fresh = document.createElement('div');
+                        fresh.innerHTML = origHtml;
+                        var restored = fresh.querySelector('button');
+                        if (restored && btn.parentNode) {
+                            btn.parentNode.replaceChild(restored, btn);
+                        }
+                    }
+                    if (btn && btn.parentNode) btn.disabled = false;
+                    showToast('Action failed. Please try again.', 'error');
+                });
+        }, true);
+
+        // Reconcile a note card's like/boost button with the server-rendered
+        // fragment at /timeline/card/<id>. The fragment is the single source of
+        // truth for counts + active state; we splice the fresh button back into
+        // the live card so the optimistic mutation is corrected if it diverged
+        // from the server (e.g. a concurrent like from another client).
+        window.FB.reconcileNoteCard = function(activityId, currentBtn, noteCard, isLike) {
+            return fetch('/timeline/card/' + encodeURIComponent(activityId), { credentials: 'same-origin' })
+                .then(function(r) { return r.ok ? r.text() : null; })
+                .then(function(html) {
+                    if (!html || !noteCard) {
+                        if (currentBtn) currentBtn.disabled = false;
+                        return;
+                    }
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var freshCard = doc.querySelector('.note-card[data-activity-id="' + activityId + '"]');
+                    if (!freshCard) {
+                        if (currentBtn) currentBtn.disabled = false;
+                        return;
+                    }
+                    var freshBtn = freshCard.querySelector(isLike ? '.btn-like' : '.btn-boost');
+                    if (freshBtn && currentBtn.parentNode) {
+                        currentBtn.parentNode.replaceChild(freshBtn, currentBtn);
+                        syncNoteButtons(noteCard, isLike ? '.btn-like' : '.btn-boost');
+                    }
+                    if (currentBtn) currentBtn.disabled = false;
+                })
+                .catch(function() {
+                    // Reconciliation is best-effort; leave the optimistic
+                    // value in place (it's already a reasonable approximation).
+                    if (currentBtn) currentBtn.disabled = false;
+                });
+        };
+
+        // Keep the like/boost buttons in a card visually in sync (the server
+        // renders each independently; after a splice we mirror the fresh value
+        // onto its sibling so the card doesn't show two different counts).
+        function syncNoteButtons(card, selector) {
+            var buttons = card.querySelectorAll(selector);
+            if (buttons.length < 2) return;
+            var first = buttons[0];
+            var text = first.textContent;
+            var active = first.classList.contains('active');
+            buttons.forEach(function(b) {
+                if (b === first) return;
+                b.textContent = text;
+                b.classList.toggle('active', active);
             });
-        });
+        }
 
         document.querySelectorAll('.btn-delete').forEach(function(btn) {
             var form = btn.closest('form');
@@ -697,6 +787,196 @@
             });
         });
     });
+
+    // ---- Optimistic follow/unfollow (profile page) --------------------------
+    // The Follow/Unfollow button on a profile toggles immediately, fires the
+    // POST, then reconciles the authoritative state (button + follower count)
+    // from /Profile/State. On failure the button is rolled back.
+    //
+    // init is stored on window.FB so a rollback can re-run it against the
+    // restored button (the form-level submit handler is bound once per form,
+    // so re-invoking init on a fresh button would not re-attach it).
+    function initFollowToggle() {
+        var btn = document.querySelector('.btn-follow-state');
+        if (!btn) return;
+        var form = btn.closest('form');
+        if (!form) return;
+
+        var targetUsername = (form.querySelector('input[name="target-username"]') || {}).value || '';
+        var isFollowing = btn.classList.contains('btn-secondary') && /following/i.test(btn.textContent);
+        var origHtml = btn.outerHTML;
+        var formAction = form.action;
+
+        function paintBtn(following, count) {
+            btn.textContent = following ? 'Following' : 'Follow';
+            btn.classList.toggle('btn-secondary', following);
+            btn.classList.toggle('btn-primary', !following);
+            if (count != null) updateFollowerCount(count);
+        }
+
+        function updateFollowerCount(count) {
+            // The profile shows "N Followers" in .profile-stats; update the
+            // number so the optimistic state is reflected without a reload.
+            var stats = document.querySelector('.profile-stats');
+            if (!stats) return;
+            var stat = Array.prototype.slice.call(stats.querySelectorAll('.stat')).find(function(el) {
+                return /followers/i.test(el.textContent);
+            });
+            if (stat) {
+                var strong = stat.querySelector('strong');
+                if (strong) strong.textContent = String(count);
+            }
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (btn.disabled) return;
+
+            var willFollow = !isFollowing;
+            btn.disabled = true;
+
+            // Optimistic toggle.
+            paintBtn(willFollow);
+
+            var fd = new FormData(form);
+            fetch(formAction, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed');
+                    showToast(willFollow ? 'Now following ' + targetUsername : 'Unfollowed ' + targetUsername, 'success');
+                    isFollowing = willFollow;
+
+                    // Reconcile with the authoritative server state.
+                    if (targetUsername && window.FB.reconcileFollowState) {
+                        return window.FB.reconcileFollowState(targetUsername, function(following, count) {
+                            isFollowing = following;
+                            paintBtn(following, count);
+                        }, function() { btn.disabled = false; });
+                    }
+                    btn.disabled = false;
+                })
+                .catch(function() {
+                    // Roll back: restore the original button markup, then
+                    // re-init the toggle against it so the form submit handler
+                    // works again (it's bound to the form, so a fresh button
+                    // needs init re-run to re-capture state + re-attach).
+                    var fresh = document.createElement('div');
+                    fresh.innerHTML = origHtml;
+                    var restored = fresh.querySelector('button');
+                    if (restored && btn.parentNode) {
+                        btn.parentNode.replaceChild(restored, btn);
+                        if (window.FB.initFollowToggle) window.FB.initFollowToggle();
+                    }
+                    showToast('Action failed. Please try again.', 'error');
+                });
+        });
+    }
+    window.FB.initFollowToggle = initFollowToggle;
+    FB.register('follow-toggle', initFollowToggle);
+
+    // Reconcile follow-state with the server and apply it (button + count).
+    // apply(following, count) updates the UI; done() re-enables the button.
+    window.FB.reconcileFollowState = function(targetUsername, apply, done) {
+        return fetch('/Profile/State?username=' + encodeURIComponent(targetUsername), { credentials: 'same-origin' })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(state) {
+                if (!state) {
+                    if (done) done();
+                    return;
+                }
+                apply(state.isFollowing, state.followerCount);
+                if (done) done();
+            })
+            .catch(function() {
+                if (done) done();
+            });
+    };
+
+    // ---- Optimistic community join/leave ------------------------------------
+    // The Join/Leave button on a community page toggles immediately, fires the
+    // POST, then reconciles the authoritative state (button + member count)
+    // from the re-fetched community page. On failure the button is rolled back.
+    function initCommunityToggle() {
+        var btn = document.querySelector('.community-actions form.inline-form button[type="submit"]');
+        if (!btn) return;
+        var form = btn.closest('form');
+        if (!form) return;
+        var communityId = (form.querySelector('input[name="communityId"]') || {}).value || '';
+        var origHtml = btn.outerHTML;
+        var formAction = form.action;
+        var isMember = /leave/i.test(btn.textContent);
+
+        function paintCommunityBtn(joined) {
+            btn.textContent = joined ? 'Leave' : 'Join';
+            btn.classList.toggle('btn-secondary', joined);
+            btn.classList.toggle('btn-primary', !joined);
+        }
+
+        function updateMemberBadge(joined) {
+            // Toggle the "You are a member" badge to reflect the new state.
+            var details = document.querySelector('.community-details');
+            if (!details) return;
+            var existing = details.querySelector('.badge.badge-member');
+            if (joined && !existing) {
+                var meta = details.querySelector('.card-meta');
+                if (!meta) return;
+                var badge = document.createElement('span');
+                badge.className = 'badge badge-member';
+                badge.textContent = 'You are a member';
+                meta.appendChild(badge);
+            } else if (!joined && existing) {
+                existing.remove();
+            }
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (btn.disabled) return;
+
+            var willJoin = !isMember;
+            btn.disabled = true;
+
+            // Optimistic toggle: swap button text/style + the member badge.
+            paintCommunityBtn(willJoin);
+            updateMemberBadge(willJoin);
+
+            var fd = new FormData(form);
+            fetch(formAction, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed');
+                    showToast(willJoin ? 'Joined community' : 'Left community', 'success');
+                    isMember = willJoin;
+                    btn.disabled = false;
+
+                    // Reconcile the member count from the authoritative page.
+                    if (communityId) {
+                        fetch('/communities/show?communityId=' + encodeURIComponent(communityId), { credentials: 'same-origin', cache: 'no-store' })
+                            .then(function(r2) { return r2.ok ? r2.text() : null; })
+                            .then(function(html) {
+                                if (!html) return;
+                                var doc = new DOMParser().parseFromString(html, 'text/html');
+                                var meta = doc.querySelector('.community-details .card-meta');
+                                var live = document.querySelector('.community-details .card-meta');
+                                if (meta && live) live.innerHTML = meta.innerHTML;
+                            })
+                            .catch(function() {});
+                    }
+                })
+                .catch(function() {
+                    // Roll back: restore the original button markup, then
+                    // re-init so the form submit handler works again.
+                    var fresh = document.createElement('div');
+                    fresh.innerHTML = origHtml;
+                    var restored = fresh.querySelector('button');
+                    if (restored && btn.parentNode) {
+                        btn.parentNode.replaceChild(restored, btn);
+                        if (window.FB.initCommunityToggle) window.FB.initCommunityToggle();
+                    }
+                    showToast('Action failed. Please try again.', 'error');
+                });
+        });
+    }
+    window.FB.initCommunityToggle = initCommunityToggle;
+    FB.register('community-toggle', initCommunityToggle);
 
     // ---- Generic dropdowns (nav groups + note more menus) ------------------
     FB.register('dropdowns', function() {

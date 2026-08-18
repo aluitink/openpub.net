@@ -462,8 +462,12 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
         var actor = await GetUserActorAsync(username);
         if (actor == null) return 0;
 
+        // Exclude Undo activities: an Undo's JSON embeds the original Follow
+        // (which contains "type":"Follow" and "object":"<actorId>"), so without
+        // this filter the count stays stale after an unfollow — the same
+        // mismatch IsFollowingAsync already guards against.
         return await _context.Activities
-            .Where(a => a.JsonData.Contains("\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actor.Id}\""))
+            .Where(a => a.JsonData.Contains("\"type\":\"Follow\"") && a.JsonData.Contains($"\"object\":\"{actor.Id}\"") && !a.JsonData.Contains("\"type\":\"Undo\""))
             .CountAsync();
     }
 

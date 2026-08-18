@@ -154,26 +154,35 @@ public class TimelineController : Controller
 
     static ActivityPub.Core.Models.Object? ExtractNote(Activity activity)
     {
-        if (activity.Object is ActivityPub.Core.Models.Object obj)
+        // The Object property may be a typed Object (built in-process) or a
+        // JsonElement (rehydrated from stored JsonData). Normalize either to a
+        // typed Object so notes — including the target of an Announce/boost —
+        // render with the correct interaction counts and author.
+        ActivityPub.Core.Models.Object? note = activity.Object switch
         {
-            return obj.Type == "Tombstone" ? null : obj;
-        }
+            ActivityPub.Core.Models.Object o => o,
+            JsonElement je when je.ValueKind == JsonValueKind.Object
+                => DeserializeObject(je),
+            _ => null
+        };
 
-        if (activity.Object is JsonElement element && element.ValueKind == JsonValueKind.Object)
+        if (note == null)
+            return null;
+        return note.Type == "Tombstone" ? null : note;
+    }
+
+    static ActivityPub.Core.Models.Object? DeserializeObject(JsonElement element)
+    {
+        var typeProp = element.TryGetProperty("type", out var typeVal) ? typeVal.GetString() : null;
+        if (typeProp == "Tombstone")
+            return null;
+
+        var opts = new JsonSerializerOptions
         {
-            var typeProp = element.TryGetProperty("type", out var typeVal) ? typeVal.GetString() : null;
-            if (typeProp == "Tombstone")
-                return null;
-
-            var opts = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true
-            };
-            return element.Deserialize<ActivityPub.Core.Models.Object>(opts);
-        }
-
-        return null;
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
+        return element.Deserialize<ActivityPub.Core.Models.Object>(opts);
     }
 
     static JsonElement? GetAttachmentElement(ActivityPub.Core.Models.Object obj)

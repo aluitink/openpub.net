@@ -164,6 +164,33 @@ public class ProfileController : Controller
     }
 
     /// <summary>
+    /// Authoritative follow-state for the signed-in viewer toward the target
+    /// profile. Lets the optimistic follow/unfollow toggle reconcile with the
+    /// server instead of trusting the client-side mutation (e.g. after a
+    /// concurrent change or a failed request).
+    /// </summary>
+    [HttpGet]
+    [Route("Profile/State")]
+    public async Task<IActionResult> State(string? username = null)
+    {
+        var viewer = User.Identity!.Name!;
+        var target = username ?? viewer;
+        var isOwnProfile = target == viewer;
+        var isFollowing = false;
+        var followerCount = 0;
+
+        var actor = await _repository.GetUserActorAsync(target);
+        if (actor != null)
+        {
+            followerCount = await _repository.GetFollowerCountAsync(target);
+            if (!isOwnProfile)
+                isFollowing = await _repository.IsFollowingAsync(viewer, actor.Id ?? string.Empty);
+        }
+
+        return Json(new { isOwnProfile, isFollowing, followerCount });
+    }
+
+    /// <summary>
     /// Resolves the profile URL to return to after a follow/unfollow action.
     /// Falls back to the viewer's own profile when no valid return URL is provided.
     /// </summary>
