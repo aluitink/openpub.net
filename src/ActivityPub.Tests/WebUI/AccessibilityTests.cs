@@ -70,6 +70,123 @@ public class AccessibilityTests : IClassFixture<WebUIFactory>
             $"--dark-text-muted = {hex} has contrast {ContrastRatio(hex, darkSurface):0.00}:1 against {darkSurface}, below WCAG AA 4.5:1");
     }
 
+    // ---------- Phase 50.1 — contrast re-audit (light + dark) ----------
+
+    private static string TokenHex(string css, string token)
+    {
+        var m = Regex.Match(css, $@"{token}\s*:\s*(#[0-9a-fA-F]{{6}})");
+        Assert.True(m.Success, $"Expected to find hex value for '{token}' in site.css");
+        return m.Groups[1].Value;
+    }
+
+    [Fact]
+    public async Task SiteCss_LightTheme_TextTokens_MeetWcagAaOnSurfaces()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        // Every text token used as normal-size text must reach 4.5:1 against the
+        // light surfaces it is actually rendered on.
+        var pairs = new (string token, string surface)[]
+        {
+            ("--color-text",           "--color-surface"),
+            ("--color-text-secondary", "--color-surface"),
+            ("--color-text-secondary", "--color-bg"),
+            ("--color-text-muted",     "--color-surface"),
+            ("--color-text-faint",     "--color-surface"),
+            ("--color-accent",         "--color-surface"),
+            ("--color-accent",         "--color-bg"),
+            ("--color-danger",         "--color-surface"),
+            ("--color-info",           "--color-surface"),
+        };
+        foreach (var (t, s) in pairs)
+        {
+            var a = TokenHex(css, t);
+            var b = TokenHex(css, s);
+            Assert.True(ContrastRatio(a, b) >= 4.5,
+                $"{t}={a} on {s}={b} has contrast {ContrastRatio(a, b):0.00}:1, below WCAG AA 4.5:1");
+        }
+    }
+
+    [Fact]
+    public async Task SiteCss_DarkTheme_TextTokens_MeetWcagAaOnSurfaces()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        var pairs = new (string token, string surface)[]
+        {
+            ("--dark-text",          "--dark-surface"),
+            ("--dark-text-secondary","--dark-surface"),
+            ("--dark-text-secondary","--dark-surface-hover"),
+            ("--dark-text-muted",    "--dark-surface"),
+            ("--dark-text-muted",    "--dark-surface-alt"),
+            ("--dark-accent",        "--dark-surface"),
+            ("--dark-accent",        "--dark-surface-hover"),
+            ("--dark-accent",        "--dark-accent-soft"),
+            ("--dark-danger",        "--dark-surface"),
+            ("--dark-danger",        "--dark-surface-hover"),
+            ("--dark-info",          "--dark-surface"),
+            ("--dark-info",          "--dark-surface-hover"),
+            ("--dark-warning",       "--dark-surface"),
+            ("--dark-warning",       "--dark-surface-hover"),
+        };
+        foreach (var (t, s) in pairs)
+        {
+            var a = TokenHex(css, t);
+            var b = TokenHex(css, s);
+            Assert.True(ContrastRatio(a, b) >= 4.5,
+                $"{t}={a} on {s}={b} has contrast {ContrastRatio(a, b):0.00}:1, below WCAG AA 4.5:1");
+        }
+    }
+
+    [Fact]
+    public async Task SiteCss_SolidFillButtons_WhiteText_MeetWcagAa()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        // Buttons/badges that render white text on a solid fill need >= 4.5:1 between
+        // white and the fill. Check the fill hex for each such control.
+        var fills = new (string selector, string hex)[]
+        {
+            // accent
+            (".btn-primary", TokenHex(css, "--color-accent")),
+            // info
+            (".btn-admin", "#2c6396"),
+            (".badge-admin", "#2c6396"),
+            // danger
+            (".btn-danger", "#b83224"),
+            (".btn-blockuser", "#b83224"),
+            // success
+            (".btn-unblock", "#1e7e46"),
+            (".badge-member", "#1e7e46"),
+            // warning
+            (".btn-report", "#9a6106"),
+        };
+        foreach (var (sel, hex) in fills)
+        {
+            Assert.True(ContrastRatio("#ffffff", hex) >= 4.5,
+                $"{sel} white text on fill {hex} has contrast {ContrastRatio("#ffffff", hex):0.00}:1, below WCAG AA 4.5:1");
+        }
+    }
+
+    [Fact]
+    public async Task SiteCss_WarningAndCharNearIcons_MeetWcagLargeText()
+    {
+        var css = await (await _client.GetAsync("/css/site.css")).Content.ReadAsStringAsync();
+
+        // The warning color is only used for the 52px non-text error icon (large
+        // graphic, 3.0:1 threshold). The character-count "near" text is normal-size,
+        // so it needs 4.5:1 on the white compose surface.
+        var warning = TokenHex(css, "--color-warning");
+        Assert.True(ContrastRatio(warning, "#ffffff") >= 3.0,
+            $"--color-warning={warning} on white is {ContrastRatio(warning, "#ffffff"):0.00}:1, below 3.0:1 large-graphic threshold");
+
+        var m = Regex.Match(css, @"\.char-near\s*\{[^}]*color:\s*(#[0-9a-fA-F]{6})");
+        Assert.True(m.Success, "Expected a .char-near rule with a hex color");
+        var charNear = m.Groups[1].Value;
+        Assert.True(ContrastRatio(charNear, "#ffffff") >= 4.5,
+            $".char-near={charNear} on white is {ContrastRatio(charNear, "#ffffff"):0.00}:1, below WCAG AA 4.5:1");
+    }
+
     [Fact]
     public async Task Layout_ThemeToggleAndHamburger_HaveAccessibleNames()
     {
