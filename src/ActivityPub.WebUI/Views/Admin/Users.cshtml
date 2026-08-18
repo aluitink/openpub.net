@@ -43,7 +43,7 @@
                     <td class="action-cell">
                         @if (!user.IsAdmin)
                         {
-                            <form asp-action="SetAdmin" method="post" style="display:inline">
+                            <form asp-action="SetAdmin" method="post" class="inline-form">
                                 <input type="hidden" name="userId" value="@user.Id" />
                                 <input type="hidden" name="isAdmin" value="true" />
                                 <button type="submit" class="btn btn-small btn-admin">Make Admin</button>
@@ -53,7 +53,7 @@
                         {
                             <span class="badge-admin">Admin</span>
                         }
-                        <form asp-action="ToggleBlock" method="post" style="display:inline">
+                        <form asp-action="ToggleBlock" method="post" class="inline-form">
                             <input type="hidden" name="userId" value="@user.Id" />
                             <button type="submit" class="btn btn-small @(user.IsBlocked ? "btn-unblock" : "btn-blockuser")">
                                 @(user.IsBlocked ? "Unblock" : "Block")

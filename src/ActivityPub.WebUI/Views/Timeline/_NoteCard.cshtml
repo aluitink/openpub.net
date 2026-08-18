@@ -123,7 +123,7 @@
             <div class="poll-question">@Html.Raw(Model.PollQuestion)</div>
             @if (Model.PollOptions != null)
             {
-                <ul class="poll-options-list" role="list" style="list-style:none; margin:0; padding:0;">
+                <ul class="poll-options-list" role="list">
                 @for (var i = 0; i < Model.PollOptions.Count; i++)
                 {
                     var opt = Model.PollOptions[i];
@@ -144,9 +144,9 @@
             }
             @if (Model.ActivityId != null)
             {
-                <form asp-controller="Poll" asp-action="Vote" method="post" style="display:inline;">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="pollId" value="@Model.PollId" />
+        <form asp-controller="Poll" asp-action="Vote" method="post" class="inline-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="pollId" value="@Model.PollId" />
                     <input type="hidden" name="activityId" value="@Model.ActivityId" />
                     <button type="submit" name="optionIndex" value="0" class="btn btn-sm btn-outline-primary">Vote</button>
                 </form>
@@ -155,13 +155,13 @@
     }
 
     <div class="note-actions">
-        <form asp-controller="Interaction" asp-action="@(Model.IsLiked ? "Unlike" : "Like")" method="post" style="display:inline;">
+        <form asp-controller="Interaction" asp-action="@(Model.IsLiked ? "Unlike" : "Like")" method="post" class="inline-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
             <button type="submit" class="btn-action btn-like@(Model.IsLiked ? " active" : "")" title="Like" aria-pressed="@(Model.IsLiked ? "true" : "false")"><icon name="like" /> @Model.LikeCount<span class="sr-only"> likes</span></button>
         </form>
 
-        <form asp-controller="Interaction" asp-action="@(Model.IsBoosted ? "Unboost" : "Boost")" method="post" style="display:inline;">
+        <form asp-controller="Interaction" asp-action="@(Model.IsBoosted ? "Unboost" : "Boost")" method="post" class="inline-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
             <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost" aria-pressed="@(Model.IsBoosted ? "true" : "false")"><icon name="boost" /> @Model.BoostCount<span class="sr-only"> boosts</span></button>
@@ -174,13 +174,13 @@
             <div id="more-menu-@Model.ActivityId" class="note-more-dropdown" role="menu" aria-labelledby="more-toggle-@Model.ActivityId">
                 <button type="button" class="note-more-item" data-action="copy-link" data-url="@Url.Action("Show", "Timeline", new { id = Model.ActivityId })" role="menuitem">Copy link</button>
                 <a asp-controller="Compose" asp-action="Index" asp-route-replyTo="@Model.ActivityId" class="note-more-item" role="menuitem">Reply via Compose</a>
-                <form asp-controller="Compose" asp-action="EditNote" method="post" style="margin:0">
+                <form asp-controller="Compose" asp-action="EditNote" method="post" class="no-margin">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="ActivityId" value="@Model.ActivityId" />
                     <input type="hidden" name="Content" value="@Model.Content" />
                     <button type="submit" class="note-more-item" role="menuitem">Edit</button>
                 </form>
-                <form asp-controller="Compose" asp-action="Delete" method="post" style="margin:0">
+                <form asp-controller="Compose" asp-action="Delete" method="post" class="no-margin">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="activityId" value="@Model.ActivityId" />
                     <button type="submit" class="note-more-item note-more-danger" role="menuitem">Delete</button>

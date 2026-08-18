@@ -44,7 +44,7 @@
                         <td>@activity.Actor</td>
                         <td>@activity.CreatedAt</td>
                         <td>
-                            <form asp-action="DeleteActivity" method="post" style="display:inline">
+                            <form asp-action="DeleteActivity" method="post" class="inline-form">
                                 <input type="hidden" name="activityId" value="@activity.ActivityId" />
                                 <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Delete this activity?')">Delete</button>
                             </form>

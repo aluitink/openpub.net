@@ -373,6 +373,307 @@ body.nav-open {
     display: inline;
 }
 
+/* ===== Component Kit =====
+   Reusable primitives extracted from per-page inline <style>/style="" so every
+   page shares one definition. Values are token-driven (var(--...)) so they
+   theme correctly in light + dark. Page-specific colour variants that genuinely
+   differ (e.g. health status tones) are defined here too, with dark overrides
+   in the [data-theme="dark"] block. */
+
+/* -- Skeleton row: the avatar + two-line header used inside .skeleton-note-card.
+   Replaces the inline display:flex;gap:0.5rem;… that appeared in both the
+   Timeline and Search load-more skeletons. */
+.skeleton-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+/* A thin second line in the skeleton header (was an inline height:10px). */
+.skeleton-line.thin {
+    height: 10px;
+}
+
+/* -- Poll options list: unspaced list container for .poll-option rows.
+   Replaces the inline list-style:none; margin:0; padding:0 on the <ul>. */
+.poll-options-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Zero-margin inline form inside menus/tables (Edit/Delete in the note-more
+   menu, admin action cells). The forms already carry .inline-form for
+   display:inline; this adds the margin:0 the inline style used to provide. */
+.inline-form.no-margin,
+form.no-margin {
+    margin: 0;
+}
+
+/* -- Discover / Suggestions (was an inline <style> block in
+   Suggestions/Index.cshtml). Tokenized so it themes in dark mode. */
+.discover-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-5);
+}
+
+.discover-container .section {
+    margin: 1.5rem 0;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-4);
+}
+
+.suggestion-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-card);
+}
+
+.suggestion-avatar {
+    flex-shrink: 0;
+}
+
+.suggestion-avatar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.suggestion-avatar .avatar-placeholder {
+    --avatar-size: 48px;
+}
+
+.suggestion-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.display-name {
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--color-text);
+}
+
+.display-name:hover {
+    color: var(--color-accent);
+}
+
+.suggestion-info .username {
+    color: var(--color-text-muted);
+}
+
+.suggestion-info .bio {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 4px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.follower-count {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+.suggestion-actions {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.btn-follow,
+.btn-muted,
+.btn-add-filter,
+.btn-remove-filter {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    font-size: 13px;
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.btn-follow {
+    background: var(--color-info);
+    color: var(--color-on-dark);
+    border-color: var(--color-info);
+}
+
+.btn-follow:hover {
+    background: var(--dark-info-btn);
+    border-color: var(--dark-info-btn);
+}
+
+.btn-muted:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+.filter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.filter-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.filter-keyword {
+    color: var(--color-info);
+    font-weight: 500;
+}
+
+.btn-add-filter {
+    padding: 6px 16px;
+    background: var(--color-info);
+    color: var(--color-on-dark);
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-add-filter:hover {
+    background: var(--dark-info-btn);
+}
+
+.btn-remove-filter {
+    background: transparent;
+    color: var(--color-danger);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-remove-filter:hover {
+    background: var(--color-danger-soft);
+}
+
+.add-filter-form {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: 12px;
+}
+
+#filterInput {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+#filterInput:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+/* -- Federation Health monitor (was an inline <style> block in
+   FederationHealth/Index.cshtml). Tokenized; the status-banner tones use the
+   semantic soft backgrounds so they theme in dark mode. */
+.health-status-banner {
+    padding: 15px 20px;
+    border-radius: var(--radius-md);
+    margin: 1.25rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.status-healthy { background: var(--color-success-soft); color: var(--color-text); border-color: var(--color-success); }
+.status-degraded,
+.status-warning { background: var(--color-accent-soft); color: var(--color-text); border-color: var(--color-warning); }
+.status-critical { background: var(--color-danger-soft); color: var(--color-text); border-color: var(--color-danger); }
+
+.health-status-banner .last-checked {
+    font-size: var(--font-sm);
+    opacity: 0.8;
+}
+
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
+    margin: 1.25rem 0;
+}
+
+.health-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-card);
+}
+
+.health-card h3 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: 8px;
+    font-size: var(--font-base);
+}
+
+.health-card h4 {
+    margin: 12px 0 6px;
+    font-size: var(--font-sm);
+    color: var(--color-text-secondary);
+}
+
+.health-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.health-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.health-table td:first-child { color: var(--color-text-secondary); }
+.health-table td:last-child { font-weight: 600; text-align: right; }
+
+.probe-form { margin: 12px 0; }
+
+.probe-input-row {
+    display: flex;
+    gap: var(--space-2);
+    max-width: 500px;
+}
+
+.probe-input-row input { flex: 1; }
+
+.badge-status {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: var(--font-xs);
+    font-weight: 600;
+}
+
+.badge-status.delivered { background: var(--color-success-soft); color: var(--color-text); }
+.badge-status.failed { background: var(--color-danger-soft); color: var(--color-text); }
+
 .main-container {
     flex: 1;
     max-width: var(--page-max-width);
