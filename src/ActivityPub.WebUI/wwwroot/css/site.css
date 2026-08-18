@@ -1245,6 +1245,29 @@ footer {
     color: var(--color-text-muted);
 }
 
+.notification-note-link {
+    display: block;
+    text-decoration: none;
+    border-left: 2px solid var(--border-color, #e0e0e0);
+    padding-left: 0.5rem;
+}
+
+.notification-note-link:hover {
+    color: #6c63ff;
+    border-left-color: #6c63ff;
+}
+
+/* Deep-link highlight: a note card that the user was scrolled to via a
+   notification deep link flashes briefly to draw the eye. */
+@keyframes note-flash {
+    0%   { box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.55); }
+    100% { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0); }
+}
+
+.note-card.note-flash {
+    animation: note-flash 1.6s ease-out;
+}
+
 .notification-time {
     flex-shrink: 0;
     font-size: 0.8rem;

@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <script src="~/js/theme.js" asp-append-version="true"></script>
 </head>
-<body data-current-user="@(User.Identity?.IsAuthenticated == true ? User.Identity.Name : "")">
+<body class="page-@ViewData["PageClass"]" data-current-user="@(User.Identity?.IsAuthenticated == true ? User.Identity.Name : "")">
     <header>
         <nav class="navbar" aria-label="Main">
             <div class="nav-container">

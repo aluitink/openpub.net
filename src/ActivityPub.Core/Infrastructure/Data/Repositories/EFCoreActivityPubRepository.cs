@@ -805,4 +805,78 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
             .Select(p => p.Domain)
             .ToListAsync();
     }
+
+    // ---- Notification read-state -------------------------------------------
+
+    private static readonly string NotificationLastReadKey = "notifications_last_read";
+
+    private async Task<ActorEntity?> GetActorEntityAsync(string username)
+    {
+        return await _context.Actors
+            .Where(a => a.Username == username)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<DateTime?> GetNotificationsLastReadAsync(string username)
+    {
+        var actor = await GetActorEntityAsync(username);
+        if (actor == null)
+            return null;
+
+        var pref = await _context.UserPreferences
+            .Where(p => p.ActorId == actor.Id && p.Key == NotificationLastReadKey)
+            .FirstOrDefaultAsync();
+
+        if (pref == null || !DateTime.TryParse(pref.Value, out var ts))
+            return null;
+
+        return ts;
+    }
+
+    public async Task SetNotificationsLastReadAsync(string username, DateTime timestamp)
+    {
+        var actor = await GetActorEntityAsync(username);
+        if (actor == null)
+            return;
+
+        var value = timestamp.ToString("O");
+        var existing = await _context.UserPreferences
+            .Where(p => p.ActorId == actor.Id && p.Key == NotificationLastReadKey)
+            .FirstOrDefaultAsync();
+
+        if (existing != null)
+        {
+            existing.Value = value;
+        }
+        else
+        {
+            await _context.UserPreferences.AddAsync(new UserPreferenceEntity
+            {
+                ActorId = actor.Id,
+                Key = NotificationLastReadKey,
+                Value = value,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> GetUnreadNotificationCountAsync(string username, DateTime? after)
+    {
+        var actor = await GetUserActorAsync(username);
+        if (actor == null || string.IsNullOrEmpty(actor.Id))
+            return 0;
+
+        var actorId = actor.Id; // actor URL, e.g. https://.../users/alice
+        var threshold = after ?? DateTime.MinValue;
+
+        // Inbox activities addressed to this actor, created after the
+        // last-read cursor. The JSON-contains match mirrors
+        // GetInboxActivitiesAsync exactly.
+        return await _context.Activities
+            .Where(a => (a.JsonData.Contains($"\"to\":\"{actorId}\"") || a.JsonData.Contains($"\"{actorId}\""))
+                        && a.CreatedAt > threshold)
+            .CountAsync();
+    }
 }

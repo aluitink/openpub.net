@@ -47,8 +47,12 @@
         },
 
         updateTimestamps: function() {
-            document.querySelectorAll('.note-timestamp[data-published]').forEach(function(el) {
+            // Any element carrying a machine-readable published timestamp is
+            // refreshed to a relative "Xm ago" form. Covers both timeline note
+            // cards (.note-timestamp) and notification list items.
+            document.querySelectorAll('[data-published]').forEach(function(el) {
                 var d = new Date(el.dataset.published);
+                if (isNaN(d.getTime())) return;
                 el.textContent = FB.timeAgo(d);
             });
         }
@@ -230,12 +234,26 @@
         window.fbSignalR = { connection: connection, ok: false };
 
         var notificationCount = 0;
+        var badgeInitialized = false;
         var badge = document.getElementById('notification-badge');
         var soundEnabled = true;
         var desktopEnabled = false;
         var maxConnections = 5;
         var notificationSound = new Audio();
         notificationSound.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeVe5CTm3+UlZl+eX+Yd2V9c3F6dHByeG97b3RxcnpxdHJ5bXpvdm91b3BvcG5vbG9vbW5uc25sbmxrbm1vbWxrbGttbGxsa2xrbGtsbGtsbWxsbWxsa21sbGtsbWxtbW1sbm1tbWxtbW1tbm5tbm5ucXFucm1wb25ybXNycm5sbm1ubm1sc3JybHRycmxscnJrbG5ycnRsbG1sc3JybXJscnRsbG1scnJrbG5ycnRsa21sbW5ubW5ucnRrbW5ubW5ucm5yc3Zsc3Zrbm5yd3Rrdm5zd21tc3Vvc3VvbG1yc3Vuc3Vvc3RrbW1yc3RvcXZuc3NvbW1yc3VvcnVvc3NvbW5zc3ZvcnZvc3RvbW9zc3Zuc3Zvc3RvbW9zc3dvcndvc3RvbW9zc3dvcndvc3RvbW90c3dvcndvc3RvbW90c3dvcndvc3Q=';
+
+        // Seed the badge from the server's persisted unread count so it
+        // survives page reloads (instead of resetting to 0 each load).
+        fetch('/notifications/badge')
+            .then(function(r) { return r.ok ? r.json() : {}; })
+            .then(function(data) {
+                if (data && typeof data.count === 'number') {
+                    notificationCount = data.count;
+                    renderBadge();
+                    badgeInitialized = true;
+                }
+            })
+            .catch(function() {});
 
         fetch('/RealtimeSettings/get')
             .then(function(r) { return r.ok ? r.json() : {}; })
@@ -248,12 +266,20 @@
             })
             .catch(function() {});
 
+        function renderBadge() {
+            if (!badge) return;
+            if (notificationCount > 0) {
+                badge.textContent = notificationCount > 99 ? '99+' : String(notificationCount);
+                badge.style.display = 'inline';
+            } else {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            }
+        }
+
         function bumpBadge() {
             notificationCount++;
-            if (badge) {
-                badge.textContent = notificationCount;
-                badge.style.display = 'inline';
-            }
+            renderBadge();
         }
 
         connection.on('NewActivity', function(data) {
@@ -273,7 +299,12 @@
         connection.on('NewNotification', function(data) {
             bumpBadge();
             playNotificationSound();
-            sendDesktopNotification(data.Type, data.Message || '', '');
+            var title = (data.Type || 'Notification').charAt(0).toUpperCase() + (data.Type || 'notification').slice(1);
+            var body = (data.ActorName ? data.ActorName + ' — ' : '') + (data.Message || '');
+            // Deep link: open the notifications page (the badge already
+            // reflects the new item); the user can jump to the source note
+            // from there.
+            sendDesktopNotification(title, body, data.Link || '/notifications');
             console.log('[SignalR] Notification:', data.Type, data.Message);
         });
 
@@ -286,16 +317,22 @@
             try { notificationSound.play().catch(function() {}); } catch (e) {}
         }
 
-        function sendDesktopNotification(title, body, actorName) {
+        function sendDesktopNotification(title, body, actorName, link) {
             if (!desktopEnabled) return;
             if (!('Notification' in window)) return;
+            function show(t, b) {
+                var n = new Notification(t, { body: b });
+                if (link) {
+                    n.onclick = function() {
+                        try { window.focus(); window.location.href = link; n.close(); } catch (e) {}
+                    };
+                }
+            }
             if (Notification.permission === 'granted') {
-                new Notification(title + (actorName ? ' by ' + actorName : ''), { body: body });
+                show(title + (actorName ? ' by ' + actorName : ''), body);
             } else if (Notification.permission !== 'denied') {
                 Notification.requestPermission().then(function(permission) {
-                    if (permission === 'granted') {
-                        new Notification(title, { body: body });
-                    }
+                    if (permission === 'granted') show(title, body);
                 });
             }
         }
@@ -363,9 +400,60 @@
 
     // ---- Relative timestamps ----------------------------------------------
     FB.register('timestamps', function() {
-        if (!document.querySelector('.note-timestamp[data-published]')) return;
+        if (!document.querySelector('[data-published]')) return;
         FB.updateTimestamps();
         setInterval(FB.updateTimestamps, 60000);
+    });
+
+    // ---- Auto mark-as-read on the notifications page -----------------------
+    // When the user opens /notifications, the persisted unread cursor advances
+    // to "now" and the nav badge clears — so the count reflects what they've
+    // actually seen, not just what arrived during this session.
+    FB.register('notifications-read', function() {
+        if (!document.body.classList.contains('page-notifications')) return;
+        // Defer a tick so the page has rendered (and any late items are in).
+        setTimeout(function() {
+            fetch('/notifications/markallread', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'RequestVerificationToken=' + encodeURIComponent(getAntiForgeryToken())
+            })
+            .then(function(r) {
+                if (!r.ok) return;
+                var badge = document.getElementById('notification-badge');
+                if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+            })
+            .catch(function() {});
+        }, 250);
+    });
+
+    function getAntiForgeryToken() {
+        var el = document.querySelector('input[name="__RequestVerificationToken"]');
+        return el ? el.value : '';
+    }
+
+    // ---- Deep link: scroll to a specific note on the timeline --------------
+    // /timeline?note=<activityId> scrolls to and flashes the matching card.
+    FB.register('deep-link-note', function() {
+        var params = new URLSearchParams(window.location.search);
+        var noteId = params.get('note');
+        if (!noteId) return;
+        function scrollToNote() {
+            var card = document.querySelector('.note-card[data-activity-id="' + noteId + '"]');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('note-flash');
+                setTimeout(function() { card.classList.remove('note-flash'); }, 1600);
+                return true;
+            }
+            return false;
+        }
+        // The note may not be on the first page yet; retry briefly while the
+        // feed renders, then give up.
+        var attempts = 0;
+        var timer = setInterval(function() {
+            if (scrollToNote() || ++attempts > 10) clearInterval(timer);
+        }, 300);
     });
 
     // ---- Client-side "load more" / infinite scroll -------------------------

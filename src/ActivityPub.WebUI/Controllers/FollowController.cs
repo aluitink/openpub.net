@@ -1,6 +1,7 @@
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
 using ActivityPub.Core.Services;
+using ActivityPub.WebUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,15 +15,18 @@ public class FollowController : Controller
     private readonly IActivityPubRepository _repository;
     private readonly IWebFingerService _webFinger;
     private readonly ILogger<FollowController> _logger;
+    private readonly INotificationService _notifications;
 
     public FollowController(
         IActivityPubRepository repository,
         IWebFingerService webFinger,
-        ILogger<FollowController> logger)
+        ILogger<FollowController> logger,
+        INotificationService notifications)
     {
         _repository = repository;
         _webFinger = webFinger;
         _logger = logger;
+        _notifications = notifications;
     }
 
     [HttpGet]
@@ -91,6 +95,16 @@ public class FollowController : Controller
         if (!isLocal)
         {
             await TrySendFollowActivityAsync(followActivity, localActor, targetActor);
+        }
+        else
+        {
+            // Real-time notification to the followed local user.
+            var targetUsername = ExtractUsername(targetActor.Id);
+            if (!string.IsNullOrEmpty(targetUsername) && targetUsername != username)
+            {
+                await _notifications.BroadcastNotificationAsync(
+                    targetUsername, "follow", $"{localActor.PreferredUsername ?? username} is now following you");
+            }
         }
 
         TempData["FollowSuccess"] = $"Now following {handle}!";
@@ -175,8 +189,8 @@ public class FollowController : Controller
                 items.Add(new FollowingItem
                 {
                     ActorId = actorId,
-                    DisplayName = actor.Name ?? ExtractUsername(actorId),
-                    Username = actor.PreferredUsername ?? ExtractUsername(actorId),
+                    DisplayName = actor.Name ?? ExtractUsername(actorId) ?? "",
+                    Username = actor.PreferredUsername ?? ExtractUsername(actorId) ?? "",
                     Inbox = actor.Inbox,
                     Domain = ExtractDomain(actorId)
                 });
@@ -202,8 +216,8 @@ public class FollowController : Controller
                 items.Add(new FollowingItem
                 {
                     ActorId = actorId,
-                    DisplayName = actor.Name ?? ExtractUsername(actorId),
-                    Username = actor.PreferredUsername ?? ExtractUsername(actorId),
+                    DisplayName = actor.Name ?? ExtractUsername(actorId) ?? "",
+                    Username = actor.PreferredUsername ?? ExtractUsername(actorId) ?? "",
                     Inbox = actor.Inbox,
                     Domain = ExtractDomain(actorId)
                 });
@@ -273,13 +287,15 @@ public class FollowController : Controller
         if (actorId.StartsWith("https://localhost"))
         {
             var username = ExtractUsername(actorId);
+            if (username == null) return null;
             return await _repository.GetUserActorAsync(username);
         }
         return null;
     }
 
-    private static string ExtractUsername(string actorId)
+    private static string? ExtractUsername(string? actorId)
     {
+        if (string.IsNullOrEmpty(actorId)) return null;
         var parts = actorId.Split('/');
         if (parts.Length >= 2)
             return parts[parts.Length - 1];
@@ -300,6 +316,7 @@ public class FollowController : Controller
             return null;
         }
     }
+
 }
 
 public class FollowModel

@@ -55,6 +55,7 @@ public class NotificationsController : Controller
                 Published = activity.Published ?? DateTime.UtcNow,
                 Title = GetNotificationTitle(notificationType, displayName),
                 TargetNote = await GetTargetNoteContent(activity),
+                TargetActivityId = GetTargetActivityId(activity, notificationType),
             };
             items.Add(item);
         }
@@ -94,11 +95,31 @@ public class NotificationsController : Controller
         }
         else if (type == "Create")
         {
-            if (activity.Object is Obj obj && !string.IsNullOrEmpty(obj.InReplyTo))
+            if (HasInReplyTo(activity))
                 return "reply";
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// True when the activity's object is a reply (a Note with InReplyTo).
+    /// Handles both a typed Object and a JsonElement (rehydrated from storage).
+    /// </summary>
+    static bool HasInReplyTo(Activity activity)
+    {
+        switch (activity.Object)
+        {
+            case Obj obj:
+                return !string.IsNullOrEmpty(obj.InReplyTo);
+            case System.Text.Json.JsonElement je:
+                return je.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                       je.TryGetProperty("inReplyTo", out var ir) &&
+                       ir.ValueKind != System.Text.Json.JsonValueKind.Null &&
+                       !string.IsNullOrEmpty(ir.GetString());
+            default:
+                return false;
+        }
     }
 
     async Task<(string Username, Actor? Actor)> GetActorFromActivity(Activity activity)
@@ -121,12 +142,66 @@ public class NotificationsController : Controller
         if (string.IsNullOrEmpty(objectId)) return null;
 
         var targetActivity = await _repository.GetActivityAsync(objectId);
-        if (targetActivity != null && targetActivity.Object is Obj obj)
-        {
-            return Truncate(obj.Content ?? "", 100);
-        }
+        if (targetActivity == null) return null;
 
-        return null;
+        // The activity's Object may deserialize as a typed Object (when built
+        // in-process) or a JsonElement (when rehydrated from stored JsonData).
+        // Handle both to extract the note's content.
+        switch (targetActivity.Object)
+        {
+            case Obj obj:
+                return Truncate(obj.Content ?? "", 100);
+
+            case System.Text.Json.JsonElement je:
+                if (je.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                    je.TryGetProperty("content", out var contentEl) &&
+                    contentEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    return Truncate(contentEl.GetString() ?? "", 100);
+                }
+                return null;
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the activity a notification points at, for deep-linking:
+    ///  - like/boost → the liked/boosted object (the note's Create activity id)
+    ///  - reply       → the parent note being replied to
+    ///  - follow      → the target profile (actor id)
+    /// </summary>
+    static string? GetTargetActivityId(Activity activity, string type)
+    {
+        switch (type)
+        {
+            case "like":
+            case "boost":
+                return activity.ObjectId;
+
+            case "reply":
+                // The reply's object is a Note with InReplyTo pointing at the
+                // parent note (may be a typed Object or a JsonElement).
+                return activity.Object switch
+                {
+                    Obj obj => obj.InReplyTo,
+                    System.Text.Json.JsonElement je
+                        when je.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                             je.TryGetProperty("inReplyTo", out var ir) &&
+                             ir.ValueKind == System.Text.Json.JsonValueKind.String
+                        => ir.GetString(),
+                    _ => null
+                };
+
+            case "follow":
+            case "follow_accept":
+                // Links back to the follower's profile / the accepted follow.
+                return activity.ObjectId;
+
+            default:
+                return activity.ObjectId;
+        }
     }
 
     static string? ExtractUsername(string? url)
@@ -147,10 +222,31 @@ public class NotificationsController : Controller
         return text.Length <= maxLength ? text : text.Substring(0, maxLength) + "...";
     }
 
+    /// <summary>
+    /// Returns the current unread notification count as JSON. Used by the
+    /// nav badge to render an accurate count on page load (rather than
+    /// starting at 0 and only counting in-session events).
+    /// </summary>
+    [HttpGet]
+    [AllowAnonymous]
+    [Produces("application/json")]
+    public async Task<IActionResult> Badge()
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return Json(new { count = 0 });
+
+        var username = User.Identity.Name!;
+        var lastRead = await _repository.GetNotificationsLastReadAsync(username);
+        var count = await _repository.GetUnreadNotificationCountAsync(username, lastRead);
+        return Json(new { count });
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult MarkAllRead()
+    public async Task<IActionResult> MarkAllRead()
     {
+        var username = User.Identity!.Name!;
+        await _repository.SetNotificationsLastReadAsync(username, DateTime.UtcNow);
         TempData["NotificationSuccess"] = "All notifications marked as read.";
         return RedirectToAction(nameof(Index));
     }
@@ -187,4 +283,11 @@ public class NotificationItem
     public string Title { get; set; } = "";
     public string? TargetNote { get; set; }
     public DateTime Published { get; set; }
+
+    /// <summary>
+    /// Id of the source note/activity this notification is about (the object
+    /// of a Like/Boost, the parent of a Reply, the profile for a Follow).
+    /// Used to deep-link the notification to the note.
+    /// </summary>
+    public string? TargetActivityId { get; set; }
 }

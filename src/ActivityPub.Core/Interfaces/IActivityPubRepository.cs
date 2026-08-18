@@ -302,4 +302,24 @@ public interface IActivityPubRepository
     /// rejection path (a snapshot to avoid a DB hit per activity).
     /// </summary>
     Task<ICollection<string>> GetBlockedDomainNamesAsync();
+
+    // ---- Notification read-state -------------------------------------------
+
+    /// <summary>
+    /// Gets the last-read timestamp for a user's notifications, or null if the
+    /// user has never marked notifications as read.
+    /// </summary>
+    Task<DateTime?> GetNotificationsLastReadAsync(string username);
+
+    /// <summary>
+    /// Sets the last-read timestamp for a user's notifications (mark-as-read
+    /// cursor). Persists to the user's preferences.
+    /// </summary>
+    Task SetNotificationsLastReadAsync(string username, DateTime timestamp);
+
+    /// <summary>
+    /// Counts inbox activities for a user published after the given timestamp
+    /// (the unread count for the notification badge).
+    /// </summary>
+    Task<int> GetUnreadNotificationCountAsync(string username, DateTime? after);
 }

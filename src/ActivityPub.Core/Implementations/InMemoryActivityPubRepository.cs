@@ -562,4 +562,30 @@ public class InMemoryActivityPubRepository : IActivityPubRepository
             .ToList();
         return Task.FromResult<ICollection<string>>(domains);
     }
+
+    // ---- Notification read-state -------------------------------------------
+
+    private readonly Dictionary<string, DateTime> _notificationLastRead = new();
+
+    public Task<DateTime?> GetNotificationsLastReadAsync(string username)
+    {
+        return Task.FromResult(_notificationLastRead.TryGetValue(username, out var ts) ? (DateTime?)ts : null);
+    }
+
+    public Task SetNotificationsLastReadAsync(string username, DateTime timestamp)
+    {
+        _notificationLastRead[username] = timestamp;
+        return Task.CompletedTask;
+    }
+
+    public Task<int> GetUnreadNotificationCountAsync(string username, DateTime? after)
+    {
+        var actorId = $"https://localhost/users/{username}";
+        var threshold = after ?? DateTime.MinValue;
+        var count = _activities.Values
+            .Where(a => a.To != null && a.To.Contains(actorId)
+                        && (a.Published ?? DateTime.MinValue) > threshold)
+            .Count();
+        return Task.FromResult(count);
+    }
 }

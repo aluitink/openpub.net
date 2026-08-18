@@ -1,5 +1,6 @@
 using ActivityPub.Core.Interfaces;
 using ActivityPub.Core.Models;
+using ActivityPub.WebUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,11 +13,16 @@ public class InteractionController : Controller
 {
     private readonly IActivityPubRepository _repository;
     private readonly ILogger<InteractionController> _logger;
+    private readonly INotificationService _notifications;
 
-    public InteractionController(IActivityPubRepository repository, ILogger<InteractionController> logger)
+    public InteractionController(
+        IActivityPubRepository repository,
+        ILogger<InteractionController> logger,
+        INotificationService notifications)
     {
         _repository = repository;
         _logger = logger;
+        _notifications = notifications;
     }
 
     [HttpPost]
@@ -46,6 +52,13 @@ public class InteractionController : Controller
         var now = DateTime.UtcNow;
         var likeId = $"https://localhost/users/{username}/activities/{Guid.NewGuid()}";
 
+        // Address the note's author in the Like's "to" so it lands in their
+        // inbox (and is surfaced as a notification).
+        var targetActorId = targetActivity.ActorId;
+        var toRecipients = new List<string> { "https://www.w3.org/ns/activitystreams#Public" };
+        if (!string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
+            toRecipients.Add(targetActorId);
+
         var likeActivity = new Activity
         {
             Id = likeId,
@@ -53,7 +66,7 @@ public class InteractionController : Controller
             Actor = actor.Id,
             Object = targetActivityId,
             Published = now,
-            To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
+            To = toRecipients
         };
 
         await _repository.SaveActivityAsync(likeActivity);
@@ -65,10 +78,17 @@ public class InteractionController : Controller
         };
         var likeJson = JsonSerializer.Serialize(likeActivity, jsonOptions);
 
-        var targetActorId = targetActivity.ActorId;
         if (!string.IsNullOrEmpty(targetActorId))
         {
             await _repository.QueueSharedInboxDeliveryAsync(likeId, likeJson, targetActorId);
+        }
+
+        // Real-time notification to the note's author (skip self-likes).
+        var authorUsername = ExtractUsername(targetActorId);
+        if (!string.IsNullOrEmpty(authorUsername) && authorUsername != username)
+        {
+            await _notifications.BroadcastNotificationAsync(
+                authorUsername, "like", $"{actor.PreferredUsername ?? username} liked your note");
         }
 
         _logger.LogInformation("User {Username} liked activity {ActivityId}", username, targetActivityId);
@@ -153,6 +173,14 @@ public class InteractionController : Controller
         var noteId = $"https://localhost/users/{username}/notes/{Guid.NewGuid()}";
         var activityId = $"https://localhost/users/{username}/activities/{Guid.NewGuid()}";
 
+        // Resolve the parent note's author up front so the reply can address
+        // them in its "to" (landing the reply in their inbox / notifications).
+        var targetActivity = await _repository.GetActivityAsync(targetActivityId);
+        var targetActorId = targetActivity?.ActorId;
+        var toRecipients = new List<string> { "https://www.w3.org/ns/activitystreams#Public" };
+        if (!string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
+            toRecipients.Add(targetActorId);
+
         var note = new Note
         {
             Id = noteId,
@@ -161,7 +189,7 @@ public class InteractionController : Controller
             AttributedTo = actor.Id,
             Published = now,
             InReplyTo = targetActivityId,
-            To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
+            To = toRecipients
         };
 
         var activity = new Activity
@@ -171,7 +199,7 @@ public class InteractionController : Controller
             Actor = actor.Id,
             Object = note,
             Published = now,
-            To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
+            To = toRecipients
         };
 
         await _repository.SaveActivityAsync(activity);
@@ -183,13 +211,16 @@ public class InteractionController : Controller
         };
         var activityJson = JsonSerializer.Serialize(activity, jsonOptions);
 
-        var targetActivity = await _repository.GetActivityAsync(targetActivityId);
-        if (targetActivity != null)
+        if (targetActivity != null && !string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
         {
-            var targetActorId = targetActivity.ActorId;
-            if (!string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
+            await _repository.QueueSharedInboxDeliveryAsync(activityId, activityJson, targetActorId);
+
+            // Real-time notification to the note's author.
+            var authorUsername = ExtractUsername(targetActorId);
+            if (!string.IsNullOrEmpty(authorUsername) && authorUsername != username)
             {
-                await _repository.QueueSharedInboxDeliveryAsync(activityId, activityJson, targetActorId);
+                await _notifications.BroadcastNotificationAsync(
+                    authorUsername, "reply", $"{actor.PreferredUsername ?? username} replied to your note");
             }
         }
 
@@ -231,6 +262,12 @@ public class InteractionController : Controller
         var now = DateTime.UtcNow;
         var announceId = $"https://localhost/users/{username}/activities/{Guid.NewGuid()}";
 
+        // Address the note's author so the boost lands in their inbox.
+        var targetActorId = targetActivity.ActorId;
+        var toRecipients = new List<string> { "https://www.w3.org/ns/activitystreams#Public" };
+        if (!string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
+            toRecipients.Add(targetActorId);
+
         var announceActivity = new Activity
         {
             Id = announceId,
@@ -238,7 +275,7 @@ public class InteractionController : Controller
             Actor = actor.Id,
             Object = targetActivity.Id,
             Published = now,
-            To = new List<string> { "https://www.w3.org/ns/activitystreams#Public" }
+            To = toRecipients
         };
 
         await _repository.SaveActivityAsync(announceActivity);
@@ -250,10 +287,17 @@ public class InteractionController : Controller
         };
         var announceJson = JsonSerializer.Serialize(announceActivity, jsonOptions);
 
-        var targetActorId = targetActivity.ActorId;
         if (!string.IsNullOrEmpty(targetActorId) && targetActorId != actor.Id)
         {
             await _repository.QueueSharedInboxDeliveryAsync(announceId, announceJson, targetActorId);
+        }
+
+        // Real-time notification to the note's author.
+        var boostAuthorUsername = ExtractUsername(targetActorId);
+        if (!string.IsNullOrEmpty(boostAuthorUsername) && boostAuthorUsername != username)
+        {
+            await _notifications.BroadcastNotificationAsync(
+                boostAuthorUsername, "boost", $"{actor.PreferredUsername ?? username} boosted your note");
         }
 
         _logger.LogInformation("User {Username} boosted activity {ActivityId}", username, targetActivityId);
@@ -296,5 +340,21 @@ public class InteractionController : Controller
         _logger.LogInformation("User {Username} unboosted activity {ActivityId}", username, targetActivityId);
         await _repository.DeleteActivityAsync(existingAnnounce);
         return RedirectToAction("Index", "Timeline");
+    }
+
+    /// <summary>
+    /// Extracts the local username from an actor URL (e.g.
+    /// https://.../users/alice → alice). Returns null for remote actors.
+    /// </summary>
+    static string? ExtractUsername(string? actorUrl)
+    {
+        if (string.IsNullOrEmpty(actorUrl)) return null;
+        var parts = actorUrl.Split('/');
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (parts[i] == "users" && i + 1 < parts.Length)
+                return parts[i + 1];
+        }
+        return null;
     }
 }

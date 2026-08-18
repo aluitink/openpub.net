@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Notifications";
+    ViewData["PageClass"] = "notifications";
 }
 @model NotificationsViewModel
 
@@ -47,7 +48,7 @@
                 <div class="notifications-list">
                     @foreach (var item in group)
                     {
-                        <div class="notification-item @(item.NotificationType)">
+                        <div class="notification-item @(item.NotificationType)" data-notification-id="@item.ActivityId">
                             <div class="notification-icon">
                                 @{
                                     var icon = item.NotificationType switch
@@ -67,13 +68,19 @@
                                     <a asp-controller="Profile" asp-action="Index" asp-route-username="@item.ActorName">@item.ActorDisplayName</a>
                                     @item.Title.Replace(item.ActorDisplayName, "")
                                 </p>
-                                @if (!string.IsNullOrEmpty(item.TargetNote))
+                                @if (!string.IsNullOrEmpty(item.TargetNote) && !string.IsNullOrEmpty(item.TargetActivityId))
+                                {
+                                    <a class="notification-note notification-note-link"
+                                       href="/timeline?note=@Uri.EscapeDataString(item.TargetActivityId)"
+                                       title="View source note">@item.TargetNote</a>
+                                }
+                                else if (!string.IsNullOrEmpty(item.TargetNote))
                                 {
                                     <p class="notification-note">@item.TargetNote</p>
                                 }
                             </div>
                             <div class="notification-time">
-                                <span>@TimeAgo(item.Published)</span>
+                                <span data-published="@item.Published.ToString("O")">@TimeAgo(item.Published)</span>
                             </div>
                         </div>
                     }
