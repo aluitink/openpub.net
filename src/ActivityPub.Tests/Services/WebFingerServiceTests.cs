@@ -26,10 +26,13 @@ public class WebFingerServiceTests
         public List<Captured> Requests { get; } = new();
 
         private readonly Func<string, (HttpStatusCode, string, string? contentType)> _responder;
+        private readonly Func<Exception>? _throw;
 
-        public StubHandler(Func<string, (HttpStatusCode, string, string? contentType)> responder)
+        public StubHandler(Func<string, (HttpStatusCode, string, string? contentType)> responder,
+                           Func<Exception>? throwFactory = null)
         {
             _responder = responder;
+            _throw = throwFactory;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -38,6 +41,9 @@ public class WebFingerServiceTests
                 ? string.Join(", ", request.Headers.Accept.Select(a => a.MediaType))
                 : null;
             Requests.Add(new Captured(request.Method, request.RequestUri!, accept));
+
+            if (_throw != null)
+                return Task.FromException<HttpResponseMessage>(_throw());
 
             var (status, body, contentType) = _responder(request.RequestUri!.ToString());
             var content = new StringContent(body, Encoding.UTF8);
@@ -58,6 +64,13 @@ public class WebFingerServiceTests
                 return (HttpStatusCode.OK, webfingerBody, webfingerContentType);
             return (HttpStatusCode.OK, actorBody, actorContentType);
         });
+        var client = new HttpClient(handler);
+        var service = new WebFingerService(client, new Mock<ILogger<WebFingerService>>().Object);
+        return new OutboundWebFingerHarness(service, handler);
+    }
+
+    private static OutboundWebFingerHarness CreateWithHandler(StubHandler handler)
+    {
         var client = new HttpClient(handler);
         var service = new WebFingerService(client, new Mock<ILogger<WebFingerService>>().Object);
         return new OutboundWebFingerHarness(service, handler);
@@ -273,5 +286,79 @@ public class WebFingerServiceTests
         Assert.NotNull(actor);
         Assert.Equal("RayvenMX", actor!.PreferredUsername);
         Assert.Equal("https://mastodon.world/inbox", actor.Endpoints?.SharedInbox);
+    }
+
+    // --- Graceful remote-failure contract --------------------------------
+    // Federation must NEVER throw on a misbehaving remote: a 5xx, a
+    // connection reset, or a timeout all degrade to `null` (logged), so a
+    // single bad instance can't take down the whole app.
+
+    [Fact]
+    public async Task ResolveActor_Webfinger500_ReturnsNull_DoesNotThrow()
+    {
+        var handler = new StubHandler(_ => (HttpStatusCode.InternalServerError, "oops", "text/plain"));
+        var harness = CreateWithHandler(handler);
+
+        var actor = await harness.Service.ResolveActorAsync("RayvenMX@mastodon.world");
+
+        Assert.Null(actor);
+    }
+
+    [Fact]
+    public async Task ResolveActor_ActorFetch500_ReturnsNull_DoesNotThrow()
+    {
+        // Webfinger succeeds (points at a self link) but the actor document
+        // itself returns a 5xx — still must degrade to null, not throw.
+        const string webfinger = """
+            { "subject": "acct:rayvenmx@mastodon.world",
+              "links": [ { "rel": "self", "type": "application/activity+json", "href": "https://mastodon.world/users/RayvenMX" } ] }
+            """;
+        var handler = new StubHandler(url =>
+            url.Contains("/.well-known/webfinger")
+                ? (HttpStatusCode.OK, webfinger, "application/jrd+json")
+                : (HttpStatusCode.BadGateway, "bad gateway", "text/plain"));
+        var harness = CreateWithHandler(handler);
+
+        var actor = await harness.Service.ResolveActorAsync("RayvenMX@mastodon.world");
+
+        Assert.Null(actor);
+    }
+
+    [Fact]
+    public async Task ResolveActor_ConnectorFailure_ReturnsNull_DoesNotThrow()
+    {
+        // A DNS failure / connection reset surfaces as HttpRequestException.
+        var handler = new StubHandler(_ => (HttpStatusCode.OK, "", null),
+            () => new HttpRequestException("connection reset by peer"));
+        var harness = CreateWithHandler(handler);
+
+        var actor = await harness.Service.ResolveActorAsync("RayvenMX@mastodon.world");
+
+        Assert.Null(actor);
+    }
+
+    [Fact]
+    public async Task ResolveActor_Timeout_ReturnsNull_DoesNotThrow()
+    {
+        // .NET's HttpClient surfaces a timeout as TaskCanceledException.
+        var handler = new StubHandler(_ => (HttpStatusCode.OK, "", null),
+            () => new TaskCanceledException("The operation was canceled."));
+        var harness = CreateWithHandler(handler);
+
+        var actor = await harness.Service.ResolveActorAsync("RayvenMX@mastodon.world");
+
+        Assert.Null(actor);
+    }
+
+    [Fact]
+    public async Task ResolveActor_MalformedJson_ReturnsNull_DoesNotThrow()
+    {
+        // A 200 whose body is not JSON must not throw out of the resolver.
+        var handler = new StubHandler(_ => (HttpStatusCode.OK, "<html>not json</html>", "text/html"));
+        var harness = CreateWithHandler(handler);
+
+        var actor = await harness.Service.ResolveActorAsync("RayvenMX@mastodon.world");
+
+        Assert.Null(actor);
     }
 }

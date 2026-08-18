@@ -61,10 +61,21 @@ public class OutboundActivityServiceTests
     private sealed class CapturingHandler : HttpMessageHandler
     {
         public List<HttpRequestMessage> Sent { get; } = new();
+        private readonly HttpStatusCode _status;
+        private readonly Func<Exception>? _throw;
+
+        public CapturingHandler(HttpStatusCode status = HttpStatusCode.Accepted, Func<Exception>? throwFactory = null)
+        {
+            _status = status;
+            _throw = throwFactory;
+        }
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Sent.Add(request);
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Accepted));
+            if (_throw != null)
+                return Task.FromException<HttpResponseMessage>(_throw());
+            return Task.FromResult(new HttpResponseMessage(_status));
         }
     }
 
@@ -128,5 +139,72 @@ public class OutboundActivityServiceTests
         signing.Verify(s => s.SignRequest(
             It.IsAny<HttpRequestMessage>(), "PEM", "https://me.example/users/alice#main-key", "example.social"),
             Times.Once);
+    }
+
+    // --- Graceful remote-failure contract --------------------------------
+    // Outbound delivery must NEVER throw on a misbehaving remote: a 4xx/5xx,
+    // a connection reset, or a timeout all degrade to `false` (logged), so a
+    // single bad instance can't take down the sender.
+
+    private static (OutboundActivityService Service, CapturingHandler Handler) CreateFailingService(CapturingHandler handler)
+    {
+        var httpClient = new HttpClient(handler);
+        var service = new OutboundActivityService(
+            httpClient,
+            new Mock<IFederationDiscoveryService>().Object,
+            new Mock<IOutboundSigningService>().Object,
+            new Mock<ILogger<OutboundActivityService>>().Object);
+        return (service, handler);
+    }
+
+    [Fact]
+    public async Task SendActivityAsync_Remote500_ReturnsFalse_DoesNotThrow()
+    {
+        var handler = new CapturingHandler(HttpStatusCode.InternalServerError);
+        var (service, _) = CreateFailingService(handler);
+
+        var ok = await service.SendActivityAsync("{}", "https://me.example/users/alice", "PEM",
+            "https://mastodon.world/inbox");
+
+        Assert.False(ok);
+        Assert.Single(handler.Sent);
+    }
+
+    [Fact]
+    public async Task SendActivityAsync_Remote404_ReturnsFalse_DoesNotThrow()
+    {
+        var handler = new CapturingHandler(HttpStatusCode.NotFound);
+        var (service, _) = CreateFailingService(handler);
+
+        var ok = await service.SendActivityAsync("{}", "https://me.example/users/alice", "PEM",
+            "https://mastodon.world/inbox");
+
+        Assert.False(ok);
+    }
+
+    [Fact]
+    public async Task SendActivityAsync_ConnectorFailure_ReturnsFalse_DoesNotThrow()
+    {
+        var handler = new CapturingHandler(HttpStatusCode.Accepted,
+            () => new HttpRequestException("connection reset by peer"));
+        var (service, _) = CreateFailingService(handler);
+
+        var ok = await service.SendActivityAsync("{}", "https://me.example/users/alice", "PEM",
+            "https://mastodon.world/inbox");
+
+        Assert.False(ok);
+    }
+
+    [Fact]
+    public async Task SendActivityAsync_Timeout_ReturnsFalse_DoesNotThrow()
+    {
+        var handler = new CapturingHandler(HttpStatusCode.Accepted,
+            () => new TaskCanceledException("The operation was canceled."));
+        var (service, _) = CreateFailingService(handler);
+
+        var ok = await service.SendActivityAsync("{}", "https://me.example/users/alice", "PEM",
+            "https://mastodon.world/inbox");
+
+        Assert.False(ok);
     }
 }
