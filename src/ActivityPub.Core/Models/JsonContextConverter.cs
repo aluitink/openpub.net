@@ -17,9 +17,25 @@ public sealed class JsonContextConverter : JsonConverter<JsonNode?>
 {
     public override JsonNode? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // JsonNode has no ParseValue; deserialize the current token (a string,
-        // array, or object) into a JsonNode via the standard serializer.
-        return JsonSerializer.Deserialize<JsonNode?>(ref reader, options);
+        // The current token is the entire @context value (a string, an array, or
+        // an object). Parse it directly into a JsonNode rather than delegating to
+        // JsonSerializer.Deserialize<JsonNode?>: on .NET 10 the built-in JsonNode
+        // converter is itself a JsonConverter<JsonNode?>, so re-deserializing from
+        // inside this converter would re-dispatch to this same converter and
+        // recurse infinitely (stack overflow), crashing actor deserialization.
+        // Reading the value as a JsonElement and re-parsing its raw text is
+        // shape-agnostic and recursion-free.
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            return JsonValue.Create(reader.GetString());
+        }
+        if (reader.TokenType == JsonTokenType.Null || reader.TokenType == JsonTokenType.None)
+        {
+            return null;
+        }
+
+        var element = JsonDocument.ParseValue(ref reader).RootElement;
+        return JsonNode.Parse(element.GetRawText());
     }
 
     public override void Write(System.Text.Json.Utf8JsonWriter writer, JsonNode? value, JsonSerializerOptions options)
