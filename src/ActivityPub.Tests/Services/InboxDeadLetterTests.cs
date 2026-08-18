@@ -320,6 +320,58 @@ public class InboxDeadLetterTests
         repo.Verify(r => r.UpdateInboxDeadLetterAsync(dlqRow), Times.AtLeastOnce);
     }
 
+    // --- End-to-end "no lost activities" against the REAL repository ----
+    // The test above proves the *service* marks a row Replayed, but it mocks the
+    // repo. This is the "no lost activities" guarantee: an activity that was
+    // dead-lettered (its inbound retries were exhausted) is still recoverable —
+    // when ProcessInboxDeadLettersAsync re-processes it, the activity actually
+    // lands in the store. Without this, a dead-lettered activity would be
+    // silently lost forever. Driven entirely against the real
+    // InMemoryActivityPubRepository, no mocks on the repo.
+    [Fact]
+    public async Task DeadLetteredActivity_RealRepository_ReplayedAndStored_NoLostActivity()
+    {
+        var repo = new InMemoryActivityPubRepository();
+        var service = new SharedInboxService(
+            repo,
+            Mock.Of<IOutboundActivityService>(),
+            new MemoryCache(new MemoryCacheOptions()),
+            Mock.Of<IFederationCache>(),
+            Mock.Of<ILogger<SharedInboxService>>(),
+            Options.Create(new ActivityPubOptions { InboxProcessing = InboxOptions() }));
+
+        var activityId = "https://remote.example/notes/9001";
+        // Simulate an activity whose inbound retries were exhausted and so was
+        // parked in the dead-letter queue with its raw payload preserved.
+        var stored = await repo.AddInboxDeadLetterAsync(new InboxDeadLetterEntity
+        {
+            ActivityId = activityId,
+            RawJson = System.Text.Json.JsonSerializer.Serialize(CreateActivity(activityId)),
+            Username = InboxUser,
+            Status = InboxDeadLetterStatus.DeadLettered,
+            AttemptCount = 3
+        });
+
+        // Sanity: before replay, nothing has been stored as an activity.
+        Assert.Empty(await repo.GetAllActivityIdsAsync());
+        Assert.False(await repo.HasSeenActivityAsync(activityId));
+
+        var replayed = await service.ProcessInboxDeadLettersAsync();
+
+        // The row is recovered and the activity is now durably stored — the
+        // "no lost activities" guarantee.
+        Assert.Equal(1, replayed);
+        Assert.Equal(InboxDeadLetterStatus.Replayed, stored.Status);
+        Assert.Null(stored.FailureReason);
+        var ids = await repo.GetAllActivityIdsAsync();
+        Assert.Single(ids);
+        Assert.Equal(activityId, Assert.Single(ids).ToString());
+        var storedActivity = await repo.GetActivityAsync(activityId);
+        Assert.NotNull(storedActivity);
+        Assert.Equal(activityId, storedActivity!.Id);
+        Assert.True(await repo.HasSeenActivityAsync(activityId));
+    }
+
     [Fact]
     public async Task ProcessInboxDeadLetters_FailingReplay_MarksFailed()
     {
