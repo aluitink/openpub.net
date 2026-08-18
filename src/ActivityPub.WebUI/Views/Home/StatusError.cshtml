@@ -1,0 +1,56 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Title;
+    ViewData["PageClass"] = "error";
+
+    // Icon + tone chosen by the status-code family. Inline SVGs keep the
+    // dependency-free icon set and inherit currentColor via the CSS class.
+    string iconClass;
+    string svg;
+    switch (Model.StatusCode)
+    {
+        case 403:
+            iconClass = "error-icon--danger";
+            svg = @"<svg viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"" aria-hidden=""true""><rect x=""5"" y=""11"" width=""14"" height=""9"" rx=""2""/><path d=""M8 11V7a4 4 0 0 1 8 0v4""/></svg>";
+            break;
+        case 404:
+        case 410:
+            iconClass = "error-icon--info";
+            svg = @"<svg viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"" aria-hidden=""true""><circle cx=""11"" cy=""11"" r=""7""/><path d=""m21 21-4.3-4.3""/><path d=""M8 11h6""/></svg>";
+            break;
+        case 429:
+            iconClass = "error-icon--warning";
+            svg = @"<svg viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"" aria-hidden=""true""><circle cx=""12"" cy=""12"" r=""9""/><path d=""M12 7v5l3 2""/></svg>";
+            break;
+        default:
+            iconClass = "error-icon--danger";
+            svg = @"<svg viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"" aria-hidden=""true""><path d=""M12 3 2.5 20h19L12 3Z""/><path d=""M12 10v4""/><path d=""M12 17.5h.01""/></svg>";
+            break;
+    }
+}
+@model ErrorViewModel
+
+<div class="error-page">
+    <div class="error-icon @iconClass" role="img" aria-hidden="true">@Html.Raw(svg)</div>
+    <h1>@Model.Title</h1>
+    <p class="error-message">@Model.Message</p>
+    <p class="error-status" aria-hidden="true">Error @(Model.StatusCode)</p>
+    @if (Model.IsDevelopment)
+    {
+        <div class="error-details">
+            <p>Development mode — see logs for details.</p>
+        </div>
+    }
+    <div class="error-actions">
+        @if (Model.StatusCode is 404 or 410)
+        {
+            <a asp-controller="Timeline" asp-action="Index" class="btn btn-primary">Go to Timeline</a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Go Home</a>
+        }
+        else
+        {
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Go Home</a>
+        }
+        <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+    </div>
+</div>

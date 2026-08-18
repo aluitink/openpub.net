@@ -1,7 +1,7 @@
 # Fediblog — UI & UX Plan
 
 **Last Updated:** Aug 18, 2026
-**Status:** Backend federation, API, and scalability infrastructure is **feature-complete** (Phases 1–45, 1015/1015 tests passing). This plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
+**Status:** Backend federation, API, and scalability infrastructure is **feature-complete** (Phases 1–45, 1021/1021 tests passing). This plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
 
 **WebUI:** `src/ActivityPub.WebUI/` — Razor MVC, SignalR, vanilla JS (`wwwroot/js/`: `compose.js`, `menu.js`, `toast.js`), single `site.css` with `:root` design tokens + `[data-theme=dark]` overrides.
 
@@ -45,7 +45,7 @@ Make the timeline and interactions feel instant.
 2. ⬜ Standardize spacing/typography tokens; no one-off metrics.
 3. ⬜ Single inline-SVG icon set (dependency-free), replacing mixed emoji/glyph icons.
 4. ⬜ Empty states, skeletons, loading affordances on every data-bearing page.
-5. ⬜ Error + 404/403/500 pages on-brand.
+5. ✅ Error + 404/403/500 pages on-brand. `UseStatusCodePagesWithReExecute` now re-runs a new `GET /Home/StatusError?id=<code>` action that reads the original status and renders one shared, status-aware view (`Views/Home/StatusError.cshtml`) — previously *every* non-2xx code (401/400/403/404) was funneled into a hard-coded 404 page and the `?id` param was ignored. Distinct on-brand pages for 404 / 403 (Access Denied) / 410 / 429 / 500 / 502 / 503 / 504 + a generic fallback, each with a dependency-free inline-SVG icon (lock / magnifier / clock / warning-triangle), tone-colored (danger/info/warning) and theme-aware. A direct `GET /Home/Forbidden` route serves the 403 page. `.error-*` CSS modernized onto the design tokens (`--color-*`, `--radius-*`, `--space-*`, `--font-*`) with a circular icon badge + mobile sizing; `Error.cshtml` (500) and `NotFound.cshtml` reuse the same markup. 6 new tests (status re-execution 404, StatusError default/403/503, Forbidden route, unknown-code fallback) — 1021/1021 passing.
 
 ### Phase 50: Accessibility (WCAG AA)
 1. ⬜ Contrast re-audit across light **and** dark themes (all views).
@@ -59,6 +59,16 @@ Make the timeline and interactions feel instant.
 3. ⬜ Video/audio/document rendering with native players + thumbnails (surface existing backend support first).
 4. ⬜ Link previews / OEmbed for outbound URLs (client-side, v1).
 5. ⬜ Content-warnings: blur + reveal, per-note and global; respected in lightbox.
+
+### Phase 52: Real-World Federation Testing
+Exercise the full stack against live remote instances and real users (integration host `https://openpub.luit.ink/`, primary target **@RayvenMX@mastodon.world**).
+0. ⬜ **Webfinger validation (remote→local)**: verify remote instances can resolve our users via Webfinger — `GET https://openpub.luit.ink/.well-known/webfinger?resource=acct:<username>@openpub.luit.ink` returns `200` with the correct `Link rel="activitypub"` pointing at our user's ActivityPub profile document, which in turn returns the correct `Person` (id, preferredUsername, name, summary, avatar, followersCollection, outbox). Cross-check from a remote instance (e.g. search our handle on mastodon.world / a second instance) that the profile appears and renders like a standard Mastodon profile (avatar, display name, bio, follower/following counts, post list) — this is the current blocker: our user is **not found** from remote instances.
+1. ⬜ **Locate real users**: follow **@RayvenMX@mastodon.world** from the Fediblog UI; verify the follow request/acceptance round-trip, the follower count updates on their profile, and the confirmation notification lands in our inbox.
+2. ⬜ **Browse real remote profiles**: open @RayvenMX's profile and their posts via our UI; verify remote avatars, banners, note rendering, interaction counts, and pagination of their timeline.
+3. ⬜ **Interact with a real user**: reply to one of their notes and like/boost it; verify the Activity is delivered (visible on their side / in their mentions), our optimistic UI reconciles with server truth, and notifications/badges update when they respond.
+4. ⬜ **Inbound federation**: when the remote user interacts with us (likes, boosts, replies, follows back), verify we receive, store, deduplicate, and surface it (notifications, timeline, profile counts).
+5. ⬜ **Federation health pass**: confirm outbound/inbound delivery latency, no duplicate or lost activities, graceful handling of remote errors/timeouts, and that remote content renders consistently across light/dark themes and at 320px.
+6. ⬜ **Cleanup**: unfollow/unlike/unboost test interactions so we leave no lasting footprint on the remote user's account.
 
 ### Deferred (only if/when a UI feature requires it)
 - OEmbed server-side, upload virus scan, size limits.

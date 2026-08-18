@@ -1,14 +1,28 @@
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Not Found";
+    ViewData["Title"] = Model.Title;
+    ViewData["PageClass"] = "error";
+
+    string iconClass;
+    string svg;
+    if (Model.StatusCode is 403)
+    {
+        iconClass = "error-icon--danger";
+        svg = @"<svg viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"" aria-hidden=""true""><rect x=""5"" y=""11"" width=""14"" height=""9"" rx=""2""/><path d=""M8 11V7a4 4 0 0 1 8 0v4""/></svg>";
+    }
+    else
+    {
+        iconClass = "error-icon--info";
+        svg = @"<svg viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"" aria-hidden=""true""><circle cx=""11"" cy=""11"" r=""7""/><path d=""m21 21-4.3-4.3""/><path d=""M8 11h6""/></svg>";
+    }
 }
 @model ErrorViewModel
 
 <div class="error-page">
-    <div class="error-icon">&#128507;</div>
+    <div class="error-icon @iconClass" role="img" aria-hidden="true">@Html.Raw(svg)</div>
     <h1>@Model.Title</h1>
     <p class="error-message">@Model.Message</p>
-    <p class="error-status">Error @(Model.StatusCode)</p>
+    <p class="error-status" aria-hidden="true">Error @(Model.StatusCode)</p>
     <div class="error-actions">
         <a asp-controller="Timeline" asp-action="Index" class="btn btn-primary">Go to Timeline</a>
         <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Go Home</a>

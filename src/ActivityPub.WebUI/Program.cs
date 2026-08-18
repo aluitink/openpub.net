@@ -220,7 +220,11 @@ public class Program
             app.UseDeveloperExceptionPage();
         }
 
-        app.UseStatusCodePagesWithReExecute("/Home/NotFound", "?id={0}");
+        // Re-execute a status-aware error page for any non-2xx status code that
+        // isn't an unhandled exception (404, 403, 401, 429, 5xx, ...). The
+        // StatusError action reads the original code from the `id` query param
+        // and renders the matching on-brand page.
+        app.UseStatusCodePagesWithReExecute("/Home/StatusError", "?id={0}");
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
