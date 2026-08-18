@@ -17,7 +17,13 @@
 
     @if (!Model.Any())
     {
-        <p class="empty-state">No pending reports.</p>
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No pending reports",
+                Hint = "Reports from users will appear here for review."
+            })
+        </div>
     }
     else
     {

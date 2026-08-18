@@ -21,7 +21,13 @@
     <h2>Recent Activities</h2>
     @if (!Model.Activities.Any())
     {
-        <p class="no-data">No activities to moderate.</p>
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No activities to moderate",
+                Hint = "Recent posts, boosts, and replies will appear here for review."
+            })
+        </div>
     }
     else
     {
@@ -84,7 +90,13 @@
     }
     else
     {
-        <p class="no-data">No pending deliveries.</p>
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No pending deliveries",
+                Hint = "All outbound federation deliveries have completed."
+            })
+        </div>
     }
 
     <h2>Blocked Domains</h2>
@@ -99,6 +111,12 @@
     }
     else
     {
-        <p class="no-data">No domains are currently blocked.</p>
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No domains are currently blocked",
+                Hint = "Blocked domains will appear here."
+            })
+        </div>
     }
 </div>

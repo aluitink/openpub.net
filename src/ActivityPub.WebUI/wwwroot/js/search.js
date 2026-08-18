@@ -10,7 +10,7 @@ FB.register('search', function() {
         clearTimeout(timer);
         var q = this.value.trim();
         if (q.length < 2) return;
-        loading.style.display = 'block';
+        loading.style.display = 'inline-flex';
         timer = setTimeout(function() {
             var url = '/search?q=' + encodeURIComponent(q) + '&tab=' + encodeURIComponent(currentTab);
             window.location.href = url;

@@ -37,7 +37,11 @@
     }
     else
     {
-        <p class="empty-state">No trending hashtags yet.</p>
+        @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+        {
+            Title = "No trending hashtags yet",
+            Hint = "Hashtags from recent posts will appear here."
+        })
     }
 </div>
 

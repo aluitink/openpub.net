@@ -56,8 +56,11 @@
 }
 else
 {
-    <div class="empty-state">
-        <p>You are not a member of any communities yet.</p>
-        <a asp-action="Index" class="btn btn-primary">Browse Communities</a>
-    </div>
+    @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+    {
+        Title = "You are not a member of any communities yet",
+        CtaLabel = "Browse Communities",
+        CtaHref = Url.Action("Index", "Communities"),
+        CtaClass = "btn btn-primary"
+    })
 }

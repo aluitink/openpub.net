@@ -49,7 +49,9 @@
 }
 else
 {
-    <div class="empty-state">
-        <p>No communities found matching "@Model.Query".</p>
-    </div>
+    @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+    {
+        Title = $"No communities found matching “{Model.Query}”",
+        Hint = "Try a different search term."
+    })
 }

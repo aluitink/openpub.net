@@ -17,7 +17,13 @@
 
     @if (!Model.Any())
     {
-        <p class="empty-state">No audit log entries.</p>
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No audit log entries",
+                Hint = "Admin actions will be recorded here."
+            })
+        </div>
     }
     else
     {

@@ -395,6 +395,98 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         Assert.Contains("_EmptyState", byPath["admin/dashboard.cshtml"]);
     }
 
+    [Fact]
+    public void Views_HaveNoBespokeEmptyStateClasses()
+    {
+        // Iteration 2 routed every bespoke "no data" block onto the shared
+        // _EmptyState partial. The one-off classes below are retired and must not
+        // reappear in any view (the Search *prompt* keeps .search-empty*, which is
+        // a "start here" hero, not a data empty-state).
+        var retired = new[]
+        {
+            "empty-timeline",
+            "empty-notifications",
+            "hashtag-empty",
+            "no-data",
+        };
+
+        var offenders = new List<string>();
+        foreach (var (path, content) in LoadAllViews())
+        {
+            foreach (var cls in retired)
+            {
+                // Match the class token, not a substring of a longer identifier.
+                var re = new Regex($@"class=""[^""]*\b{Regex.Escape(cls)}\b[^""]*""",
+                    RegexOptions.IgnoreCase);
+                if (re.IsMatch(content))
+                    offenders.Add($"{path}: '{cls}'");
+            }
+        }
+
+        Assert.True(offenders.Count == 0,
+            "Bespoke empty-state class(es) found (use the shared _EmptyState partial):\n" +
+            string.Join("\n", offenders));
+    }
+
+    [Fact]
+    public void DataBearingPages_RouteEmptyStateThroughSharedPartial()
+    {
+        var views = LoadAllViews();
+        var byPath = views.ToDictionary(
+            v => v.Path.Replace('\\', '/').ToLowerInvariant(),
+            v => v.Content);
+
+        // Every data-bearing page that has a "no data" moment now renders the
+        // shared _EmptyState partial (accessible, labelled, one markup pattern).
+        var expected = new[]
+        {
+            "notifications/index.cshtml",
+            "follow/following.cshtml",
+            "follow/followers.cshtml",
+            "hashtag/index.cshtml",
+            "trends/index.cshtml",
+            "admin/moderation.cshtml",
+            "admin/auditlog.cshtml",
+            "admin/reports.cshtml",
+            "admin/users.cshtml",
+            "admin/dashboard.cshtml",
+            "federationhealth/index.cshtml",
+            "suggestions/index.cshtml",
+            "communities/show.cshtml",
+            "communities/mycommunities.cshtml",
+            "communities/search.cshtml",
+            "communities/index.cshtml",
+            "search/index.cshtml",
+            "timeline/index.cshtml",
+        };
+
+        foreach (var page in expected)
+        {
+            Assert.True(byPath.TryGetValue(page, out var content), $"Missing view {page}");
+            Assert.True(content.Contains("_EmptyState", StringComparison.Ordinal),
+                $"{page} should render its empty state via the shared _EmptyState partial");
+        }
+    }
+
+    [Fact]
+    public void SearchLoadingUsesSharedSpinnerAffordance()
+    {
+        var views = LoadAllViews();
+        var byPath = views.ToDictionary(
+            v => v.Path.Replace('\\', '/').ToLowerInvariant(),
+            v => v.Content);
+
+        var search = byPath["search/index.cshtml"];
+        // The "Searching…" indicator adopts the shared spinner kit + aria-busy.
+        Assert.Contains("loading-indicator", search);
+        Assert.Contains("loading-spinner", search);
+        Assert.Contains("aria-busy", search);
+        // The old bespoke .search-loading CLASS is gone (the element id may remain
+        // for the JS hook, but it no longer carries bespoke styling).
+        var re = new Regex(@"class=""[^""]*\bsearch-loading\b[^""]*""", RegexOptions.IgnoreCase);
+        Assert.True(!re.IsMatch(search), "Bespoke .search-loading class should be retired");
+    }
+
     // ---- helpers -----------------------------------------------------------
 
     async Task RegisterAndLogin(HttpClient client, string username, string displayName = "Kit Test")

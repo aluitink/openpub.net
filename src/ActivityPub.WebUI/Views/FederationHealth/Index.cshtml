@@ -127,6 +127,12 @@
     }
     else
     {
-        <p class="no-data">No recent delivery errors.</p>
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No recent delivery errors",
+                Hint = "Outbound federation delivery failures will appear here."
+            })
+        </div>
     }
 </div>

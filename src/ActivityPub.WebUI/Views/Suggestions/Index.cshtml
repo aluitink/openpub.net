@@ -50,7 +50,11 @@
         }
         else
         {
-            <p class="empty-state">No suggestions yet. Follow some people to get started!</p>
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No suggestions yet",
+                Hint = "Follow some people to get started!"
+            })
         }
     </div>
 
@@ -71,7 +75,11 @@
         }
         else
         {
-            <p class="empty-state">No content filters configured.</p>
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No content filters configured",
+                Hint = "Add a keyword below to hide notes that contain it."
+            })
         }
 
         <div class="add-filter-form">

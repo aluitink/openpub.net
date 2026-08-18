@@ -116,6 +116,9 @@ public class HashtagTests : IClassFixture<WebUIFactory>
         var response = await client.GetAsync("/hashtag/nonexistent123");
         Assert.True(response.IsSuccessStatusCode, $"Failed: {(int)response.StatusCode}");
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("No notes found", body);
+        // The no-notes case now renders via the shared _EmptyState partial
+        // (labelled, accessible status region) rather than a bespoke block.
+        Assert.Contains("empty-state-title", body);
+        Assert.Contains("No notes for", body);
     }
 }

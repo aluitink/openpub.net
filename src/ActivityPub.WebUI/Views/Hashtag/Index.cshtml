@@ -15,9 +15,11 @@
 
     @if (!Model.Notes.Any())
     {
-        <div class="hashtag-empty">
-            <p>No notes found for @Model.Tag. Be the first to post with this hashtag!</p>
-        </div>
+        @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+        {
+            Title = $"No notes for @Model.Tag",
+            Hint = "Be the first to post with this hashtag!"
+        })
     }
     else
     {

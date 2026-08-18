@@ -11,7 +11,10 @@
         <input type="text" name="q" id="search-input" value="@Html.Encode(Model.Query)" placeholder="Search notes and users..." class="search-input" autofocus />
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    <div id="search-loading" class="search-loading" style="display:none">Searching…</div>
+    <div id="search-loading" class="loading-indicator" style="display:none" aria-busy="true">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <span>Searching…</span>
+    </div>
 
     @if (string.IsNullOrWhiteSpace(Model.Query))
     {
@@ -59,9 +62,11 @@
         }
         else if (Model.Tab == "notes" && !Model.Notes.Any())
         {
-            <div class="search-empty">
-                <p>No notes found matching "@Model.Query"</p>
-            </div>
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = $"No notes found matching “{Model.Query}”",
+                Hint = "Try a different keyword or check the spelling."
+            })
         }
 
         @if ((Model.Tab == "all" || Model.Tab == "users") && Model.Users.Any())
@@ -96,9 +101,11 @@
         }
         else if (Model.Tab == "users" && !Model.Users.Any())
         {
-            <div class="search-empty">
-                <p>No users found matching "@Model.Query"</p>
-            </div>
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = $"No users found matching “{Model.Query}”",
+                Hint = "Try a different username or handle."
+            })
         }
 
         @if ((Model.Tab == "all" || Model.Tab == "hashtags") && Model.Hashtags.Any())
@@ -116,9 +123,11 @@
         }
         else if (Model.Tab == "hashtags" && !Model.Hashtags.Any())
         {
-            <div class="search-empty">
-                <p>No hashtags found matching "@Model.Query"</p>
-            </div>
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = $"No hashtags found matching “{Model.Query}”",
+                Hint = "Try a different keyword."
+            })
         }
     }
 </div>

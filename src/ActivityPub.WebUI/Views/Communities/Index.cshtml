@@ -65,7 +65,12 @@
 }
 else
 {
-    <div class="empty-state">
-        <p>No communities yet. Be the first to create one!</p>
-    </div>
+    @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+    {
+        Title = "No communities yet",
+        Hint = "Be the first to create one!",
+        CtaLabel = "Create a Community",
+        CtaHref = Url.Action("Create", "Communities"),
+        CtaClass = "btn btn-primary"
+    })
 }

@@ -41,10 +41,13 @@
     }
     else
     {
-        <div class="empty-timeline">
-            <p>You are not following anyone yet.</p>
-            <a asp-controller="Follow" asp-action="Index">Follow someone</a>
-        </div>
+        @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+        {
+            Title = "You are not following anyone yet",
+            CtaLabel = "Follow someone",
+            CtaHref = Url.Action("Index", "Follow"),
+            CtaClass = "btn btn-primary"
+        })
     }
 
     <div class="following-links">

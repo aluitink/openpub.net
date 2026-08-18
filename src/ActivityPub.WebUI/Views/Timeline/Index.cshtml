@@ -67,11 +67,14 @@
 }
 else
 {
-    <div class="empty-timeline">
-        <p class="empty-timeline-title">No posts yet</p>
-        <p class="empty-timeline-hint">Share your first note with your followers, or follow some people to populate your timeline.</p>
-        <a asp-controller="Compose" asp-action="Index" class="btn btn-primary">Write your first post</a>
-    </div>
+    @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+    {
+        Title = "No posts yet",
+        Hint = "Share your first note with your followers, or follow some people to populate your timeline.",
+        CtaLabel = "Write your first post",
+        CtaHref = Url.Action("Index", "Compose"),
+        CtaClass = "btn btn-primary"
+    })
 }
 
 @section Scripts {

@@ -20,9 +20,11 @@
 
     @if (Model.Items.Count == 0)
     {
-        <div class="empty-notifications">
-            <p>No notifications yet. When people interact with your notes, you'll see them here.</p>
-        </div>
+        @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+        {
+            Title = "No notifications yet",
+            Hint = "When people interact with your notes, you'll see them here."
+        })
     }
     else
     {

@@ -93,6 +93,10 @@
     }
     else
     {
-        <p class="empty-state">No members yet.</p>
+        @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+        {
+            Title = "No members yet",
+            Hint = "Members of this community will appear here."
+        })
     }
 </div>
