@@ -321,6 +321,80 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         Assert.DoesNotContain("<style", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ---- Phase 49 Item 4 — empty states, skeletons, loading affordances -----
+
+    [Fact]
+    public async Task SiteCss_SkeletonUsesThemeTokens_AndHasSpinner()
+    {
+        var client = CreateClient();
+        var css = await client.GetStringAsync("/css/site.css");
+
+        // The shimmer is now driven by theme tokens, not hard-coded light greys,
+        // so it reads correctly in both light and dark.
+        Assert.Contains("var(--skeleton-base)", css);
+        Assert.Contains("var(--skeleton-shine)", css);
+        Assert.Contains("--skeleton-base:", css);
+        Assert.Contains("--skeleton-shine:", css);
+        // The old hard-coded light greys are gone from the shimmer.
+        Assert.DoesNotContain("#e0e0e0 25%, #f0f0f0", css);
+
+        // Dark-mode overrides for the skeleton tokens exist.
+        Assert.Contains("--skeleton-base: #2a2a3c", css);
+        Assert.Contains("--skeleton-shine: #34344a", css);
+
+        // The shared loading affordance: a spinner + its keyframes.
+        Assert.Contains(".loading-spinner", css);
+        Assert.Contains("@keyframes fb-spin", css);
+        Assert.Contains(".loading-indicator", css);
+    }
+
+    [Fact]
+    public void SharedEmptyState_AndSkeletonPartials_Exist()
+    {
+        var views = LoadAllViews();
+        var byName = views.ToDictionary(
+            v => v.Path.Replace('\\', '/').ToLowerInvariant(),
+            v => v.Content);
+
+        Assert.True(byName.ContainsKey("shared/_emptystate.cshtml"),
+            "Missing shared partial Views/Shared/_EmptyState.cshtml");
+        Assert.True(byName.ContainsKey("shared/_skeletonnotecard.cshtml"),
+            "Missing shared partial Views/Shared/_SkeletonNoteCard.cshtml");
+
+        // The empty-state partial renders a labelled, accessible status region.
+        var empty = byName["shared/_emptystate.cshtml"];
+        Assert.Contains("empty-state-title", empty);
+        Assert.Contains("role=\"status\"", empty);
+        Assert.Contains("@model EmptyStateModel", empty);
+
+        // The skeleton partial reuses the shared shimmer kit.
+        var skeleton = byName["shared/_skeletonnotecard.cshtml"];
+        Assert.Contains("skeleton-note-card", skeleton);
+        Assert.Contains("skeleton-avatar", skeleton);
+    }
+
+    [Fact]
+    public void Views_UseSharedEmptyStateAndSkeletonPartials()
+    {
+        var views = LoadAllViews();
+        var byPath = views.ToDictionary(
+            v => v.Path.Replace('\\', '/').ToLowerInvariant(),
+            v => v.Content);
+
+        // The load-more skeletons were de-duplicated onto the shared partial.
+        var timeline = byPath["timeline/index.cshtml"];
+        var search = byPath["search/index.cshtml"];
+        Assert.Contains("_SkeletonNoteCard", timeline);
+        Assert.Contains("_SkeletonNoteCard", search);
+        // No more copy-pasted inline skeleton markup in those pages.
+        Assert.DoesNotContain("skeleton-avatar", timeline);
+        Assert.DoesNotContain("skeleton-avatar", search);
+
+        // The admin tables adopt the shared empty state for their no-data case.
+        Assert.Contains("_EmptyState", byPath["admin/users.cshtml"]);
+        Assert.Contains("_EmptyState", byPath["admin/dashboard.cshtml"]);
+    }
+
     // ---- helpers -----------------------------------------------------------
 
     async Task RegisterAndLogin(HttpClient client, string username, string displayName = "Kit Test")

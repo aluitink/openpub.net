@@ -1,0 +1,23 @@
+@*
+    Shared loading placeholder for a note card. Mirrors the real note card's
+    layout (avatar + name/username + body lines [+ optional media]) so a
+    skeleton can stand in while a feed or search "load more" is fetching.
+    @model bool — true renders the trailing media block (Timeline), false omits
+    it (Search). The host wraps this in a container the load-more JS toggles
+    (e.g. `.timeline-loading`).
+*@
+<div class="skeleton-note-card">
+    <div class="skeleton-row">
+        <div class="skeleton skeleton-avatar"></div>
+        <div>
+            <div class="skeleton skeleton-line short"></div>
+            <div class="skeleton skeleton-line medium thin"></div>
+        </div>
+    </div>
+    <div class="skeleton skeleton-line long"></div>
+    <div class="skeleton skeleton-line medium"></div>
+    @if (Model)
+    {
+        <div class="skeleton skeleton-image"></div>
+    }
+</div>

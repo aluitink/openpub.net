@@ -1,0 +1,17 @@
+@*
+    Standardized, accessible empty state — one markup pattern for every
+    "no data" moment. @model EmptyStateModel. Screen readers get a real
+    heading; the block is announced as a status region.
+*@
+@model EmptyStateModel
+<div class="empty-state" role="status">
+    <p class="empty-state-title">@Model.Title</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Hint))
+    {
+        <p class="empty-state-hint">@Model.Hint</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.CtaLabel) && !string.IsNullOrWhiteSpace(Model.CtaHref))
+    {
+        <a href="@Model.CtaHref" class="@Model.CtaClass">@Model.CtaLabel</a>
+    }
+</div>

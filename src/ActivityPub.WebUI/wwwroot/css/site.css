@@ -24,6 +24,11 @@
     --color-border: #e0e0e0;
     --color-border-light: #eeeeee;
 
+    /* Skeleton / shimmer (loading placeholders). Overridden per-theme below so
+       the shimmer reads correctly in both light and dark. */
+    --skeleton-base: #e6e6ee;
+    --skeleton-shine: #f4f4f8;
+
     /* Semantic */
     --color-danger: #d63324;
     --color-danger-dark: #b02a1e;
@@ -112,6 +117,8 @@
     --color-text-muted: var(--dark-text-muted);
     --color-border: var(--dark-border);
     --color-border-light: var(--dark-border-light);
+    --skeleton-base: #2a2a3c;
+    --skeleton-shine: #34344a;
     --color-danger-soft: var(--dark-danger-soft);
     --color-success-soft: var(--dark-success-soft);
     --color-nav: var(--dark-nav);
@@ -2977,6 +2984,45 @@ footer {
     color: var(--color-text-muted);
 }
 
+/* Standardized empty-state internals (used by the Shared/_EmptyState partial)
+   so every "no data" moment reads consistently. */
+.empty-state-title {
+    font-size: var(--font-md);
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 var(--space-2);
+}
+
+.empty-state-hint {
+    font-size: var(--font-base);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-4);
+    max-width: 42ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state a.btn {
+    margin-top: var(--space-1);
+}
+
+/* Inline "none yet" hint for small list-based settings (MRF domains/words). */
+.mrf-empty {
+    margin: var(--space-2) 0;
+    padding: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-sm);
+    font-style: italic;
+    background: var(--color-surface-alt);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+/* Wrapper that centres the shared empty state inside admin table regions. */
+.admin-empty {
+    margin-top: var(--space-3);
+}
+
 .action-buttons {
     margin: var(--space-5) 0;
     display: flex;
@@ -3596,7 +3642,7 @@ footer {
 }
 
 .skeleton {
-    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
     border-radius: var(--btn-radius);
@@ -3639,6 +3685,30 @@ footer {
 
 .timeline-loading.active {
     display: block;
+}
+
+/* Loading indicator (spinner) — the shared animated loading affordance.
+   Pair with `aria-busy="true"` on the region being loaded for screen readers. */
+.loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--font-sm);
+}
+
+.loading-spinner {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: fb-spin 0.7s linear infinite;
+}
+
+@keyframes fb-spin {
+    to { transform: rotate(360deg); }
 }
 
 .reply-context-banner {

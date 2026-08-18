@@ -53,17 +53,7 @@
                     <a href="@noteNextUrl" class="btn btn-secondary load-more-btn" role="button">Load more</a>
                 </div>
                 <div id="load-more-skeleton" class="timeline-loading" aria-hidden="true">
-                    <div class="skeleton-note-card">
-                        <div class="skeleton-row">
-                            <div class="skeleton skeleton-avatar"></div>
-                            <div>
-                                <div class="skeleton skeleton-line short"></div>
-                                <div class="skeleton skeleton-line medium thin"></div>
-                            </div>
-                        </div>
-                        <div class="skeleton skeleton-line long"></div>
-                        <div class="skeleton skeleton-line medium"></div>
-                    </div>
+                    @await Html.PartialAsync("../Shared/_SkeletonNoteCard", false)
                 </div>
             }
         }

@@ -18,50 +18,63 @@
         <div class="alert alert-error">@TempData["Error"]</div>
     }
 
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Display Name</th>
-                <th>Email</th>
-                <th>Created</th>
-                <th>Admin</th>
-                <th>Blocked</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in Model)
-            {
-                <tr class="@(user.IsBlocked ? "blocked-row" : "")">
-                    <td>@user.Username</td>
-                    <td>@user.DisplayName</td>
-                    <td>@user.Email</td>
-                    <td>@user.CreatedAt</td>
-                    <td>@(user.IsAdmin ? "Yes" : "No")</td>
-                    <td>@(user.IsBlocked ? "Yes" : "No")</td>
-                    <td class="action-cell">
-                        @if (!user.IsAdmin)
-                        {
-                            <form asp-action="SetAdmin" method="post" class="inline-form">
-                                <input type="hidden" name="userId" value="@user.Id" />
-                                <input type="hidden" name="isAdmin" value="true" />
-                                <button type="submit" class="btn btn-small btn-admin">Make Admin</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <span class="badge-admin">Admin</span>
-                        }
-                        <form asp-action="ToggleBlock" method="post" class="inline-form">
-                            <input type="hidden" name="userId" value="@user.Id" />
-                            <button type="submit" class="btn btn-small @(user.IsBlocked ? "btn-unblock" : "btn-blockuser")">
-                                @(user.IsBlocked ? "Unblock" : "Block")
-                            </button>
-                        </form>
-                    </td>
+    @if (Model != null && Model.Any())
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Display Name</th>
+                    <th>Email</th>
+                    <th>Created</th>
+                    <th>Admin</th>
+                    <th>Blocked</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr class="@(user.IsBlocked ? "blocked-row" : "")">
+                        <td>@user.Username</td>
+                        <td>@user.DisplayName</td>
+                        <td>@user.Email</td>
+                        <td>@user.CreatedAt</td>
+                        <td>@(user.IsAdmin ? "Yes" : "No")</td>
+                        <td>@(user.IsBlocked ? "Yes" : "No")</td>
+                        <td class="action-cell">
+                            @if (!user.IsAdmin)
+                            {
+                                <form asp-action="SetAdmin" method="post" class="inline-form">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <input type="hidden" name="isAdmin" value="true" />
+                                    <button type="submit" class="btn btn-small btn-admin">Make Admin</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge-admin">Admin</span>
+                            }
+                            <form asp-action="ToggleBlock" method="post" class="inline-form">
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <button type="submit" class="btn btn-small @(user.IsBlocked ? "btn-unblock" : "btn-blockuser")">
+                                    @(user.IsBlocked ? "Unblock" : "Block")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No registered users yet",
+                Hint = "Users will appear here as soon as they register an account on this instance."
+            })
+        </div>
+    }
 </div>

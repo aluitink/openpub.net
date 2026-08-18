@@ -21,15 +21,22 @@
             <input type="text" name="NewDomain" class="form-control" placeholder="Add domain to block..." aria-label="Domain to block" value="@Model.NewDomain" />
             <button type="submit" name="action" value="addDomain" class="btn btn-secondary">Add</button>
         </div>
-        <ul class="list-group">
-            @foreach (var domain in Model.BlockedDomains)
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    @domain
-                    <button type="submit" name="RemoveDomain" value="@domain" class="btn btn-sm btn-danger">Remove</button>
-                </li>
-            }
-        </ul>
+        @if (Model.BlockedDomains.Any())
+        {
+            <ul class="list-group">
+                @foreach (var domain in Model.BlockedDomains)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @domain
+                        <button type="submit" name="RemoveDomain" value="@domain" class="btn btn-sm btn-danger">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="mrf-empty">No blocked domains. Content from every domain is currently allowed.</p>
+        }
     </div>
 
     <div class="mb-3">
@@ -38,15 +45,22 @@
             <input type="text" name="NewWord" class="form-control" placeholder="Add prohibited word..." aria-label="Prohibited word" value="@Model.NewWord" />
             <button type="submit" name="action" value="addWord" class="btn btn-secondary">Add</button>
         </div>
-        <ul class="list-group">
-            @foreach (var word in Model.ProhibitedWords)
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    @word
-                    <button type="submit" name="RemoveWord" value="@word" class="btn btn-sm btn-danger">Remove</button>
-                </li>
-            }
-        </ul>
+        @if (Model.ProhibitedWords.Any())
+        {
+            <ul class="list-group">
+                @foreach (var word in Model.ProhibitedWords)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @word
+                        <button type="submit" name="RemoveWord" value="@word" class="btn btn-sm btn-danger">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="mrf-empty">No prohibited words. All content passes the MRF word filter.</p>
+        }
     </div>
 
     <div class="mb-3">

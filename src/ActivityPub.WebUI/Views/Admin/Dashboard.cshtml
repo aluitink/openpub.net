@@ -43,29 +43,42 @@
     </div>
 
     <h2>Recent Users</h2>
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Display Name</th>
-                <th>Email</th>
-                <th>Created</th>
-                <th>Admin</th>
-                <th>Blocked</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in Model.RecentUsers)
-            {
+    @if (Model.RecentUsers != null && Model.RecentUsers.Any())
+    {
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <td>@user.Username</td>
-                    <td>@user.DisplayName</td>
-                    <td>@user.Email</td>
-                    <td>@user.CreatedAt</td>
-                    <td>@(user.IsAdmin ? "Yes" : "No")</td>
-                    <td>@(user.IsBlocked ? "Yes" : "No")</td>
+                    <th>Username</th>
+                    <th>Display Name</th>
+                    <th>Email</th>
+                    <th>Created</th>
+                    <th>Admin</th>
+                    <th>Blocked</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.RecentUsers)
+                {
+                    <tr>
+                        <td>@user.Username</td>
+                        <td>@user.DisplayName</td>
+                        <td>@user.Email</td>
+                        <td>@user.CreatedAt</td>
+                        <td>@(user.IsAdmin ? "Yes" : "No")</td>
+                        <td>@(user.IsBlocked ? "Yes" : "No")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="admin-empty">
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No users yet",
+                Hint = "New registrations will show up here."
+            })
+        </div>
+    }
 </div>
