@@ -208,7 +208,7 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
     }
 
     [Fact]
-    public async Task SiteCss_SingleValuePaddingMarginGap_UseSpaceTokens()
+    public async Task SiteCss_PaddingMarginGap_UseSpaceTokens()
     {
         var client = CreateClient();
         // Strip /* … */ comments first: several carry example snippets (e.g. the
@@ -217,35 +217,44 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         var css = new Regex(@"/\*.*?\*/", RegexOptions.Singleline)
             .Replace(await client.GetStringAsync("/css/site.css"), " ");
 
-        // Every single-value padding/margin/gap declaration (one length followed
-        // immediately by `;`) must come from the --space-* scale. The only
-        // permitted raw forms are the zero reset (`0`) and the deliberate
-        // `.sr-only` negative overlap (`margin: -1px`). Multi-value shorthands
-        // (e.g. `padding: 1rem 2rem`) are out of scope for this check.
-        var spacingRegex = new Regex(@"(padding|margin|gap):\s*([^;]+);");
+        // Every length in a padding/margin/gap declaration (single- or
+        // multi-value) must come from the --space-* scale. Permitted raw forms:
+        // the zero reset, `auto` (centering), negative lengths (the .sr-only
+        // `margin:-1px` overlap + negative positioning hacks), and non-scale
+        // units (vh/vw/em/%). var()/calc() are already token-derived.
+        var spacingRegex = new Regex(@"(?<![-\w])(padding|margin|gap):\s*([^;{}]+);");
         var offenders = new List<string>();
         foreach (Match m in spacingRegex.Matches(css))
         {
-            var value = m.Groups[2].Value.Trim();
-
-            // Only inspect single-value declarations (no whitespace before ;).
-            bool singleValue = value.IndexOf(' ') < 0;
-            if (!singleValue)
-                continue;
-
-            bool ok =
-                value == "0" ||
-                value == "0px" ||
-                value == "0rem" ||
-                value.StartsWith("var(--space-", StringComparison.Ordinal) ||
-                value.StartsWith("var(--", StringComparison.Ordinal) ||
-                value.StartsWith("calc(", StringComparison.Ordinal) ||
-                value == "-1px"; // .sr-only overlap hack
-            if (!ok)
-                offenders.Add($"{m.Groups[1].Value}: {value};");
+            var prop = m.Groups[1].Value;
+            foreach (var token in m.Groups[2].Value.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (SpacingTokenIsAllowed(token))
+                    continue;
+                offenders.Add($"{prop}: …{token}…");
+            }
         }
 
-        Assert.True(offenders.Count == 0, "One-off single-value padding/margin/gap literals (should use the --space-* scale):\n" + string.Join("\n", offenders.Distinct()));
+        Assert.True(offenders.Count == 0, "One-off padding/margin/gap literals (should use the --space-* scale):\n" + string.Join("\n", offenders.Distinct()));
+    }
+
+    private static bool SpacingTokenIsAllowed(string token)
+    {
+        // Zero reset, centering, or token-derived.
+        if (token is "0" or "0px" or "0rem" or "auto")
+            return true;
+        if (token.StartsWith("var(", StringComparison.Ordinal) ||
+            token.StartsWith("calc(", StringComparison.Ordinal))
+            return true;
+        // Negative lengths are overlap/positioning hacks, not scale spacing.
+        if (token.StartsWith("-"))
+            return true;
+        // Non-scale units stay raw.
+        if (token.EndsWith("vh") || token.EndsWith("vw") || token.EndsWith("%") ||
+            (token.EndsWith("em") && !token.EndsWith("rem")))
+            return true;
+        // A plain rem/px length must be a --space-* token, i.e. not a raw length.
+        return false;
     }
 
     // ---- Rendered pages use the kit (no inline style blocks) ---------------

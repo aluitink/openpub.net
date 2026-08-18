@@ -6,6 +6,10 @@ obj/
 test_full.txt
 test_output.txt
 ActivityPub.Tests/WebUI/ComposeDumpTests.cs
+.lb_test_img.png
+.site.css.bak
+.space_tokenizer.py
+src/ActivityPub.Tests/WebUI/LbDbg.cs
 
 # Build artifacts (specific paths)
 **/bin/
