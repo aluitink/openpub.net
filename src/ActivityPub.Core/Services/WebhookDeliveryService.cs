@@ -138,7 +138,6 @@ public class WebhookDeliveryService : IWebhookDeliveryService
                 {
                     delivery.Status = WebhookDeliveryStatus.Delivered;
                     await _repository.UpdateWebhookDeliveryAsync(delivery);
-                    await SaveDeliveryHistoryAsync(delivery, true, 200, string.Empty);
                 }
                 else
                 {
@@ -164,7 +163,6 @@ public class WebhookDeliveryService : IWebhookDeliveryService
             Content = content
         };
 
-        request.Headers.Add("Content-Type", "application/json");
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("DemoApp", "1.0"));
 
         if (!string.IsNullOrEmpty(config.SecretKey))
