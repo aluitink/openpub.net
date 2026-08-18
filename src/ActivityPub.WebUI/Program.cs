@@ -7,6 +7,9 @@ using ActivityPub.WebUI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
+using ActivityPub.Core.Options;
 using ActivityPub.Core.Repositories;
 
 namespace ActivityPub.WebUI;
@@ -216,6 +219,39 @@ public class Program
         });
 
         var app = builder.Build();
+
+        // Reverse-proxy support: when deployed behind a TLS-terminating proxy
+        // (nginx, Caddy, ...), honor X-Forwarded-Proto/-Host/-For so that
+        // Request.Scheme/Host reflect the public URL. Every generated
+        // federation URL (webfinger self-link, actor id/inbox/outbox, delivery
+        // target) is derived from these, so without this a proxied instance
+        // would advertise http:// links that remote instances reject. Gated by
+        // ActivityPub:ForwardedHeaders:Enabled (off by default).
+        var forwardedOptions = app.Configuration
+            .GetSection("ActivityPub:ForwardedHeaders")
+            .Get<ActivityPub.Core.Options.ForwardedHeadersOptions>() ?? new ActivityPub.Core.Options.ForwardedHeadersOptions();
+        if (forwardedOptions.Enabled)
+        {
+            var fhOptions = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedProto |
+                                   ForwardedHeaders.XForwardedHost |
+                                   ForwardedHeaders.XForwardedFor
+            };
+            // Only honor the headers from trusted proxies. KnownProxies defaults
+            // to loopback (nginx on the same host); extend it with any
+            // additional trusted proxy IPs from config. An empty config list
+            // leaves the loopback default in place.
+            if (forwardedOptions.TrustedProxies != null && forwardedOptions.TrustedProxies.Length > 0)
+            {
+                foreach (var ip in forwardedOptions.TrustedProxies)
+                {
+                    if (IPAddress.TryParse(ip, out var parsed))
+                        fhOptions.KnownProxies.Add(parsed);
+                }
+            }
+            app.UseForwardedHeaders(fhOptions);
+        }
 
         if (!app.Environment.IsDevelopment())
         {

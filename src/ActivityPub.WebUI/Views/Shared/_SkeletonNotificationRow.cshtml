@@ -1,0 +1,16 @@
+@*
+    Shared loading placeholder for a notification row. Mirrors the real
+    .notification-item layout (round icon + title line + muted note line) so a
+    skeleton row can stand in while the Notifications "Load More" fetches.
+    Rendered N times (typically 3) inside a .notifications-loading container
+    that the load-more JS toggles.
+*@
+<div class="notification-item notification-skeleton" aria-hidden="true">
+    <div class="notification-icon">
+        <div class="skeleton skeleton-avatar"></div>
+    </div>
+    <div class="notification-content">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line medium thin"></div>
+    </div>
+</div>

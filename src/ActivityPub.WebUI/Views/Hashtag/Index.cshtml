@@ -23,10 +23,10 @@
     }
     else
     {
-        <div class="hashtag-feed">
+        <div class="hashtag-feed" data-feed data-card-selector=".note-card">
             @foreach (var note in Model.Notes)
             {
-                <div class="note-card">
+                <div class="note-card" data-activity-id="@note.ActivityId">
                     <div class="note-header">
                         <a asp-controller="Profile" asp-action="Index" asp-route-username="@note.AuthorUsername" class="note-author-link">
                             <span class="note-author-name">@note.AuthorName</span>
@@ -41,8 +41,12 @@
 
         @if (Model.HasMore)
         {
-            <div class="hashtag-pagination">
-                <a href="/hashtag/@Uri.EscapeDataString(Model.Tag.TrimStart('#'))?page=@(Model.Page + 1)" class="btn btn-secondary">Load More</a>
+            <div class="load-more-container" data-page="@Model.Page"
+                 data-next="@Url.Action("Index", "Hashtag", new { tag = Model.Tag.TrimStart('#'), page = Model.Page + 1 })">
+                <a class="btn btn-secondary load-more-btn" role="button">Load more</a>
+            </div>
+            <div id="load-more-skeleton" class="timeline-loading" aria-hidden="true">
+                @await Html.PartialAsync("../Shared/_SkeletonNoteCard", false)
             </div>
         }
     }

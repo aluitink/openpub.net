@@ -411,4 +411,40 @@ public class ActivityPubOptions
     /// <see cref="DatabaseOptions"/>).
     /// </summary>
     public DatabaseOptions Database { get; set; } = new();
+
+    /// <summary>
+    /// Reverse-proxy (forwarded headers) configuration (see
+    /// <see cref="ForwardedHeadersOptions"/>). When the app is deployed behind a
+    /// TLS-terminating proxy (e.g. nginx), this makes generated federation URLs
+    /// use the public scheme/host instead of the internal one.
+    /// </summary>
+    public ForwardedHeadersOptions ForwardedHeaders { get; set; } = new();
+}
+
+/// <summary>
+/// Reverse-proxy (forwarded headers) configuration. When the app runs behind a
+/// TLS-terminating reverse proxy (nginx, Caddy, etc.), the proxy rewrites
+/// <c>X-Forwarded-Proto</c> / <c>X-Forwarded-Host</c> (or <c>X-Forwarded-For</c>)
+/// and the ASP.NET Core Forwarded Headers middleware uses them to populate
+/// <c>Request.Scheme</c> / <c>Request.Host</c>. Every generated federation URL
+/// (webfinger self-links, actor id/inbox/outbox, delivery targets) is derived
+/// from those, so honoring the forwarded headers is what makes an instance
+/// deployed behind a proxy advertise <c>https://</c> URLs to remote instances.
+/// </summary>
+public class ForwardedHeadersOptions
+{
+    /// <summary>
+    /// When true, the app registers the Forwarded Headers middleware. Off by
+    /// default so a bare (non-proxied) deployment is unchanged.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Comma-separated CIDR / IP list of trusted proxies allowed to set the
+    /// forwarded headers. Defaults to the loopback range, which is correct for
+    /// the common "nginx on the same host" deployment. Leave empty to trust all
+    /// proxies (only do this if the proxy is on an untrusted network you still
+    /// control end-to-end).
+    /// </summary>
+    public string[] TrustedProxies { get; set; } = { "127.0.0.1", "::1" };
 }

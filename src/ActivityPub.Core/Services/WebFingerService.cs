@@ -41,14 +41,39 @@ public class WebFingerService : IWebFingerService
         {
             _logger.LogInformation("Querying WebFinger at {Url}", webfingerUrl);
 
-            var webfingerResponse = await _httpClient.GetAsync(webfingerUrl);
+            // Request the ActivityPub self link explicitly. Servers that
+            // content-negotiate (and some proxies) return a richer document
+            // when they see the AP Accept header, and ignoring it can yield an
+            // HTML 200 that we cannot parse.
+            using var webfingerRequest = new HttpRequestMessage(HttpMethod.Get, webfingerUrl);
+            webfingerRequest.Headers.Accept.ParseAdd("application/activity+json");
+            webfingerRequest.Headers.Accept.ParseAdd("application/json");
+            webfingerRequest.Headers.Accept.ParseAdd("application/ld+json");
+
+            var webfingerResponse = await _httpClient.SendAsync(webfingerRequest);
             if (!webfingerResponse.IsSuccessStatusCode)
             {
                 _logger.LogWarning("WebFinger query failed with status {StatusCode} for {Handle}", (int)webfingerResponse.StatusCode, handle);
                 return null;
             }
 
-            var webfingerJson = await webfingerResponse.Content.ReadFromJsonAsync<JsonNode>();
+            // Read the body as a string and parse it ourselves. WebFinger
+            // responses are frequently served with the JRD media type
+            // (application/jrd+json) rather than application/json, and
+            // ReadFromJsonAsync<JsonNode>() rejects a 200 whose content type it
+            // doesn't recognize — which would silently discard a perfectly valid
+            // self link. Parsing the raw body is content-type agnostic.
+            var webfingerBody = await webfingerResponse.Content.ReadAsStringAsync();
+            JsonNode? webfingerJson;
+            try
+            {
+                webfingerJson = JsonNode.Parse(webfingerBody);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "WebFinger response for {Handle} was not parseable JSON", handle);
+                return null;
+            }
             if (webfingerJson == null)
                 return null;
 
@@ -59,23 +84,32 @@ public class WebFingerService : IWebFingerService
                 return null;
             }
 
-            string? actorUrl = null;
+            // Prefer a self link typed as the ActivityPub media type, but fall
+            // back to any `rel == "self"` link: several ActivityPub stacks
+            // omit `type` on the self link, and requiring the media type makes
+            // resolution fail against perfectly valid servers.
+            string? preferredUrl = null;
+            string? anySelfUrl = null;
             foreach (var link in links)
             {
                 var rel = link?["rel"]?.GetValue<string>();
                 var type = link?["type"]?.GetValue<string>();
                 var href = link?["href"]?.GetValue<string>();
+                if (rel != "self" || href == null)
+                    continue;
 
-                if (rel == "self" && type == "application/activity+json" && href != null)
+                if (type == "application/activity+json")
                 {
-                    actorUrl = href;
+                    preferredUrl = href;
                     break;
                 }
+                anySelfUrl ??= href;
             }
 
+            var actorUrl = preferredUrl ?? anySelfUrl;
             if (actorUrl == null)
             {
-                _logger.LogWarning("No ActivityPub self link found in WebFinger response for {Handle}", handle);
+                _logger.LogWarning("No self link found in WebFinger response for {Handle}", handle);
                 return null;
             }
 
@@ -94,7 +128,11 @@ public class WebFingerService : IWebFingerService
         try
         {
             _logger.LogInformation("Fetching actor document from {Url}", actorUrl);
-            var response = await _httpClient.GetAsync(actorUrl);
+            using var actorRequest = new HttpRequestMessage(HttpMethod.Get, actorUrl);
+            actorRequest.Headers.Accept.ParseAdd("application/activity+json");
+            actorRequest.Headers.Accept.ParseAdd("application/ld+json");
+            actorRequest.Headers.Accept.ParseAdd("application/json");
+            var response = await _httpClient.SendAsync(actorRequest);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Actor fetch failed with status {StatusCode}", (int)response.StatusCode);

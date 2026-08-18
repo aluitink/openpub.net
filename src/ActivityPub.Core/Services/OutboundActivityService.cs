@@ -46,31 +46,43 @@ public class OutboundActivityService : IOutboundActivityService
 
         try
         {
-            // Extract domain from recipient URL
-            var recipientUri = new Uri(to);
-            var domain = recipientUri.Host;
+            // The `to` argument is the recipient's *actual* delivery endpoint —
+            // the actor's `inbox` or `endpoints.sharedInbox`, resolved up front
+            // from the remote actor's JSON-LD (see WebFingerService + the
+            // Follow/queue flow). Honor it verbatim rather than re-deriving a
+            // path: re-deriving `{domain}/inbox` only coincides with the real
+            // inbox on stock Mastodon and 404s on Pleroma/Akkoma subpath,
+            // per-user-inbox, or custom deployments.
+            var inboxUrl = to;
+            string domain;
 
-            // Discover endpoint via DNS SRV record
-            var endpoint = await _federationDiscovery.DiscoverEndpointAsync(domain);
-            if (string.IsNullOrEmpty(endpoint))
+            // Honor the resolved inbox/sharedInbox verbatim. Fall back to SRV
+            // discovery only when `to` is not an absolute http(s) URL
+            // (defensive; callers always pass an absolute inbox).
+            if (inboxUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                inboxUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("Failed to discover endpoint for {Domain}", domain);
-                return false;
+                domain = new Uri(inboxUrl).Host;
             }
-
-            // Construct the inbox URL
-            var inboxUrl = BuildInboxUrl(endpoint, domain);
-            if (string.IsNullOrEmpty(inboxUrl))
+            else
             {
-                _logger.LogWarning("Failed to build inbox URL for {Domain}", domain);
-                return false;
+                domain = new Uri(to).Host;
+                var endpoint = await _federationDiscovery.DiscoverEndpointAsync(domain);
+                if (string.IsNullOrEmpty(endpoint))
+                {
+                    _logger.LogWarning("Failed to discover endpoint for {Domain}", domain);
+                    return false;
+                }
+                inboxUrl = BuildInboxUrl(endpoint, domain);
             }
 
             // Create HTTP request
             var request = new HttpRequestMessage(HttpMethod.Post, inboxUrl);
             request.Content = new StringContent(activity, Encoding.UTF8, "application/activity+json");
 
-            // Sign the request
+            // Sign the request. The host for the signature is the resolved
+            // inbox's host, which can differ from the raw `to` host when a
+            // shared-inbox lives on a different host than the actor document.
             var keyId = $"{actorId}#main-key";
             _signingService.SignRequest(request, privateKeyPem, keyId, domain);
 

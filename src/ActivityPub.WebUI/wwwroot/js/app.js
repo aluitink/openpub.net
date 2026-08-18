@@ -510,13 +510,21 @@
         document.querySelectorAll('.load-more-container[data-next]').forEach(function(container) {
             var btn = container.querySelector('.load-more-btn');
             if (!btn) return;
-            var feed = container.closest('[data-feed]');
+            // The feed is the nearest [data-feed] ancestor of the container;
+            // for feeds whose container sits outside the feed (Notifications),
+            // fall back to the first feed on the page.
+            var feed = container.closest('[data-feed]') || document.querySelector('[data-feed]');
             var sibling = container.nextElementSibling;
             var skeleton = sibling && sibling.id === 'load-more-skeleton'
                 ? sibling
                 : document.getElementById('load-more-skeleton');
+            // Two injection modes:
+            //  - data-card-selector  -> dedupe by data-activity-id (note feeds).
+            //  - data-inject-selector -> clone every match (non-card feeds such
+            //    as the grouped Notifications list, which has no per-card id).
             var cardSel = feed ? (feed.dataset.cardSelector || '') : '';
-            if (!feed || !cardSel || !skeleton) return;
+            var injectSel = feed ? (feed.dataset.injectSelector || '') : '';
+            if (!feed || (!cardSel && !injectSel) || !skeleton) return;
 
             var loading = false;
             var nextUrl = FB.decodeUrl(container.getAttribute('data-next'));
@@ -532,17 +540,26 @@
                 var doc = new DOMParser().parseFromString(html, 'text/html');
                 var newFeed = doc.querySelector('[data-feed]');
                 if (!newFeed) return;
-                var existing = new Set();
-                feed.querySelectorAll(cardSel + '[data-activity-id]').forEach(function(c) {
-                    existing.add(c.getAttribute('data-activity-id'));
-                });
                 var frag = document.createDocumentFragment();
-                newFeed.querySelectorAll(cardSel).forEach(function(card) {
-                    var id = card.getAttribute('data-activity-id');
-                    if (id && existing.has(id)) return;
-                    if (id) existing.add(id);
-                    frag.appendChild(card.cloneNode(true));
-                });
+
+                if (cardSel) {
+                    // Note-card feed: de-duplicate by data-activity-id.
+                    var existing = new Set();
+                    feed.querySelectorAll(cardSel + '[data-activity-id]').forEach(function(c) {
+                        existing.add(c.getAttribute('data-activity-id'));
+                    });
+                    newFeed.querySelectorAll(cardSel).forEach(function(card) {
+                        var id = card.getAttribute('data-activity-id');
+                        if (id && existing.has(id)) return;
+                        if (id) existing.add(id);
+                        frag.appendChild(card.cloneNode(true));
+                    });
+                } else if (injectSel) {
+                    // Non-card feed (Notifications): clone every matched block.
+                    newFeed.querySelectorAll(injectSel).forEach(function(block) {
+                        frag.appendChild(block.cloneNode(true));
+                    });
+                }
                 if (frag.childNodes.length) feed.appendChild(frag);
 
                 var next = doc.querySelector('.load-more-container');

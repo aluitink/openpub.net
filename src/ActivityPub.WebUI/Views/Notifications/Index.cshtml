@@ -33,6 +33,7 @@
             .OrderByDescending(g => g.First().Published)
             .ToList();
 
+        <div class="notifications-feed" data-feed data-inject-selector=".notification-group">
         @foreach (var group in grouped)
         {
             var typeLabel = group.Key switch
@@ -89,11 +90,19 @@
                 </div>
             </div>
         }
+        </div>
 
         @if (Model.HasMore)
         {
-            <div class="notifications-pagination">
-                <a asp-controller="Notifications" asp-action="Index" asp-route-page="@(Model.Page + 1)" class="btn btn-secondary">Load More</a>
+            <div class="load-more-container" data-page="@Model.Page"
+                 data-next="@Url.Action("Index", "Notifications", new { page = Model.Page + 1 })">
+                <a class="btn btn-secondary load-more-btn" role="button">Load more</a>
+            </div>
+            <div id="load-more-skeleton" class="notifications-loading" aria-hidden="true">
+                @for (var i = 0; i < 3; i++)
+                {
+                    @await Html.PartialAsync("../Shared/_SkeletonNotificationRow")
+                }
             </div>
         }
     }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace ActivityPub.Core.Models;
@@ -9,10 +10,13 @@ namespace ActivityPub.Core.Models;
 public class Actor
 {
     /// <summary>
-    /// The @context for JSON-LD
+    /// The @context for JSON-LD. Polymorphic (string, array, or object) so a
+    /// real Mastodon actor document — whose @context is an array — parses
+    /// instead of throwing. See <see cref="JsonContextConverter"/>.
     /// </summary>
     [JsonPropertyName("@context")]
-    public string? Context { get; set; }
+    [JsonConverter(typeof(JsonContextConverter))]
+    public JsonNode? Context { get; set; }
 
     /// <summary>
     /// The unique identifier for the actor
