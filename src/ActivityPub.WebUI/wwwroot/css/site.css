@@ -168,13 +168,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-4);
 }
 
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
     flex-shrink: 0;
 }
 
@@ -189,7 +189,7 @@ body {
 .nav-menu {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1);
     list-style: none;
     margin: 0;
     padding: 0;
@@ -204,7 +204,7 @@ body {
 .nav-item-user {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-left: 0.5rem;
 }
 
@@ -218,10 +218,10 @@ body {
     display: none;
     flex-direction: column;
     justify-content: center;
-    gap: 4px;
+    gap: var(--space-1);
     width: 40px;
     height: 40px;
-    padding: 8px;
+    padding: var(--space-2);
     background: transparent;
     border: none;
     border-radius: var(--btn-radius);
@@ -260,7 +260,7 @@ body.nav-open {
 .nav-group-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1);
     background: transparent;
     border: none;
     color: #ccc;
@@ -393,7 +393,7 @@ body.nav-open {
    Timeline and Search load-more skeletons. */
 .skeleton-row {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     align-items: center;
     margin-bottom: 0.75rem;
 }
@@ -748,7 +748,7 @@ form.no-margin {
 .checkbox-group {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .checkbox-group label {
@@ -788,7 +788,7 @@ form.no-margin {
 
 .hero-actions {
     display: flex;
-    gap: 1rem;
+    gap: var(--space-4);
     justify-content: center;
 }
 
@@ -796,7 +796,7 @@ footer {
     background: #1a1a2e;
     color: #b9b9d6;
     text-align: center;
-    padding: 1.5rem;
+    padding: var(--space-5);
     font-size: var(--font-sm);
 }
 
@@ -805,7 +805,7 @@ footer {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
     align-items: center;
 }
 
@@ -858,7 +858,7 @@ footer {
     color: var(--color-text-secondary);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--space-1);
 }
 
 .about-link {
@@ -873,7 +873,7 @@ footer {
     background: #fdf0f0;
     border: 1px solid var(--color-danger);
     border-radius: var(--btn-radius);
-    padding: 1rem;
+    padding: var(--space-4);
     margin-bottom: 1rem;
     color: #c0392b;
 }
@@ -887,7 +887,7 @@ footer {
     background: #f0fdf0;
     border: 1px solid #27ae60;
     border-radius: var(--btn-radius);
-    padding: 1rem;
+    padding: var(--space-4);
     margin-bottom: 1rem;
     color: #1e8449;
 }
@@ -924,7 +924,7 @@ footer {
 
 .compose-form {
     background: var(--color-surface);
-    padding: 2rem;
+    padding: var(--space-6);
     border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
@@ -957,13 +957,13 @@ footer {
 .timeline-feed {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-4);
 }
 
 .note-card {
     background: var(--color-surface);
     border-radius: var(--card-radius);
-    padding: 1.25rem;
+    padding: var(--space-5);
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
@@ -994,7 +994,7 @@ footer {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
-    gap: 0.6rem;
+    gap: var(--space-2);
 }
 
 .note-avatar {
@@ -1051,7 +1051,7 @@ footer {
 
 .note-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     border-top: 1px solid var(--color-border-light);
     padding-top: 0.75rem;
 }
@@ -1138,7 +1138,7 @@ footer {
 
 .follow-form {
     background: var(--color-surface);
-    padding: 2rem;
+    padding: var(--space-6);
     border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
@@ -1194,7 +1194,7 @@ footer {
 .following-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .following-item {
@@ -1210,7 +1210,7 @@ footer {
 .following-info {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .following-display-name {
@@ -1414,7 +1414,7 @@ footer {
 
 .profile-stats {
     display: flex;
-    gap: 1.5rem;
+    gap: var(--space-5);
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--color-border-light);
@@ -1463,7 +1463,7 @@ footer {
 
 .profile-edit-form {
     background: var(--color-surface);
-    padding: 2rem;
+    padding: var(--space-6);
     border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
@@ -1477,7 +1477,7 @@ footer {
 
 .form-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--space-3);
     margin-top: 1.5rem;
 }
 
@@ -1504,14 +1504,14 @@ footer {
 .notifications-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .notification-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: var(--space-3);
+    padding: var(--space-4);
     background: #fff;
     border-radius: var(--card-radius);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
@@ -1809,7 +1809,7 @@ footer {
     .nav-item-user {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.75rem;
+        gap: var(--space-3);
         margin-left: 0;
         padding-top: 0.75rem;
         border-bottom: none;
@@ -1821,7 +1821,7 @@ footer {
     }
 
     .main-container {
-        padding: 0.5rem;
+        padding: var(--space-2);
     }
 
     .profile-info {
@@ -1850,11 +1850,11 @@ footer {
     }
 
     .timeline-feed {
-        gap: 0.75rem;
+        gap: var(--space-3);
     }
 
     .note-card {
-        padding: 0.75rem;
+        padding: var(--space-3);
     }
 
     .note-header {
@@ -1864,7 +1864,7 @@ footer {
     .note-actions {
         flex-wrap: wrap;
         justify-content: flex-start;
-        gap: 0.5rem;
+        gap: var(--space-2);
     }
 
     .compose-form {
@@ -1909,7 +1909,7 @@ footer {
 /* Multi-attachment grid: 2–4 images tile, 3 spans full width, 5+ wraps. */
 .note-images {
     display: grid;
-    gap: 0.25rem;
+    gap: var(--space-1);
     grid-template-columns: repeat(2, 1fr);
 }
 .note-images .note-image {
@@ -1950,7 +1950,7 @@ footer {
 .doc-attachment {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     padding: 0.5rem 0.75rem;
     background: #f4f4f8;
     border: 1px solid #e0e0e8;
@@ -1983,7 +1983,7 @@ footer {
     margin: 0.5rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .note-media-item {
@@ -2006,7 +2006,7 @@ footer {
 .note-audio {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     padding: 0.6rem 0.75rem;
     background: #f4f4f8;
     border: 1px solid #e0e0e8;
@@ -2034,7 +2034,7 @@ footer {
 
 .report-form-container {
     margin: 1rem 0;
-    padding: 1rem;
+    padding: var(--space-4);
     background: #fff;
     border-radius: var(--radius-md);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -2112,7 +2112,7 @@ footer {
 
 @media (max-width: 480px) {
     .navbar {
-        padding: 0.5rem;
+        padding: var(--space-2);
     }
 
     .brand {
@@ -2146,7 +2146,7 @@ footer {
 
 .search-form {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-bottom: 1.5rem;
 }
 
@@ -2170,7 +2170,7 @@ footer {
 
 .search-tabs {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-bottom: 1.5rem;
     border-bottom: 2px solid #eee;
     padding-bottom: 0.5rem;
@@ -2199,11 +2199,11 @@ footer {
 .search-results {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .search-note-card {
-    padding: 1rem;
+    padding: var(--space-4);
     background: #fff;
     border-radius: var(--card-radius);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
@@ -2244,8 +2244,8 @@ footer {
 .search-user-card {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: var(--space-3);
+    padding: var(--space-4);
     background: #fff;
     border-radius: var(--card-radius);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
@@ -2293,7 +2293,7 @@ footer {
 
 .search-empty {
     text-align: center;
-    padding: 2rem;
+    padding: var(--space-6);
     color: var(--color-text-muted);
 }
 
@@ -2337,7 +2337,7 @@ footer {
     }
 
     .search-user-card {
-        padding: 0.75rem;
+        padding: var(--space-3);
     }
 
     .search-user-avatar {
@@ -2387,7 +2387,7 @@ footer {
 .hashtag-feed {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .hashtag-pagination {
@@ -2409,7 +2409,7 @@ footer {
     }
 
     .hashtag-feed {
-        gap: 0.5rem;
+        gap: var(--space-2);
     }
 }
 
@@ -2423,14 +2423,14 @@ footer {
 .admin-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
+    gap: var(--space-4);
     margin: 1.5rem 0;
 }
 
 .stat-card {
     background: var(--color-surface);
     border-radius: var(--card-radius);
-    padding: 1.5rem;
+    padding: var(--space-5);
     text-align: center;
     box-shadow: var(--shadow-card);
     border: 1px solid var(--color-border-light);
@@ -2450,7 +2450,7 @@ footer {
 
 .admin-nav {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
     margin: 1.5rem 0;
 }
@@ -2459,7 +2459,7 @@ footer {
     background: var(--color-surface);
     border-radius: var(--card-radius);
     box-shadow: var(--shadow-card);
-    padding: 1.5rem;
+    padding: var(--space-5);
     margin: 1rem 0;
 }
 
@@ -2495,7 +2495,7 @@ footer {
 
 .admin-table .action-cell {
     display: flex;
-    gap: 0.25rem;
+    gap: var(--space-1);
     flex-wrap: wrap;
 }
 
@@ -2610,7 +2610,7 @@ footer {
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .blocked-domains li {
@@ -2631,7 +2631,7 @@ footer {
     }
 
     .admin-table th, .admin-table td {
-        padding: 0.5rem;
+        padding: var(--space-2);
     }
 
     .admin-table .action-cell {
@@ -2657,7 +2657,7 @@ footer {
 .poll-widget {
     border: 1px solid #dee2e6;
     border-radius: var(--radius-md);
-    padding: 12px;
+    padding: var(--space-3);
     margin: 8px 0;
     background: var(--color-surface-alt);
 }
@@ -2698,7 +2698,7 @@ footer {
 .page-header {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-4);
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
 }
@@ -2716,7 +2716,7 @@ footer {
 .page-header-actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
     margin-left: auto;
 }
@@ -2741,7 +2741,7 @@ footer {
 .settings-form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: var(--space-5);
 }
 
 .settings-group {
@@ -2760,7 +2760,7 @@ footer {
 .settings-toggle {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: var(--space-3);
     cursor: pointer;
 }
 
@@ -2775,7 +2775,7 @@ footer {
 .settings-toggle-text {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1);
 }
 
 .settings-toggle-text strong {
@@ -2802,13 +2802,13 @@ footer {
 .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    gap: var(--space-4);
 }
 
 /* --- Filter tabs (period selectors etc.) --- */
 .filter-tabs {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
     margin: 1rem 0 1.5rem;
 }
@@ -2845,13 +2845,13 @@ footer {
 .trends-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .trend-card {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
     background: var(--color-surface);
     border-radius: var(--card-radius);
     box-shadow: var(--shadow-card);
@@ -2967,7 +2967,7 @@ footer {
 
 .search-form {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-bottom: 1rem;
 }
 
@@ -2980,13 +2980,13 @@ footer {
 .action-buttons {
     margin: 1.5rem 0;
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .member-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .member-item {
@@ -3053,7 +3053,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--color-border-light);
@@ -3081,7 +3081,7 @@ footer {
 .community-header-body {
     display: flex;
     align-items: flex-start;
-    gap: 1.25rem;
+    gap: var(--space-5);
     padding: 0 2rem 1.5rem;
     margin-top: -45px;
     flex-wrap: wrap;
@@ -3115,7 +3115,7 @@ footer {
 .community-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-shrink: 0;
 }
 
@@ -3234,12 +3234,12 @@ footer {
 .search-hashtag-card {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     background: #fff;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: 0.5rem 1rem;
-    margin: 0.25rem;
+    margin: var(--space-1);
     text-decoration: none;
     color: var(--color-text);
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -3267,7 +3267,7 @@ footer {
     z-index: 10000;
     display: flex;
     flex-direction: column-reverse;
-    gap: 0.5rem;
+    gap: var(--space-2);
     max-width: 360px;
     pointer-events: none;
 }
@@ -3275,7 +3275,7 @@ footer {
 .toast {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     background: #1a1a2e;
     color: #fff;
     padding: 0.75rem 1rem;
@@ -3395,7 +3395,7 @@ footer {
 
 .compose-preview {
     margin-top: 0.5rem;
-    padding: 0.75rem;
+    padding: var(--space-3);
     background: var(--color-surface-alt);
     border: 1px solid var(--color-border);
     border-radius: var(--btn-radius);
@@ -3425,7 +3425,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2);
     padding: 0.5rem 0.75rem;
     background: var(--color-warning-soft, #fff3cd);
     border: 1px solid var(--color-warning, #ffc107);
@@ -3511,7 +3511,7 @@ footer {
 .image-preview-container {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: var(--space-3);
     margin-top: 0.5rem;
 }
 
@@ -3539,7 +3539,7 @@ footer {
 }
 
 .poll-preview {
-    padding: 1rem;
+    padding: var(--space-4);
     background: var(--color-surface-alt);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -3555,7 +3555,7 @@ footer {
 .poll-preview-option {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin-bottom: 0.5rem;
 }
 
@@ -3608,7 +3608,7 @@ footer {
 }
 
 .skeleton-note-card {
-    padding: 1rem;
+    padding: var(--space-4);
     border-bottom: 1px solid var(--color-border-light);
 }
 
@@ -3644,7 +3644,7 @@ footer {
 .reply-context-banner {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: var(--space-2);
     padding: 0.5rem 0.75rem;
     background: #eef2ff;
     border: 1px solid #c7d2fe;
@@ -4099,7 +4099,7 @@ footer {
 .form-check {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     margin: 0.5rem 0;
 }
 
@@ -4118,7 +4118,7 @@ footer {
 
 .input-group {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     align-items: center;
 }
 
@@ -4132,7 +4132,7 @@ footer {
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .list-group-item {
@@ -4177,7 +4177,7 @@ footer {
 .row {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: var(--space-4);
     margin: 0 -0.5rem;
 }
 
@@ -4189,7 +4189,7 @@ footer {
 @media (max-width: 640px) {
     .row {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: var(--space-3);
         margin: 0;
     }
 
@@ -4203,7 +4203,7 @@ footer {
 .stat {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1);
     font-size: var(--font-sm);
     color: var(--color-text-secondary);
     background-color: var(--color-surface-alt);
@@ -4349,7 +4349,7 @@ footer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
+    gap: var(--space-1);
     min-height: 44px;
     padding: 0.4rem 0.25rem;
     color: var(--color-text-muted);
@@ -4403,7 +4403,7 @@ footer {
     .btn-more {
         min-height: 44px;
         min-width: 44px;
-        padding: 0.5rem;
+        padding: var(--space-2);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -4460,7 +4460,7 @@ footer {
 
     /* Note cards: keep actions tappable when wrapped */
     .note-card {
-        padding: 1rem;
+        padding: var(--space-4);
     }
 
     /* Poll bars: full-width tappable rows */
@@ -4497,7 +4497,7 @@ footer {
     .note-attachments {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: var(--space-2);
     }
 }
 
@@ -4532,7 +4532,7 @@ footer {
 .palette-trigger {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-2);
     margin-left: 0.75rem;
     padding: 0.35rem 0.6rem;
     background: var(--color-surface-alt);
@@ -4602,7 +4602,7 @@ footer {
 .palette-input-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     padding: 0.85rem 1rem;
     border-bottom: 1px solid var(--color-border-light);
 }
@@ -4652,7 +4652,7 @@ footer {
 .palette-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
     width: 100%;
     padding: 0.55rem 1rem;
     border: none;
@@ -4712,7 +4712,7 @@ footer {
 }
 .palette-footer {
     display: flex;
-    gap: 1.25rem;
+    gap: var(--space-5);
     padding: 0.5rem 1rem;
     border-top: 1px solid var(--color-border-light);
     font-size: var(--font-xs);
@@ -4745,7 +4745,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: var(--space-4);
     background: rgba(0, 0, 0, 0.88);
     animation: lightbox-fade 0.12s ease;
 }
@@ -4832,7 +4832,7 @@ body.lightbox-open { overflow: hidden; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     padding: 1rem 1.25rem;
     max-width: min(20rem, 84vw);
     text-align: center;
@@ -4876,7 +4876,7 @@ body.lightbox-open { overflow: hidden; }
 .link-preview-body {
     display: flex;
     align-items: stretch;
-    gap: 0.6rem;
+    gap: var(--space-2);
     padding: 0.5rem 0.6rem;
     background: var(--color-surface-alt);
     border: 1px solid var(--color-border-light);
@@ -4908,7 +4908,7 @@ body.lightbox-open { overflow: hidden; }
 .link-preview-text {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
     min-width: 0;
     flex: 1 1 auto;
 }

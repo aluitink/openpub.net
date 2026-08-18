@@ -207,6 +207,47 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         Assert.True(offenders.Count == 0, "One-off font-size literals (should use the --font-* scale):\n" + string.Join("\n", offenders.Distinct()));
     }
 
+    [Fact]
+    public async Task SiteCss_SingleValuePaddingMarginGap_UseSpaceTokens()
+    {
+        var client = CreateClient();
+        // Strip /* … */ comments first: several carry example snippets (e.g. the
+        // Component Kit section documents the inline `display:flex;gap:0.5rem;`
+        // the kit replaces) that must not be scanned as live declarations.
+        var css = new Regex(@"/\*.*?\*/", RegexOptions.Singleline)
+            .Replace(await client.GetStringAsync("/css/site.css"), " ");
+
+        // Every single-value padding/margin/gap declaration (one length followed
+        // immediately by `;`) must come from the --space-* scale. The only
+        // permitted raw forms are the zero reset (`0`) and the deliberate
+        // `.sr-only` negative overlap (`margin: -1px`). Multi-value shorthands
+        // (e.g. `padding: 1rem 2rem`) are out of scope for this check.
+        var spacingRegex = new Regex(@"(padding|margin|gap):\s*([^;]+);");
+        var offenders = new List<string>();
+        foreach (Match m in spacingRegex.Matches(css))
+        {
+            var value = m.Groups[2].Value.Trim();
+
+            // Only inspect single-value declarations (no whitespace before ;).
+            bool singleValue = value.IndexOf(' ') < 0;
+            if (!singleValue)
+                continue;
+
+            bool ok =
+                value == "0" ||
+                value == "0px" ||
+                value == "0rem" ||
+                value.StartsWith("var(--space-", StringComparison.Ordinal) ||
+                value.StartsWith("var(--", StringComparison.Ordinal) ||
+                value.StartsWith("calc(", StringComparison.Ordinal) ||
+                value == "-1px"; // .sr-only overlap hack
+            if (!ok)
+                offenders.Add($"{m.Groups[1].Value}: {value};");
+        }
+
+        Assert.True(offenders.Count == 0, "One-off single-value padding/margin/gap literals (should use the --space-* scale):\n" + string.Join("\n", offenders.Distinct()));
+    }
+
     // ---- Rendered pages use the kit (no inline style blocks) ---------------
 
     [Fact]
