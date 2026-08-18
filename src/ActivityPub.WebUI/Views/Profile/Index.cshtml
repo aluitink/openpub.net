@@ -75,4 +75,27 @@
             }
         </div>
     </div>
+
+    @if (Model.NoteCount == 0)
+    {
+        @if (Model.IsOwnProfile)
+        {
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No notes yet",
+                Hint = "Share your first note and it will show up here.",
+                CtaLabel = "Compose a note",
+                CtaHref = Url.Action("Index", "Compose"),
+                CtaClass = "btn btn-primary"
+            })
+        }
+        else
+        {
+            @await Html.PartialAsync("../Shared/_EmptyState", new EmptyStateModel
+            {
+                Title = "No notes yet",
+                Hint = $"{Model.DisplayName} hasn't posted anything yet."
+            })
+        }
+    }
 </div>

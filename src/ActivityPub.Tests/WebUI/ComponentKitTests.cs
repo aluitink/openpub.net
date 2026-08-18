@@ -458,6 +458,7 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
             "communities/index.cshtml",
             "search/index.cshtml",
             "timeline/index.cshtml",
+            "profile/index.cshtml",
         };
 
         foreach (var page in expected)
