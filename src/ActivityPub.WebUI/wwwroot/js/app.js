@@ -210,9 +210,11 @@
                     var reduceMotion = window.matchMedia &&
                         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                     card.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-                    setTimeout(function () { card.classList.remove('note-card-new'); }, 4000);
+                setTimeout(function () { card.classList.remove('note-card-new'); }, 4000);
 
-                    var author = card.querySelector('.note-username');
+                if (window.FB.linkPreviewInit) window.FB.linkPreviewInit(card);
+
+                var author = card.querySelector('.note-username');
                     var contentEl = card.querySelector('.note-content');
                     liveRegion.textContent = 'New post by ' +
                         (author ? author.textContent : 'someone') +
@@ -515,6 +517,7 @@
                     container.remove();
                     if (skeleton) skeleton.remove();
                 }
+                if (window.FB.linkPreviewInit) window.FB.linkPreviewInit(frag);
             }
 
             async function loadMore(e) {
@@ -638,6 +641,7 @@
                     if (freshBtn && currentBtn.parentNode) {
                         currentBtn.parentNode.replaceChild(freshBtn, currentBtn);
                         syncNoteButtons(noteCard, isLike ? '.btn-like' : '.btn-boost');
+                        if (window.FB.linkPreviewInit) window.FB.linkPreviewInit(noteCard);
                     }
                     if (currentBtn) currentBtn.disabled = false;
                 })
@@ -1197,5 +1201,114 @@
             if (!e.target.closest('.nav-group')) closeAllGroups();
             if (!e.target.closest('.note-more-menu')) closeAllMoreMenus();
         });
+    });
+
+    // ---- Link previews for outbound URLs (server-fetched, v1) ---------------
+    // The browser can't fetch or image external hosts (CSP), so each outbound
+    // link asks the server for a card (/linkpreview/card) and, if one is
+    // available, we insert a thumbnail + title + description block beneath it.
+    // The thumbnail is proxied through /linkpreview/image to stay within
+    // img-src 'self'. Works for links in note content, and is re-run on
+    // dynamically-inserted cards (live timeline / load-more / reconcile).
+    FB.register('linkpreview', function() {
+        var MAX_PER_PAGE = 10;
+        var inFlight = new Set();
+        var processed = new WeakSet();
+        var rendered = 0;
+
+        function isExternalHref(href) {
+            if (!href) return false;
+            if (href[0] === '#' || href[0] === '/') return false;
+            if (href.indexOf('javascript:') === 0 ||
+                href.indexOf('mailto:') === 0 ||
+                href.indexOf('data:') === 0) return false;
+            try {
+                var u = new URL(href, window.location.origin);
+                return (u.protocol === 'http:' || u.protocol === 'https:');
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function hostOf(url) {
+            try { return new URL(url).host; } catch (e) { return ''; }
+        }
+
+        function buildCard(url, p) {
+            var imgSrc = p.image
+                ? '/linkpreview/image?url=' + encodeURIComponent(p.image)
+                : null;
+            var title = p.title || url;
+            var desc = p.description && p.description !== title ? p.description : '';
+            var site = p.siteName || hostOf(url);
+
+            var html = '<div class="link-preview" role="note">';
+            html += '<a class="link-preview-body" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">';
+            if (imgSrc) {
+                html += '<img class="link-preview-image" src="' + escapeHtml(imgSrc) + '" alt="" loading="lazy" decoding="async" />';
+            }
+            html += '<div class="link-preview-text">';
+            if (site) html += '<span class="link-preview-site">' + escapeHtml(site) + '</span>';
+            html += '<span class="link-preview-title">' + escapeHtml(title) + '</span>';
+            if (desc) html += '<span class="link-preview-desc">' + escapeHtml(desc) + '</span>';
+            html += '</div></a></div>';
+            return html;
+        }
+
+        function processLink(a) {
+            if (processed.has(a) || a.getAttribute('data-linkpreview')) return;
+            var href = a.getAttribute('href');
+            if (!isExternalHref(href)) return;
+            if (a.closest('.link-preview')) return;
+            if (rendered >= MAX_PER_PAGE) return;
+            processed.add(a);
+            a.setAttribute('data-linkpreview', 'pending');
+
+            // Skip links whose visible text is already just the URL (a bare
+            // autolink) — still preview them, but only if we have budget.
+            var key = href;
+            if (inFlight.has(key)) return;
+            inFlight.add(key);
+
+            fetch('/linkpreview/card?url=' + encodeURIComponent(href), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(p) {
+                    if (!p || !p.title) { a.removeAttribute('data-linkpreview'); return; }
+                    var host = a.parentNode;
+                    if (!host) return;
+                    var wrap = document.createElement('div');
+                    wrap.innerHTML = buildCard(href, p);
+                    var card = wrap.firstElementChild;
+                    if (!card) return;
+                    host.insertBefore(card, a.nextSibling);
+                    a.setAttribute('data-linkpreview', 'done');
+                    rendered++;
+                })
+                .catch(function() { a.removeAttribute('data-linkpreview'); })
+                .then(function() { inFlight.delete(key); });
+        }
+
+        function processScope(root) {
+            if (!root) return;
+            var scope = (root === document) ? document : root;
+            scope.querySelectorAll('a[href]').forEach(function(a) {
+                if (a.closest('.note-card')) processLink(a);
+            });
+        }
+
+        window.FB.linkPreviewInit = function(root) {
+            processScope(root || document);
+        };
+
+        processScope(document);
     });
 })();

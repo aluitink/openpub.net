@@ -203,6 +203,13 @@ public class Program
         builder.Services.AddHostedService<ActivityPub.Core.Services.WebhookDeliveryBackgroundService>();
 
         builder.Services.AddHttpClient<IWebFingerService, WebFingerService>();
+
+        // Server-side link previews for outbound URLs (OpenGraph/meta + OEmbed).
+        // The browser can't fetch external hosts (CSP) and can't display remote
+        // images, so previews are produced server-side and returned as JSON; the
+        // client JS (linkpreview.js) renders the card and proxies the thumbnail
+        // through /linkpreview/image to stay within img-src 'self'.
+        builder.Services.AddScoped<ActivityPub.Core.Services.ILinkPreviewService, ActivityPub.WebUI.Services.LinkPreviewService>();
         builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
         {
             options.ConstraintMap.Add("apiVersion", typeof(ActivityPub.WebUI.DummyRouteConstraint));
