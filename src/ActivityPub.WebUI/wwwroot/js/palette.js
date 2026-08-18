@@ -284,6 +284,7 @@
             overlay.hidden = false;
             overlay.setAttribute('aria-hidden', 'false');
             dialog.setAttribute('aria-hidden', 'false');
+            if (trigger) trigger.setAttribute('aria-expanded', 'true');
             document.body.classList.add('palette-open');
             input.value = '';
             items = [];
@@ -308,6 +309,7 @@
             overlay.hidden = true;
             overlay.setAttribute('aria-hidden', 'true');
             dialog.setAttribute('aria-hidden', 'true');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
             document.body.classList.remove('palette-open');
             if (lastFocused && typeof lastFocused.focus === 'function') {
                 lastFocused.focus();
@@ -375,6 +377,26 @@
         // Click on the overlay backdrop closes the palette.
         overlay.addEventListener('mousedown', function(e) {
             if (e.target === overlay) closePalette();
+        });
+
+        // Focus trap: while the modal is open, Tab/Shift+Tab cycle within it so
+        // focus can't escape behind the aria-modal dialog (WCAG 2.4.3).
+        dialog.addEventListener('keydown', function(e) {
+            if (e.key !== 'Tab' || !isOpen) return;
+            var focusables = dialog.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+            if (!focusables.length) return;
+            var first = focusables[0];
+            var last = focusables[focusables.length - 1];
+            var active = document.activeElement;
+            if (e.shiftKey && active === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && active === last) {
+                e.preventDefault();
+                first.focus();
+            }
         });
 
         // Trigger button.

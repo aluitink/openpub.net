@@ -81,7 +81,9 @@
             toast.setAttribute('role', 'status');
 
             var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ';
-            toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-msg"></span>';
+            // Icon is decorative (aria-hidden) so screen readers announce only
+            // the message; the container's role="status" live region does the rest.
+            toast.innerHTML = '<span class="toast-icon" aria-hidden="true">' + icon + '</span><span class="toast-msg"></span>';
             toast.querySelector('.toast-msg').textContent = message;
 
             container.appendChild(toast);

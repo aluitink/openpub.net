@@ -32,7 +32,7 @@
                         <form asp-controller="Search" asp-action="Index" method="get" class="nav-search-form" role="search">
                             <input type="text" name="q" id="nav-search-input" class="nav-search-input" placeholder="Search… (press /)" aria-label="Search" />
                         </form>
-                        <button type="button" class="palette-trigger" id="palette-trigger" aria-label="Open command palette" title="Command palette (Ctrl+K)">
+                        <button type="button" class="palette-trigger" id="palette-trigger" aria-label="Open command palette" aria-controls="palette-overlay" aria-expanded="false" title="Command palette (Ctrl+K)">
                             <span class="palette-trigger-icon" aria-hidden="true">&#9906;</span>
                             <span class="palette-trigger-kbd" aria-hidden="true">Ctrl K</span>
                         </button>
@@ -53,12 +53,12 @@
                             <a asp-controller="Compose" asp-action="Index" class="nav-link@(NavActive("Compose") ? " active" : "")">Compose</a>
                         </li>
                         <li class="nav-group">
-                            <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+                            <button type="button" class="nav-group-toggle" id="nav-toggle-notifications" aria-controls="nav-menu-notifications" aria-expanded="false" aria-haspopup="menu">
                                 Notifications
                                 <span id="notification-badge" class="notification-badge" style="display:none">0</span>
                                 <span class="caret" aria-hidden="true">&#9662;</span>
                             </button>
-                            <ul class="nav-dropdown" role="menu">
+                            <ul id="nav-menu-notifications" class="nav-dropdown" role="menu" aria-labelledby="nav-toggle-notifications">
                                 <li><a asp-controller="Notifications" asp-action="Index" class="nav-dropdown-link@(NavActive("Notifications") ? " active" : "")" role="menuitem">Inbox</a></li>
                             </ul>
                         </li>
@@ -66,20 +66,20 @@
                             <a asp-controller="Search" asp-action="Index" class="nav-link@(NavActive("Search") ? " active" : "")">Search</a>
                         </li>
                         <li class="nav-group">
-                            <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+                            <button type="button" class="nav-group-toggle" id="nav-toggle-discover" aria-controls="nav-menu-discover" aria-expanded="false" aria-haspopup="menu">
                                 Discover <span class="caret" aria-hidden="true">&#9662;</span>
                             </button>
-                            <ul class="nav-dropdown" role="menu">
+                            <ul id="nav-menu-discover" class="nav-dropdown" role="menu" aria-labelledby="nav-toggle-discover">
                                 <li><a asp-controller="Trends" asp-action="Index" class="nav-dropdown-link@(NavActive("Trends", "Trending") ? " active" : "")" role="menuitem">Trends</a></li>
                                 <li><a asp-controller="Suggestions" asp-action="Index" class="nav-dropdown-link@(NavActive("Suggestions", "Discover") ? " active" : "")" role="menuitem">Suggestions</a></li>
                                 <li><a asp-controller="Communities" asp-action="Index" class="nav-dropdown-link@(NavActive("Communities") ? " active" : "")" role="menuitem">Communities</a></li>
                             </ul>
                         </li>
                         <li class="nav-group">
-                            <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">
+                            <button type="button" class="nav-group-toggle" id="nav-toggle-account" aria-controls="nav-menu-account" aria-expanded="false" aria-haspopup="menu">
                                 Account <span class="caret" aria-hidden="true">&#9662;</span>
                             </button>
-                            <ul class="nav-dropdown" role="menu">
+                            <ul id="nav-menu-account" class="nav-dropdown" role="menu" aria-labelledby="nav-toggle-account">
                                 <li><a asp-controller="Profile" asp-action="Index" class="nav-dropdown-link@(NavActive("Profile", "Index") ? " active" : "")" role="menuitem">Profile</a></li>
                                 <li><a asp-controller="Profile" asp-action="Edit" class="nav-dropdown-link@(NavActive("Profile", "Edit") ? " active" : "")" role="menuitem">Edit Profile</a></li>
                                 <li><a asp-controller="Follow" asp-action="Index" class="nav-dropdown-link@(NavActive("Follow", "Index") ? " active" : "")" role="menuitem">Follow</a></li>
@@ -140,7 +140,7 @@
             </nav>
         </div>
     </footer>
-    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <div id="toast-container" class="toast-container" aria-live="polite" role="status" aria-atomic="true"></div>
     @if (User.Identity?.IsAuthenticated ?? false)
     {
         <div class="palette-overlay" id="palette-overlay" hidden aria-hidden="true">

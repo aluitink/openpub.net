@@ -746,10 +746,12 @@ public class EFCoreActivityPubRepository : IActivityPubRepository
 
     public async Task<int> GetReplyCountAsync(string activityId)
     {
+        // Count activities whose inReplyTo points specifically at this activity.
+        // Matching the exact "inReplyTo":"<id>" value avoids counting the target
+        // note itself (whose own JSON contains the key with a null value) or any
+        // note that merely mentions the id elsewhere.
         return await _context.Activities
-            .Where(a => a.JsonData.Contains("\"type\":\"Reply\"") ||
-                        a.JsonData.Contains("\"inReplyTo\""))
-            .Where(a => a.JsonData.Contains($"\"{activityId}\""))
+            .Where(a => a.JsonData.Contains($"\"inReplyTo\":\"{activityId}\""))
             .CountAsync();
     }
 

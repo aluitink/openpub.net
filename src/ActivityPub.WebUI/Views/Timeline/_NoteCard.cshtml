@@ -72,17 +72,20 @@
 
     @if (Model.PollQuestion != null)
     {
-        <div class="poll-widget">
+        <div class="poll-widget" role="group" aria-label="Poll: @Model.PollQuestion">
             <div class="poll-question">@Html.Raw(Model.PollQuestion)</div>
             @if (Model.PollOptions != null)
             {
-                @foreach (var opt in Model.PollOptions)
+                <ul class="poll-options-list" role="list" style="list-style:none; margin:0; padding:0;">
+                @for (var i = 0; i < Model.PollOptions.Count; i++)
                 {
-                    <div class="poll-option">
+                    var opt = Model.PollOptions[i];
+                    <li class="poll-option" role="listitem">
                         <div class="poll-bar" style="width:@opt.Percent%">@opt.Text</div>
-                        <span class="poll-votes">@(opt.Votes ?? 0) votes</span>
-                    </div>
+                        <span class="poll-votes">@(opt.Votes ?? 0) of @(Model.PollOptions.Sum(o => o.Votes ?? 0)) votes</span>
+                    </li>
                 }
+                </ul>
             }
             @if (Model.PollEndTime.HasValue)
             {
@@ -108,20 +111,20 @@
         <form asp-controller="Interaction" asp-action="@(Model.IsLiked ? "Unlike" : "Like")" method="post" style="display:inline;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
-            <button type="submit" class="btn-action btn-like@(Model.IsLiked ? " active" : "")" title="Like">♥ @Model.LikeCount</button>
+            <button type="submit" class="btn-action btn-like@(Model.IsLiked ? " active" : "")" title="Like" aria-pressed="@(Model.IsLiked ? "true" : "false")">♥ @Model.LikeCount<span class="sr-only"> likes</span></button>
         </form>
 
         <form asp-controller="Interaction" asp-action="@(Model.IsBoosted ? "Unboost" : "Boost")" method="post" style="display:inline;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="targetActivityId" value="@Model.ActivityId" />
-            <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost">↻ @Model.BoostCount</button>
+            <button type="submit" class="btn-action btn-boost@(Model.IsBoosted ? " active" : "")" title="Boost" aria-pressed="@(Model.IsBoosted ? "true" : "false")">↻ @Model.BoostCount<span class="sr-only"> boosts</span></button>
         </form>
 
-        <button type="button" class="btn-action btn-reply" data-reply-target="reply-@Model.ActivityId">💬 @Model.ReplyCount</button>
+        <button type="button" class="btn-action btn-reply" data-reply-target="reply-@Model.ActivityId" title="Reply">💬 @Model.ReplyCount<span class="sr-only"> replies</span></button>
 
         <div class="note-more-menu">
-            <button type="button" class="btn-action btn-more" title="More actions" aria-label="More actions" aria-haspopup="true" aria-expanded="false">&#8943;</button>
-            <div class="note-more-dropdown" role="menu">
+            <button type="button" id="more-toggle-@Model.ActivityId" class="btn-action btn-more" title="More actions" aria-label="More actions" aria-haspopup="menu" aria-controls="more-menu-@Model.ActivityId" aria-expanded="false">&#8943;</button>
+            <div id="more-menu-@Model.ActivityId" class="note-more-dropdown" role="menu" aria-labelledby="more-toggle-@Model.ActivityId">
                 <button type="button" class="note-more-item" data-action="copy-link" data-url="@Url.Action("Show", "Timeline", new { id = Model.ActivityId })" role="menuitem">Copy link</button>
                 <a asp-controller="Compose" asp-action="Index" asp-route-replyTo="@Model.ActivityId" class="note-more-item" role="menuitem">Reply via Compose</a>
                 <form asp-controller="Compose" asp-action="EditNote" method="post" style="margin:0">

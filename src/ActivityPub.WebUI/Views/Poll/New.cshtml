@@ -17,11 +17,13 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Options</label>
+        <label class="form-label" id="poll-options-label">Options</label>
+        <div role="group" aria-labelledby="poll-options-label">
         @for (int i = 0; i < 4; i++)
         {
-            <input type="text" name="Options" id="poll-option-@i" class="form-control mb-2 poll-option-input" placeholder="Option @(i+1)" value="@Model.Options?[i]" maxlength="50" />
+            <input type="text" name="Options" id="poll-option-@i" aria-label="Option @(i+1)" class="form-control mb-2 poll-option-input" placeholder="Option @(i+1)" value="@Model.Options?[i]" maxlength="50" />
         }
+        </div>
         <small class="text-muted">2-4 options, max 50 characters each</small>
     </div>
 

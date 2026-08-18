@@ -159,6 +159,96 @@ public class AccessibilityTests : IClassFixture<WebUIFactory>
         Assert.Contains("ActivityPub", html);
     }
 
+    // ---------- Phase 50.3 — screen-reader pass ----------
+
+    [Fact]
+    public async Task NoteMoreMenu_HasControlsAndHaspopupMenu()
+    {
+        var client = await GetAuthenticatedClient();
+        await client.PostAsync("/compose/post", new System.Net.Http.StringContent(
+            $"Content={Uri.EscapeDataString("a11y more menu note")}",
+            System.Text.Encoding.UTF8, "application/x-www-form-urlencoded"));
+        var html = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        // The toggle references the menu it controls and declares a popup menu.
+        var moreBtn = Regex.Match(html, "<button[^>]*class=\"[^\"]*btn-more[^\"]*\"[^>]*>");
+        Assert.True(moreBtn.Success, "Expected a .btn-more button on the timeline");
+        Assert.Contains("aria-haspopup=\"menu\"", moreBtn.Value, StringComparison.Ordinal);
+        Assert.Contains("aria-controls=", moreBtn.Value, StringComparison.Ordinal);
+
+        // The menu element is labelled by its toggle.
+        Assert.Contains("class=\"note-more-dropdown\" role=\"menu\" aria-labelledby=", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LikeAndBoostButtons_ExposePressedState()
+    {
+        var client = await GetAuthenticatedClient();
+        await client.PostAsync("/compose/post", new System.Net.Http.StringContent(
+            $"Content={Uri.EscapeDataString("a11y pressed note")}",
+            System.Text.Encoding.UTF8, "application/x-www-form-urlencoded"));
+        var html = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        var likeBtn = Regex.Match(html, "<button[^>]*class=\"[^\"]*btn-like[^\"]*\"[^>]*>");
+        Assert.True(likeBtn.Success, "Expected a .btn-like button on the timeline");
+        Assert.Contains("aria-pressed=", likeBtn.Value, StringComparison.Ordinal);
+
+        var boostBtn = Regex.Match(html, "<button[^>]*class=\"[^\"]*btn-boost[^\"]*\"[^>]*>");
+        Assert.True(boostBtn.Success, "Expected a .btn-boost button on the timeline");
+        Assert.Contains("aria-pressed=", boostBtn.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Layout_NavDropdowns_HaveControlsAndHaspopup()
+    {
+        // The authenticated layout renders the Discover/Account/Notifications
+        // dropdowns; each toggle must reference its menu and declare a popup.
+        var client = await GetAuthenticatedClient();
+        var html = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        Assert.Contains("nav-toggle-discover", html);
+        Assert.Contains("nav-toggle-account", html);
+
+        var discoverBtn = ElementWithId(html, "nav-toggle-discover");
+        Assert.True(discoverBtn.Contains("aria-controls="),
+            "Discover dropdown toggle must reference its menu via aria-controls. Got: " + discoverBtn);
+        Assert.Contains("aria-haspopup=\"menu\"", discoverBtn, StringComparison.Ordinal);
+        Assert.Contains("id=\"nav-menu-discover\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Layout_ToastContainer_IsStatusLiveRegion()
+    {
+        var html = await (await _client.GetAsync("/auth/login")).Content.ReadAsStringAsync();
+        Assert.Contains("id=\"toast-container\"", html, StringComparison.Ordinal);
+        Assert.Contains("role=\"status\"", html, StringComparison.Ordinal);
+        Assert.Contains("aria-live=\"polite\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PollCreation_OptionsInputs_HaveLabels()
+    {
+        var client = await GetAuthenticatedClient();
+        var html = await (await client.GetAsync("/poll/new")).Content.ReadAsStringAsync();
+
+        Assert.Contains("id=\"poll-options-label\"", html, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"Option 1\"", html, StringComparison.Ordinal);
+        Assert.Contains("role=\"group\" aria-labelledby=\"poll-options-label\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Layout_PaletteTrigger_ReferencesOverlay()
+    {
+        var client = await GetAuthenticatedClient();
+        var html = await (await client.GetAsync("/timeline")).Content.ReadAsStringAsync();
+
+        var trigger = ElementWithId(html, "palette-trigger");
+        Assert.True(trigger.Contains("aria-controls=\"palette-overlay\""),
+            "Palette trigger should reference the overlay it controls via aria-controls. Got: " + trigger);
+        Assert.True(trigger.Contains("aria-expanded="),
+            "Palette trigger should expose its open state via aria-expanded. Got: " + trigger);
+    }
+
     // ---------- helpers ----------
 
     private async Task<HttpClient> GetAuthenticatedClient()

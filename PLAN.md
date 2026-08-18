@@ -50,7 +50,7 @@ Make the timeline and interactions feel instant.
 ### Phase 50: Accessibility (WCAG AA)
 1. ⬜ Contrast re-audit across light **and** dark themes (all views).
 2. ⬜ Focus-visible + logical tab order on all interactive controls (incl. note-more dropdown, poll options).
-3. ⬜ Screen-reader pass: `aria-*` on dropdowns/menus/modals, live regions for toasts + timeline inserts, `alt`/`aria-label` on every icon button.
+3. ✅ Screen-reader pass: `aria-*` on dropdowns/menus/modals (note-more + nav dropdowns carry `aria-controls`/`aria-haspopup="menu"`/`aria-labelledby`), live region for toasts (`role="status"` + `aria-atomic`), `aria-pressed` on like/boost, `aria-label` on icon buttons, labelled poll options, palette `aria-controls`/`aria-expanded` + Tab focus trap. 6 new a11y tests (1027 total).
 4. ⬜ Keyboard-only walkthrough of entire app via delegated subagent; fix any trap.
 
 ### Phase 51: Rich Media in the UI (leverage existing backend)
