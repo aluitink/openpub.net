@@ -180,6 +180,33 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         Assert.True(offenders.Count == 0, "Raw border-radius literals that duplicate a token:\n" + string.Join("\n", offenders));
     }
 
+    [Fact]
+    public async Task SiteCss_HasNoOneOffFontSizeLiterals()
+    {
+        var client = CreateClient();
+        var css = await client.GetStringAsync("/css/site.css");
+
+        // Every font-size must come from the --font-* scale. The only other
+        // permitted forms are a token-with-fallback (var(--font-x, …)), a
+        // component metric token (--btn-font), or a computed value derived from
+        // another token (e.g. the avatar-placeholder glyph sized off
+        // --avatar-size). Any raw rem/px/em length is a one-off off the scale.
+        var fontSizeRegex = new Regex(@"font-size:\s*([^;]+);");
+        var offenders = new List<string>();
+        foreach (Match m in fontSizeRegex.Matches(css))
+        {
+            var value = m.Groups[1].Value.Trim();
+            bool ok =
+                value.StartsWith("var(--font-", StringComparison.Ordinal) ||
+                value.StartsWith("var(--btn-font", StringComparison.Ordinal) ||
+                value.StartsWith("calc(", StringComparison.Ordinal);
+            if (!ok)
+                offenders.Add($"font-size: {value};");
+        }
+
+        Assert.True(offenders.Count == 0, "One-off font-size literals (should use the --font-* scale):\n" + string.Join("\n", offenders.Distinct()));
+    }
+
     // ---- Rendered pages use the kit (no inline style blocks) ---------------
 
     [Fact]
