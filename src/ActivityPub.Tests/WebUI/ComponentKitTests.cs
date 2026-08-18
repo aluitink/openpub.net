@@ -217,17 +217,21 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         var css = new Regex(@"/\*.*?\*/", RegexOptions.Singleline)
             .Replace(await client.GetStringAsync("/css/site.css"), " ");
 
-        // Every length in a padding/margin/gap declaration (single- or
-        // multi-value) must come from the --space-* scale. Permitted raw forms:
-        // the zero reset, `auto` (centering), negative lengths (the .sr-only
-        // `margin:-1px` overlap + negative positioning hacks), and non-scale
-        // units (vh/vw/em/%). var()/calc() are already token-derived.
-        var spacingRegex = new Regex(@"(?<![-\w])(padding|margin|gap):\s*([^;{}]+);");
+        // Every length in a padding/margin/gap declaration (shorthand or
+        // longhand, single- or multi-value) must come from the --space-* scale.
+        // Permitted raw forms: the zero reset, `auto` (centering), negative
+        // lengths (the .sr-only `margin:-1px` overlap + negative positioning
+        // hacks), non-scale units (vh/vw/em/%), and fine sub-4px pixel nudges
+        // (e.g. `margin-top:1px`) that are alignment, not rhythm. var()/calc()
+        // are already token-derived.
+        var spacingRegex = new Regex(@"(?<![-\w])((?:padding|margin|gap|(?:margin|padding)-(?:top|right|bottom|left))):\s*([^;{}]+);");
         var offenders = new List<string>();
         foreach (Match m in spacingRegex.Matches(css))
         {
             var prop = m.Groups[1].Value;
-            foreach (var token in m.Groups[2].Value.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+            // Paren-aware split so function calls (e.g. `env(safe-area-inset-bottom, 0)`)
+            // stay a single token instead of breaking at the space inside the parens.
+            foreach (var token in SplitSpacingTokens(m.Groups[2].Value))
             {
                 if (SpacingTokenIsAllowed(token))
                     continue;
@@ -238,13 +242,34 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         Assert.True(offenders.Count == 0, "One-off padding/margin/gap literals (should use the --space-* scale):\n" + string.Join("\n", offenders.Distinct()));
     }
 
+    private static IEnumerable<string> SplitSpacingTokens(string value)
+    {
+        var current = new System.Text.StringBuilder();
+        var depth = 0;
+        foreach (var c in value)
+        {
+            if (c == '(') depth++;
+            else if (c == ')') depth--;
+            if ((c == ' ' || c == '\t') && depth == 0)
+            {
+                if (current.Length > 0) { yield return current.ToString(); current.Clear(); }
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+        if (current.Length > 0) yield return current.ToString();
+    }
+
     private static bool SpacingTokenIsAllowed(string token)
     {
         // Zero reset, centering, or token-derived.
         if (token is "0" or "0px" or "0rem" or "auto")
             return true;
         if (token.StartsWith("var(", StringComparison.Ordinal) ||
-            token.StartsWith("calc(", StringComparison.Ordinal))
+            token.StartsWith("calc(", StringComparison.Ordinal) ||
+            token.StartsWith("env(", StringComparison.Ordinal))
             return true;
         // Negative lengths are overlap/positioning hacks, not scale spacing.
         if (token.StartsWith("-"))
@@ -252,6 +277,9 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         // Non-scale units stay raw.
         if (token.EndsWith("vh") || token.EndsWith("vw") || token.EndsWith("%") ||
             (token.EndsWith("em") && !token.EndsWith("rem")))
+            return true;
+        // Fine sub-4px pixel nudges are alignment, not rhythm (the grid is rem).
+        if (token.EndsWith("px") && decimal.TryParse(token[..^2], out var px) && px % 4m != 0)
             return true;
         // A plain rem/px length must be a --space-* token, i.e. not a raw length.
         return false;
