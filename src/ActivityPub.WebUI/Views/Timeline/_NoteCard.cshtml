@@ -50,10 +50,21 @@
 
     <div class="note-content@(Model.Sensitive && string.IsNullOrEmpty(Model.ContentWarning) ? " note-content-blurred" : "")"@((Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning)) ? " data-cw-content" : "")>@Html.Raw(Model.Content)</div>
 
-    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    @{
+        var images = (Model.ImageAttachments is { Count: > 0 })
+            ? Model.ImageAttachments
+            : (string.IsNullOrEmpty(Model.ImageUrl)
+                ? new List<NoteImageItem>()
+                : new List<NoteImageItem> { new() { Url = Model.ImageUrl!, Alt = "Attached image" } });
+    }
+    @if (images.Count > 0)
     {
-        <div class="note-attachment@(Model.Sensitive ? " note-attachment-blurred" : "")"@((Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning)) ? " data-cw-content" : "")>
-            <img src="@Model.ImageUrl" alt="Attached image" class="note-image" loading="lazy" decoding="async" />
+        <div class="note-attachment note-images note-images-@images.Count@(Model.Sensitive ? " note-attachment-blurred" : "")" data-lightbox-group="@Model.ActivityId"@((Model.Sensitive || !string.IsNullOrEmpty(Model.ContentWarning)) ? " data-cw-content" : "")>
+            @for (var i = 0; i < images.Count; i++)
+            {
+                var img = images[i];
+                <img src="@img.Url" alt="@(string.IsNullOrEmpty(img.Alt) ? "Attached image" : img.Alt)" class="note-image" loading="lazy" decoding="async" tabindex="0" role="button" aria-label="@(string.IsNullOrEmpty(img.Alt) ? "View image" : "View: " + img.Alt)" data-lightbox-index="@i" />
+            }
         </div>
     }
 

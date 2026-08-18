@@ -69,6 +69,7 @@ public class TimelineController : Controller
                         IsLiked = isLiked,
                         IsBoosted = isBoosted,
                         ImageUrl = ExtractImageUrl(note),
+                        ImageAttachments = ExtractImageAttachments(note),
                         Sensitive = ExtractSensitive(note),
                         ContentWarning = ExtractContentWarning(note),
                         DocumentAttachments = ExtractDocumentAttachments(note),
@@ -140,6 +141,7 @@ public class TimelineController : Controller
             IsLiked = isLiked,
             IsBoosted = isBoosted,
             ImageUrl = ExtractImageUrl(note),
+            ImageAttachments = ExtractImageAttachments(note),
             Sensitive = ExtractSensitive(note),
             ContentWarning = ExtractContentWarning(note),
             DocumentAttachments = ExtractDocumentAttachments(note),
@@ -226,14 +228,49 @@ public class TimelineController : Controller
                         return urlProp.GetString();
                 }
             }
-            if (att.GetArrayLength() > 0)
-            {
-                var first = att[0];
-                if (first.ValueKind == JsonValueKind.Object && first.TryGetProperty("url", out var urlProp))
-                    return urlProp.GetString();
-            }
+        if (att.GetArrayLength() > 0)
+        {
+            var first = att[0];
+            if (first.ValueKind == JsonValueKind.Object && first.TryGetProperty("url", out var urlProp))
+                return urlProp.GetString();
         }
-        return null;
+    }
+    return null;
+}
+
+    static List<NoteImageItem>? ExtractImageAttachments(ActivityPub.Core.Models.Object obj)
+    {
+        var elem = GetAttachmentElement(obj);
+        if (elem is not { } att)
+            return null;
+
+        var images = new List<NoteImageItem>();
+        foreach (var item in att.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object) continue;
+
+            var type = item.TryGetProperty("type", out var t) ? t.GetString() : null;
+            if (!"Image".Equals(type, StringComparison.OrdinalIgnoreCase)) continue;
+
+            if (!item.TryGetProperty("url", out var urlProp) || string.IsNullOrWhiteSpace(urlProp.GetString()))
+                continue;
+
+            // Alt text: Mastodon-style "alt" property, falling back to "name"
+            // (the original filename) so screen readers never get a blank.
+            var alt = "";
+            if (item.TryGetProperty("alt", out var altProp) && !string.IsNullOrWhiteSpace(altProp.GetString()))
+                alt = altProp.GetString()!;
+            else if (item.TryGetProperty("name", out var nameProp) && !string.IsNullOrWhiteSpace(nameProp.GetString()))
+                alt = nameProp.GetString()!;
+
+            images.Add(new NoteImageItem
+            {
+                Url = urlProp.GetString()!,
+                Alt = alt,
+                Media = item.TryGetProperty("mediaType", out var mt) ? mt.GetString() : null
+            });
+        }
+        return images.Count > 0 ? images : null;
     }
 
     static bool ExtractSensitive(ActivityPub.Core.Models.Object obj)
@@ -386,6 +423,7 @@ public class TimelineActivityItem
     public bool IsLiked { get; set; }
     public bool IsBoosted { get; set; }
     public string? ImageUrl { get; set; }
+    public List<NoteImageItem>? ImageAttachments { get; set; }
     public bool Sensitive { get; set; }
     public string? ContentWarning { get; set; }
     public List<DocumentAttachmentItem>? DocumentAttachments { get; set; }
@@ -406,4 +444,11 @@ public class DocumentAttachmentItem
 {
     public string Url { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+}
+
+public class NoteImageItem
+{
+    public string Url { get; set; } = string.Empty;
+    public string Alt { get; set; } = string.Empty;
+    public string? Media { get; set; }
 }
