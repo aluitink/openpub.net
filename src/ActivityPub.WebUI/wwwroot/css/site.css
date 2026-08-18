@@ -51,6 +51,14 @@
     --font-xl: 1.8rem;
     --font-display: 2.25rem;
 
+    /* Line-height scale (unitless). Replaces the per-rule literals so every
+       text block picks its leading from one place. */
+    --lh-none: 1;
+    --lh-tight: 1.2;
+    --lh-normal: 1.4;
+    --lh-body: 1.5;
+    --lh-relaxed: 1.6;
+
     /* Spacing scale */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -127,7 +135,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text);
-    line-height: 1.6;
+    line-height: var(--lh-relaxed);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -216,7 +224,7 @@ body {
     padding: 8px;
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     cursor: pointer;
 }
 
@@ -259,7 +267,7 @@ body.nav-open {
     font-size: 0.9rem;
     font-family: inherit;
     padding: 0.4rem 0.8rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     white-space: nowrap;
     transition: background-color 0.2s, color 0.2s;
@@ -291,7 +299,7 @@ body.nav-open {
     list-style: none;
     background: #232342;
     border: 1px solid #3a3a5e;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     z-index: 1000;
 }
@@ -713,7 +721,7 @@ form.no-margin {
     width: 100%;
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--color-border);
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     font-size: 1rem;
     transition: border-color 0.2s;
 }
@@ -864,7 +872,7 @@ footer {
 .alert-error {
     background: #fdf0f0;
     border: 1px solid var(--color-danger);
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     padding: 1rem;
     margin-bottom: 1rem;
     color: #c0392b;
@@ -878,7 +886,7 @@ footer {
 .alert-success {
     background: #f0fdf0;
     border: 1px solid #27ae60;
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     padding: 1rem;
     margin-bottom: 1rem;
     color: #1e8449;
@@ -889,7 +897,7 @@ footer {
     text-decoration: none;
     font-size: 0.9rem;
     padding: 0.4rem 0.8rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     transition: background-color 0.2s, color 0.2s;
     white-space: nowrap;
 }
@@ -1035,7 +1043,7 @@ footer {
 }
 
 .note-content {
-    line-height: 1.5;
+    line-height: var(--lh-body);
     color: var(--color-text);
     margin-bottom: 0.75rem;
     word-wrap: break-word;
@@ -1228,7 +1236,7 @@ footer {
     border: 1px solid var(--color-danger);
     color: var(--color-danger);
     padding: 0.35rem 0.8rem;
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     font-size: 0.85rem;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
@@ -1401,7 +1409,7 @@ footer {
 .profile-bio {
     margin-top: 0.75rem;
     color: var(--color-text);
-    line-height: 1.5;
+    line-height: var(--lh-body);
 }
 
 .profile-stats {
@@ -1655,7 +1663,7 @@ footer {
     font-size: var(--font-display);
     font-weight: 700;
     letter-spacing: 0.08em;
-    line-height: 1;
+    line-height: var(--lh-none);
     color: var(--color-text);
     margin-bottom: var(--space-3);
 }
@@ -1946,7 +1954,7 @@ footer {
     padding: 0.5rem 0.75rem;
     background: #f4f4f8;
     border: 1px solid #e0e0e8;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: var(--color-text);
     text-decoration: none;
     margin-right: 0.5rem;
@@ -2028,7 +2036,7 @@ footer {
     margin: 1rem 0;
     padding: 1rem;
     background: #fff;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -2036,7 +2044,7 @@ footer {
     max-width: 200px;
     max-height: 200px;
     margin-top: 0.5rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
 @media (max-width: 768px) {
@@ -2172,7 +2180,7 @@ footer {
     padding: 0.5rem 1rem;
     color: var(--color-text-secondary);
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 0.9rem;
     transition: all 0.2s;
 }
@@ -2225,7 +2233,7 @@ footer {
     margin: 0.25rem 0;
     font-size: 0.95rem;
     color: var(--color-text);
-    line-height: 1.5;
+    line-height: var(--lh-body);
 }
 
 .search-note-time {
@@ -2391,7 +2399,7 @@ footer {
     background: #e8e5ff;
     color: var(--color-accent);
     padding: 0.1em 0.3em;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
 }
 
@@ -2494,7 +2502,7 @@ footer {
 .btn-small {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     border: 1px solid;
     cursor: pointer;
 }
@@ -2543,7 +2551,7 @@ footer {
     background: #2c6396;
     color: white;
     padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.75rem;
 }
 
@@ -2551,14 +2559,14 @@ footer {
     background: #e9ecef;
     color: #495057;
     padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.75rem;
     font-family: monospace;
 }
 
 .badge-status {
     padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.75rem;
     font-weight: 600;
 }
@@ -2592,7 +2600,7 @@ footer {
     background: #f8d7da;
     color: #721c24;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin: 1rem 0;
     border: 1px solid #f5c6cb;
 }
@@ -2609,7 +2617,7 @@ footer {
     background: #f8d7da;
     color: #721c24;
     padding: 0.25rem 0.75rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
 }
 
@@ -2648,7 +2656,7 @@ footer {
 
 .poll-widget {
     border: 1px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 12px;
     margin: 8px 0;
     background: var(--color-surface-alt);
@@ -2666,7 +2674,7 @@ footer {
 
 .poll-bar {
     background: #e9ecef;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 4px 8px;
     min-height: 20px;
     display: flex;
@@ -2702,7 +2710,7 @@ footer {
     color: var(--color-text);
     margin: 0;
     font-size: var(--font-lg);
-    line-height: 1.2;
+    line-height: var(--lh-tight);
 }
 
 .page-header-actions {
@@ -2777,7 +2785,7 @@ footer {
 
 .settings-toggle-text small {
     color: var(--color-text-muted);
-    line-height: 1.4;
+    line-height: var(--lh-normal);
 }
 
 .settings-actions {
@@ -2931,7 +2939,7 @@ footer {
 .card-summary {
     color: var(--color-text);
     margin-bottom: 0.5rem;
-    line-height: 1.5;
+    line-height: var(--lh-body);
 }
 
 .card-meta {
@@ -2942,7 +2950,7 @@ footer {
 .badge {
     display: inline-block;
     padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.75rem;
     font-weight: 600;
 }
@@ -2983,7 +2991,7 @@ footer {
 
 .member-item {
     background: var(--color-surface);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 0.5rem 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
@@ -3101,7 +3109,7 @@ footer {
 .community-summary {
     color: var(--color-text);
     margin: 0 0 0.5rem;
-    line-height: 1.5;
+    line-height: var(--lh-body);
 }
 
 .community-actions {
@@ -3148,7 +3156,7 @@ footer {
 .nav-search-input {
     background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 0.35rem 0.6rem;
     color: #fff;
     font-size: 0.85rem;
@@ -3229,7 +3237,7 @@ footer {
     gap: 0.5rem;
     background: #fff;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 0.5rem 1rem;
     margin: 0.25rem;
     text-decoration: none;
@@ -3271,7 +3279,7 @@ footer {
     background: #1a1a2e;
     color: #fff;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     font-size: 0.9rem;
     opacity: 0;
@@ -3322,8 +3330,8 @@ footer {
     font-size: 1rem;
     color: var(--color-text-muted);
     padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    line-height: 1;
+    border-radius: var(--radius-sm);
+    line-height: var(--lh-none);
 }
 
 .btn-more:hover {
@@ -3339,7 +3347,7 @@ footer {
     margin-bottom: 4px;
     background: #fff;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     min-width: 160px;
     z-index: 100;
@@ -3390,9 +3398,9 @@ footer {
     padding: 0.75rem;
     background: var(--color-surface-alt);
     border: 1px solid var(--color-border);
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     font-size: 0.9rem;
-    line-height: 1.5;
+    line-height: var(--lh-body);
     max-height: 200px;
     overflow-y: auto;
     word-break: break-word;
@@ -3510,7 +3518,7 @@ footer {
 .image-preview {
     max-width: 200px;
     max-height: 150px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     object-fit: cover;
     border: 1px solid var(--color-border);
 }
@@ -3520,7 +3528,7 @@ footer {
     color: #fff;
     border: none;
     padding: 0.3rem 0.6rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.8rem;
     cursor: pointer;
     white-space: nowrap;
@@ -3534,7 +3542,7 @@ footer {
     padding: 1rem;
     background: var(--color-surface-alt);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-bottom: 1rem;
 }
 
@@ -3555,7 +3563,7 @@ footer {
     flex: 1;
     height: 24px;
     background: #e0e0e0;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
@@ -3563,7 +3571,7 @@ footer {
     width: 0%;
     height: 100%;
     background: var(--color-accent);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     transition: width 0.3s;
 }
 
@@ -3591,7 +3599,7 @@ footer {
     background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
 }
 
 @keyframes skeleton-shimmer {
@@ -3640,7 +3648,7 @@ footer {
     padding: 0.5rem 0.75rem;
     background: #eef2ff;
     border: 1px solid #c7d2fe;
-    border-radius: 6px;
+    border-radius: var(--btn-radius);
     margin-bottom: 0.5rem;
     font-size: 0.85rem;
 }
@@ -4347,12 +4355,12 @@ footer {
     color: var(--color-text-muted);
     text-decoration: none;
     font-size: 0.7rem;
-    line-height: 1.2;
+    line-height: var(--lh-tight);
 }
 
 .mobile-bottom-nav a .mbn-icon {
     font-size: 1.25rem;
-    line-height: 1;
+    line-height: var(--lh-none);
 }
 
 .mobile-bottom-nav a.active,
@@ -4545,13 +4553,13 @@ footer {
     font-size: var(--font-xs);
     padding: 0.1rem 0.35rem;
     border: 1px solid var(--color-border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--color-surface);
     color: var(--color-text-muted);
 }
 .palette-trigger-icon {
     font-size: 1rem;
-    line-height: 1;
+    line-height: var(--lh-none);
 }
 
 .palette-overlay {
@@ -4619,7 +4627,7 @@ footer {
     font-size: var(--font-xs);
     padding: 0.15rem 0.4rem;
     border: 1px solid var(--color-border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     color: var(--color-text-muted);
     background: var(--color-surface-alt);
     flex-shrink: 0;
@@ -4777,7 +4785,7 @@ footer {
     background: rgba(0, 0, 0, 0.55);
     color: #fff;
     font-size: 1.25rem;
-    line-height: 1;
+    line-height: var(--lh-none);
     cursor: pointer;
     transition: background 0.12s ease;
 }
@@ -4835,7 +4843,7 @@ body.lightbox-open { overflow: hidden; }
     box-shadow: var(--shadow-card-hover);
 }
 .lightbox-cw-gate[hidden] { display: none; }
-.lightbox-cw-label { font-size: 1.75rem; color: var(--color-warning, #ffc107); line-height: 1; }
+.lightbox-cw-label { font-size: 1.75rem; color: var(--color-warning, #ffc107); line-height: var(--lh-none); }
 .lightbox-cw-text { font-size: 0.9rem; }
 .lightbox-cw-reveal {
     padding: 0.4rem 1.1rem;

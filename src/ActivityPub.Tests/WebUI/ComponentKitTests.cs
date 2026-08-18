@@ -124,6 +124,62 @@ public class ComponentKitTests : IClassFixture<WebUIFactory>
         Assert.Contains(".badge-status", css);
     }
 
+    // ---- Phase 49.2 — spacing/typography token standardization -------------
+
+    [Fact]
+    public async Task SiteCss_DefinesLineHeightTokens()
+    {
+        var client = CreateClient();
+        var css = await client.GetStringAsync("/css/site.css");
+
+        Assert.Contains("--lh-none", css);
+        Assert.Contains("--lh-tight", css);
+        Assert.Contains("--lh-normal", css);
+        Assert.Contains("--lh-body", css);
+        Assert.Contains("--lh-relaxed", css);
+    }
+
+    [Fact]
+    public async Task SiteCss_HasNoOneOffLineHeightLiterals()
+    {
+        var client = CreateClient();
+        var css = await client.GetStringAsync("/css/site.css");
+
+        // Every metric line-height must come from the --lh-* tokens. The only
+        // permitted raw literal is the deliberate `line-height: 0` layout reset.
+        var lines = css.Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => l.StartsWith("line-height:", StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var line in lines)
+        {
+            Assert.True(
+                line.Contains("var(--lh-") || line == "line-height: 0;",
+                $"One-off line-height literal (should use a --lh-* token): {line}");
+        }
+    }
+
+    [Fact]
+    public async Task SiteCss_HasNoRawRadiusLiteralsThatDuplicateAToken()
+    {
+        var client = CreateClient();
+        var css = await client.GetStringAsync("/css/site.css");
+
+        // 4px == --radius-sm, 8px == --radius-md, 6px == --btn-radius. Any of
+        // these written as a raw border-radius literal is a one-off that should
+        // reference the token. (Distinct values like 2px/3px/10px/20px/0 and
+        // multi-value radii are legitimately different and are allowed.)
+        var offenders = new List<string>();
+        foreach (var raw in new[] { "border-radius: 4px;", "border-radius: 8px;", "border-radius: 6px;" })
+        {
+            if (css.Contains(raw, StringComparison.Ordinal))
+                offenders.Add(raw);
+        }
+
+        Assert.True(offenders.Count == 0, "Raw border-radius literals that duplicate a token:\n" + string.Join("\n", offenders));
+    }
+
     // ---- Rendered pages use the kit (no inline style blocks) ---------------
 
     [Fact]
