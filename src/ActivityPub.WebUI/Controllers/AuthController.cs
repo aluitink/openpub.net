@@ -101,25 +101,35 @@ public class AuthController : Controller
         {
             var (privateKeyPem, publicKeyPem) = _keyGenerationService.GenerateRSAKeyPair();
             var now = DateTime.UtcNow;
+            // Derive the base URL from the request host so the actor's
+            // canonical id/inbox/outbox point at the real deployed domain
+            // (e.g. openpub.luit.ink) rather than a hard-coded localhost,
+            // which remote instances cannot resolve. The scheme is pinned to
+            // https and the path convention is /users/{username} (the
+            // ActivityPub standard the Core API + local follow logic expect),
+            // so only the host is dynamic.
+            var host = Request.Host.HasValue ? Request.Host.Value : "localhost";
+            var baseUrl = $"https://{host}";
+            var actorId = $"{baseUrl}/users/{model.Username}";
             var actor = new Actor
             {
-                Id = $"https://localhost/users/{model.Username}",
+                Id = actorId,
                 Type = "Person",
                 PreferredUsername = model.Username,
                 Name = model.DisplayName,
                 Summary = "",
-                Inbox = $"https://localhost/inbox/{model.Username}",
-                Outbox = $"https://localhost/outbox/{model.Username}",
-                Followers = $"https://localhost/followers/{model.Username}",
-                Following = $"https://localhost/following/{model.Username}",
-                Liked = $"https://localhost/liked/{model.Username}",
+                Inbox = $"{baseUrl}/users/{model.Username}/inbox",
+                Outbox = $"{baseUrl}/users/{model.Username}/outbox",
+                Followers = $"{baseUrl}/users/{model.Username}/followers",
+                Following = $"{baseUrl}/users/{model.Username}/following",
+                Liked = $"{baseUrl}/users/{model.Username}/liked",
                 PublicKey = new PublicKey
                 {
-                    Id = $"https://localhost/users/{model.Username}#main-key",
-                    Owner = $"https://localhost/users/{model.Username}",
+                    Id = $"{actorId}#main-key",
+                    Owner = actorId,
                     PublicKeyPem = publicKeyPem
                 },
-                Url = $"https://localhost/@{model.Username}",
+                Url = $"{baseUrl}/@{model.Username}",
                 ManuallyApprovesFollowers = false,
                 Published = now,
                 Updated = now

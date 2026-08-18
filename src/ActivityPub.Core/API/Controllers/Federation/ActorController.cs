@@ -64,6 +64,29 @@ public class ActorController : ControllerBase
                 };
             }
 
+            // Normalize every federation URL from the live request host so the
+            // document is valid for whatever domain the instance is deployed
+            // under (openpub.luit.ink in production, localhost in tests). The
+            // stored actor may carry a legacy localhost prefix; remote
+            // instances cannot resolve that, so always re-derive from Request.
+            var scheme = HttpContext.Request.Scheme;
+            var host = HttpContext.Request.Host.HasValue ? HttpContext.Request.Host.Value : null;
+            if (!string.IsNullOrEmpty(scheme) && !string.IsNullOrEmpty(host))
+            {
+                var baseUrl = $"{scheme}://{host}";
+                actor.Id = $"{baseUrl}{_options.UserPath}/{username}";
+                actor.Inbox = $"{baseUrl}{_options.UserPath}/{username}/inbox";
+                actor.Outbox = $"{baseUrl}{_options.UserPath}/{username}/outbox";
+                actor.Followers = $"{baseUrl}{_options.UserPath}/{username}/followers";
+                actor.Following = $"{baseUrl}{_options.UserPath}/{username}/following";
+                actor.Liked = $"{baseUrl}{_options.UserPath}/{username}/liked";
+                if (actor.PublicKey != null)
+                {
+                    actor.PublicKey.Id = $"{actor.Id}#main-key";
+                    actor.PublicKey.Owner = actor.Id;
+                }
+            }
+
             _logger.LogInformation("Actor request successful for username: {Username}", username);
             stopwatch.Stop();
             _logger.LogDebug("Actor request completed in {ElapsedMilliseconds} ms", stopwatch.ElapsedMilliseconds);

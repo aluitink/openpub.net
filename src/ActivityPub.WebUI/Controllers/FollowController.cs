@@ -284,7 +284,14 @@ public class FollowController : Controller
 
     private async Task<Actor?> TryGetActorFromId(string actorId)
     {
-        if (actorId.StartsWith("https://localhost"))
+        // Only treat an actor id as "local" when its domain matches this
+        // instance's host (derived from the request), not a hard-coded
+        // https://localhost — otherwise a production deployment
+        // (e.g. openpub.luit.ink) could never resolve its own actors back to
+        // a username.
+        var domain = ExtractDomain(actorId);
+        var ourHost = (Request?.Host.HasValue == true ? Request.Host.Value : "localhost").ToLowerInvariant();
+        if (!string.IsNullOrEmpty(domain) && domain.ToLowerInvariant() == ourHost)
         {
             var username = ExtractUsername(actorId);
             if (username == null) return null;
