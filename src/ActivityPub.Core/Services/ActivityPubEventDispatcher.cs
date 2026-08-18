@@ -10,7 +10,11 @@ namespace ActivityPub.Core.Services;
 /// </summary>
 public class ActivityPubEventDispatcher
 {
-    private readonly ConcurrentBag<IActivityPubEventHandler> _handlers = new();
+    // A ConcurrentDictionary keyed by handler identity gives us thread-safe add
+    // AND removal (ConcurrentBag has no TryRemove). Keying on the handler
+    // instance means re-adding the same handler is idempotent and removing it
+    // actually removes it.
+    private readonly ConcurrentDictionary<IActivityPubEventHandler, byte> _handlers = new();
 
     /// <summary>
     /// Adds an event handler to the dispatcher
@@ -18,7 +22,7 @@ public class ActivityPubEventDispatcher
     /// <param name="handler">The event handler to add</param>
     public void AddHandler(IActivityPubEventHandler handler)
     {
-        _handlers.Add(handler);
+        _handlers.TryAdd(handler, 0);
     }
 
     /// <summary>
@@ -27,9 +31,7 @@ public class ActivityPubEventDispatcher
     /// <param name="handler">The event handler to remove</param>
     public void RemoveHandler(IActivityPubEventHandler handler)
     {
-        // The ConcurrentBag doesn't have TryRemove, so we'll just leave it as is
-        // In a production system, you'd want to implement proper removal logic
-        _handlers.Add(handler); // This is a simplified approach
+        _handlers.TryRemove(handler, out _);
     }
 
     /// <summary>
@@ -39,7 +41,10 @@ public class ActivityPubEventDispatcher
     /// <returns>A task that represents the asynchronous operation</returns>
     public async Task DispatchAsync(ActivityPubEvent @event)
     {
-        var tasks = _handlers.Select(h => h.HandleEventAsync(@event));
+        // Snapshot the keys so a concurrent add/remove during dispatch doesn't
+        // throw a ConcurrentDictionary enumeration exception.
+        var handlers = _handlers.Keys.ToArray();
+        var tasks = handlers.Select(h => h.HandleEventAsync(@event));
         await Task.WhenAll(tasks);
     }
 }

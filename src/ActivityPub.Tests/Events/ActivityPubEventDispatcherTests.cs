@@ -120,11 +120,92 @@ public class ActivityPubEventDispatcherTests
         await _dispatcher.DispatchAsync(@event);
     }
 
+    // --- Runtime dispatcher (Core.Services) regression tests -------------
+    // The dispatcher actually wired into the runtime path (ActivityPubService /
+    // InboxProcessorService / DI) is Core.Services.ActivityPubEventDispatcher.
+    // These tests pin the Add/Remove/Dispatch contract for that class.
+
+    [Fact]
+    public async Task ServicesDispatcher_AddHandler_ThenDispatch_InvokesHandler()
+    {
+        var dispatcher = new ActivityPub.Core.Services.ActivityPubEventDispatcher();
+        var invocations = 0;
+        var handler = new CountingEventHandler(() => invocations++);
+
+        dispatcher.AddHandler(handler);
+        await dispatcher.DispatchAsync(new TestEvent("test.event"));
+
+        Assert.Equal(1, invocations);
+    }
+
+    [Fact]
+    public async Task ServicesDispatcher_RemoveHandler_StopsInvocation()
+    {
+        var dispatcher = new ActivityPub.Core.Services.ActivityPubEventDispatcher();
+        var invocations = 0;
+        var handler = new CountingEventHandler(() => invocations++);
+
+        dispatcher.AddHandler(handler);
+        dispatcher.RemoveHandler(handler);
+        await dispatcher.DispatchAsync(new TestEvent("test.event"));
+
+        // After removal the handler must NOT be invoked. (The previous
+        // implementation *added* the handler on RemoveHandler, so it would have
+        // been invoked — twice.)
+        Assert.Equal(0, invocations);
+    }
+
+    [Fact]
+    public async Task ServicesDispatcher_RemoveHandler_LeavesOtherHandlersIntact()
+    {
+        var dispatcher = new ActivityPub.Core.Services.ActivityPubEventDispatcher();
+        var handler1Invocations = 0;
+        var handler2Invocations = 0;
+        var handler1 = new CountingEventHandler(() => handler1Invocations++);
+        var handler2 = new CountingEventHandler(() => handler2Invocations++);
+
+        dispatcher.AddHandler(handler1);
+        dispatcher.AddHandler(handler2);
+        dispatcher.RemoveHandler(handler1);
+        await dispatcher.DispatchAsync(new TestEvent("test.event"));
+
+        Assert.Equal(0, handler1Invocations);
+        Assert.Equal(1, handler2Invocations);
+    }
+
+    [Fact]
+    public async Task ServicesDispatcher_MultipleHandlers_AllInvoked()
+    {
+        var dispatcher = new ActivityPub.Core.Services.ActivityPubEventDispatcher();
+        var handler1Invocations = 0;
+        var handler2Invocations = 0;
+        var handler1 = new CountingEventHandler(() => handler1Invocations++);
+        var handler2 = new CountingEventHandler(() => handler2Invocations++);
+
+        dispatcher.AddHandler(handler1);
+        dispatcher.AddHandler(handler2);
+        await dispatcher.DispatchAsync(new TestEvent("test.event"));
+
+        Assert.Equal(1, handler1Invocations);
+        Assert.Equal(1, handler2Invocations);
+    }
+
     private class TestEvent : ActivityPubEvent
     {
         public TestEvent(string eventType)
         {
             EventType = eventType;
+        }
+    }
+
+    private sealed class CountingEventHandler : IActivityPubEventHandler
+    {
+        private readonly Action _onEvent;
+        public CountingEventHandler(Action onEvent) => _onEvent = onEvent;
+        public Task HandleEventAsync(ActivityPubEvent @event)
+        {
+            _onEvent();
+            return Task.CompletedTask;
         }
     }
 }
