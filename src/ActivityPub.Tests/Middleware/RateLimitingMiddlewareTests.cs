@@ -13,7 +13,7 @@ namespace ActivityPub.Tests.Middleware;
 /// </summary>
 public class RateLimitingMiddlewareTests
 {
-    private static (RateLimitingMiddleware middleware, DefaultHttpContext context, Func<Task> next) Build(
+    private static (RateLimitingMiddleware middleware, DefaultHttpContext context, Func<int> nextCallCount) Build(
         RateLimitOptions options,
         string path = "/inbox",
         string? authHeader = null,
@@ -25,10 +25,10 @@ public class RateLimitingMiddlewareTests
         if (authHeader != null)
             context.Request.Headers["Authorization"] = authHeader;
 
-        bool nextRan = false;
+        int calls = 0;
         RequestDelegate next = _ =>
         {
-            nextRan = true;
+            calls++;
             return Task.CompletedTask;
         };
 
@@ -37,25 +37,26 @@ public class RateLimitingMiddlewareTests
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RateLimitingMiddleware>.Instance,
             options);
 
-        return (middleware, context, () => Task.CompletedTask);
+        return (middleware, context, () => calls);
     }
 
     [Fact]
     public async Task UnderLimit_PassesThrough()
     {
         var options = new RateLimitOptions { MaxRequests = 5, Window = TimeSpan.FromMinutes(1) };
-        var (mw, ctx, _) = Build(options);
+        var (mw, ctx, nextCallCount) = Build(options);
 
         await mw.InvokeAsync(ctx);
 
         Assert.Equal(200, ctx.Response.StatusCode);
+        Assert.True(nextCallCount() == 1, "the downstream delegate should run once when under the limit");
     }
 
     [Fact]
     public async Task ExceedsLimit_Returns429()
     {
         var options = new RateLimitOptions { MaxRequests = 3, Window = TimeSpan.FromMinutes(1) };
-        var (mw, ctx, _) = Build(options);
+        var (mw, ctx, nextCallCount) = Build(options);
 
         // 3 allowed...
         for (var i = 0; i < 3; i++)
@@ -65,6 +66,7 @@ public class RateLimitingMiddlewareTests
         await mw.InvokeAsync(ctx);
 
         Assert.Equal(429, ctx.Response.StatusCode);
+        Assert.True(nextCallCount() == 3, "the downstream delegate should run only for the 3 allowed requests");
     }
 
     [Fact]
