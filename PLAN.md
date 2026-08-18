@@ -1,7 +1,7 @@
 # Fediblog — UI & UX Plan
 
-**Last Updated:** Aug 17, 2026
-**Status:** Backend federation, API, and scalability infrastructure is **feature-complete** (Phases 1–45, 966/966 tests passing). This plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
+**Last Updated:** Aug 18, 2026
+**Status:** Backend federation, API, and scalability infrastructure is **feature-complete** (Phases 1–45, 996/996 tests passing). This plan is **UI-first**: raise the WebUI to a polished, fast, responsive, accessible microblog. New backend work is deferred until a UI feature specifically requires it.
 
 **WebUI:** `src/ActivityPub.WebUI/` — Razor MVC, SignalR, vanilla JS (`wwwroot/js/`: `compose.js`, `menu.js`, `toast.js`), single `site.css` with `:root` design tokens + `[data-theme=dark]` overrides.
 
@@ -35,7 +35,7 @@ Make the timeline and interactions feel instant.
 4. ✅ Media queries for note cards, poll bars, admin tables (`.admin-table` horizontal-scroll wrapper as last resort), attachment grids, font-size floors.
 
 ### Phase 48: Interaction & Real-Time UX
-1. ⬜ Live timeline refresh via SignalR (new notes prepend without reload) + SSE fallback.
+1. ✅ Live timeline refresh via SignalR (new notes prepend without reload) + SSE fallback.
 2. ⬜ Notifications: real-time badge + unread counts, mark-as-read, relative timestamps, deep links to source note.
 3. ⬜ Optimistic UI everywhere safe, with rollback on failure; replace form-submit reloads with `fetch` + DOM patch.
 4. ⬜ Command palette / global search — fuzzy match across notes, users, hashtags, communities.

@@ -190,6 +190,7 @@ public class Program
             builder.Services.AddSingleton<ActivityPub.WebUI.Hubs.IHubRateLimiter, ActivityPub.WebUI.Hubs.InMemoryHubRateLimiter>();
         }
 
+        builder.Services.AddSingleton<ActivityPub.WebUI.Services.IActivityBroadcaster, ActivityPub.WebUI.Services.ActivityBroadcaster>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.INotificationService, ActivityPub.WebUI.Services.SignalRNotificationService>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IPushNotificationService, ActivityPub.WebUI.Services.PushNotificationService>();
         builder.Services.AddScoped<ActivityPub.WebUI.Services.IAuditLogService, ActivityPub.WebUI.Services.AuditLogService>();

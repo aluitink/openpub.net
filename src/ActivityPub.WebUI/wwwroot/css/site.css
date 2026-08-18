@@ -643,6 +643,28 @@ footer {
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
+.note-card-new {
+    animation: note-card-in 0.4s ease-out;
+    box-shadow: 0 0 0 2px var(--color-accent), 0 2px 8px rgba(0,0,0,0.12);
+}
+
+@keyframes note-card-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .note-header {
     display: flex;
     justify-content: space-between;

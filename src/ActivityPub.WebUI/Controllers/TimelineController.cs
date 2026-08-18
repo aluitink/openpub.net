@@ -91,6 +91,67 @@ public class TimelineController : Controller
         return View(activities);
     }
 
+    /// <summary>
+    /// Renders a single note card as an HTML fragment for live (SignalR/SSE)
+    /// timeline inserts. Returns 404 if the activity is unknown or not a note.
+    /// </summary>
+    [HttpGet]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Card(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return NotFound();
+
+        // The id is a full ActivityPub URL. MVC decodes the route value, but
+        // clients (JS encodeURIComponent / HttpClient) may hand us a still-
+        // percent-encoded path segment; normalize either way so the lookup
+        // always matches the stored ActivityId.
+        var lookupId = id.Contains("%") ? Uri.UnescapeDataString(id) : id;
+        var username = User.Identity!.Name!;
+        var activity = await _repository.GetActivityAsync(lookupId);
+        if (activity == null)
+            return NotFound();
+
+        var note = ExtractNote(activity);
+        if (note == null)
+            return NotFound();
+
+        var authorActor = await GetAuthorActor(activity);
+        var activityId = activity.Id ?? string.Empty;
+        var likeCount = await _repository.GetLikeCountAsync(activityId);
+        var boostCount = await _repository.GetBoostCountAsync(activityId);
+        var replyCount = await _repository.GetReplyCountAsync(activityId);
+        var isLiked = await _repository.IsLikedByActorAsync(username, activityId);
+        var isBoosted = await _repository.IsBoostedByActorAsync(username, activityId);
+
+        var item = new TimelineActivityItem
+        {
+            ActivityId = activityId,
+            AuthorName = authorActor?.PreferredUsername ?? activity.ActorId?.Split('/').Last() ?? "unknown",
+            AuthorDisplayName = authorActor?.Name ?? "",
+            AuthorAvatarUrl = authorActor?.Icon?.Url,
+            Content = note.Content ?? "",
+            Published = note.Published ?? DateTime.UtcNow,
+            ActivityType = activity.Type ?? "Create",
+            InReplyTo = note.InReplyTo,
+            LikeCount = likeCount,
+            BoostCount = boostCount,
+            ReplyCount = replyCount,
+            IsLiked = isLiked,
+            IsBoosted = isBoosted,
+            ImageUrl = ExtractImageUrl(note),
+            Sensitive = ExtractSensitive(note),
+            ContentWarning = ExtractContentWarning(note),
+            DocumentAttachments = ExtractDocumentAttachments(note),
+            PollQuestion = ExtractPollQuestion(note),
+            PollOptions = ExtractPollOptions(note),
+            PollEndTime = ExtractPollEndTime(note),
+            PollId = ExtractPollId(note)
+        };
+
+        return PartialView("_NoteCard", item);
+    }
+
     static ActivityPub.Core.Models.Object? ExtractNote(Activity activity)
     {
         if (activity.Object is ActivityPub.Core.Models.Object obj)

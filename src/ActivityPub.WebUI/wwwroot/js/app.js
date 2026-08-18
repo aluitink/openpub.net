@@ -145,6 +145,81 @@
         });
     });
 
+    // ---- Live timeline (SignalR primary, SSE fallback) ---------------------
+    // Shared by both transports: receives a NewActivity payload and, when the
+    // timeline page is open, fetches + prepends the server-rendered note card.
+    FB.register('live-timeline', function() {
+        var currentUser = document.body.getAttribute('data-current-user') || '';
+        var feed = document.querySelector('.timeline-feed[data-feed]');
+        if (!feed) return; // not a timeline page — nothing to prepend into
+
+        var liveRegion = document.createElement('div');
+        liveRegion.className = 'sr-only';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('role', 'status');
+        document.body.appendChild(liveRegion);
+
+        function isOnTimeline() {
+            return !!(document.querySelector('.timeline-feed[data-feed]'));
+        }
+
+        function handleNewActivity(data) {
+            if (!data || !data.ActivityId) return;
+
+            // Self-echo suppression: the card for a note we just composed is
+            // already in the DOM (ComposeController redirects back to a page
+            // that re-renders it), so don't bump the badge or prepend a dup.
+            var isSelf = data.ActorName && currentUser &&
+                (data.ActorName === currentUser || data.ActorName === '@' + currentUser);
+            if (isSelf) {
+                console.log('[LiveTimeline] Ignoring own activity:', data.ActivityId);
+                return;
+            }
+
+            // De-dupe: skip if the card is already rendered (e.g. a late
+            // duplicate broadcast after a reload that already fetched it).
+            if (document.querySelector('.note-card[data-activity-id="' + CSS.escape(data.ActivityId) + '"]')) {
+                return;
+            }
+
+            if (!isOnTimeline()) {
+                console.log('[LiveTimeline] Not on timeline; skipping prepend for', data.ActivityId);
+                return;
+            }
+
+            fetch('/timeline/card/' + encodeURIComponent(data.ActivityId), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'text/html' }
+            })
+                .then(function(r) { return r.ok ? r.text() : null; })
+                .then(function(html) {
+                    if (!html) return;
+                    var wrap = document.createElement('div');
+                    wrap.innerHTML = html;
+                    var card = wrap.querySelector('.note-card');
+                    if (!card) return;
+
+                    feed.insertBefore(card, feed.firstChild);
+                    card.classList.add('note-card-new');
+                    var reduceMotion = window.matchMedia &&
+                        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    card.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+                    setTimeout(function () { card.classList.remove('note-card-new'); }, 4000);
+
+                    var author = card.querySelector('.note-username');
+                    var contentEl = card.querySelector('.note-content');
+                    liveRegion.textContent = 'New post by ' +
+                        (author ? author.textContent : 'someone') +
+                        ': ' + (contentEl ? contentEl.textContent.slice(0, 80) : '');
+                    console.log('[LiveTimeline] Prepended', data.ActivityId);
+                })
+                .catch(function (err) { console.warn('[LiveTimeline] fetch failed:', err); });
+        }
+
+        // Expose for the SignalR + SSE transports to call.
+        window.FB.handleLiveActivity = handleNewActivity;
+    });
+
     // ---- SignalR notifications (single bootstrap for the whole app) --------
     FB.register('signals', function() {
         if (typeof signalR === 'undefined') return;
@@ -152,7 +227,7 @@
             .withUrl('/notifications/ws')
             .withAutomaticReconnect()
             .build();
-        window.fbSignalR = { connection: connection };
+        window.fbSignalR = { connection: connection, ok: false };
 
         var notificationCount = 0;
         var badge = document.getElementById('notification-badge');
@@ -182,9 +257,16 @@
         }
 
         connection.on('NewActivity', function(data) {
-            bumpBadge();
-            playNotificationSound();
-            sendDesktopNotification('New ' + data.Type, data.Content || '', data.ActorName);
+            // Only bump the badge / sound / desktop notif; the live-timeline
+            // module independently prepends the card when on the timeline page.
+            if (data && data.ActorName && document.body.getAttribute('data-current-user') === data.ActorName) {
+                // own post already in DOM — skip the "new" noise
+            } else {
+                bumpBadge();
+                playNotificationSound();
+                sendDesktopNotification('New ' + data.Type, data.Content || '', data.ActorName);
+            }
+            if (window.FB.handleLiveActivity) window.FB.handleLiveActivity(data);
             console.log('[SignalR] New activity:', data.Type, 'by', data.ActorName);
         });
 
@@ -218,9 +300,65 @@
             }
         }
 
-        connection.start().catch(function(err) {
-            console.log('[SignalR] Connection failed:', err);
-        });
+        connection.start()
+            .then(function () { window.fbSignalR.ok = true; })
+            .catch(function (err) {
+                window.fbSignalR.ok = false;
+                console.log('[SignalR] Connection failed:', err);
+            });
+    });
+
+    // ---- SSE fallback transport (only when SignalR is unavailable) ----------
+    // Consumes /timeline/events and feeds the same live-timeline handler.
+    // Kept in its own module so it never double-fires alongside SignalR.
+    FB.register('sse-fallback', function () {
+        if (typeof EventSource === 'undefined') return;
+        // /timeline/events is only authorized for signed-in users and only
+        // useful where a feed is open. Without these guards an anonymous
+        // visitor would 401 forever (EventSource auto-retries) and every
+        // non-timeline page would carry a useless open stream.
+        if (!document.body.getAttribute('data-current-user')) return;
+        if (!document.querySelector('.timeline-feed[data-feed]')) return;
+
+        var started = false;
+        function startSSE() {
+            if (started) return;
+            // Only fall back when there is no live SignalR connection.
+            if (window.fbSignalR && window.fbSignalR.ok) {
+                console.log('[SSE] SignalR active; SSE fallback disabled');
+                return;
+            }
+            started = true;
+            console.log('[SSE] Starting fallback stream');
+            var src = new EventSource('/timeline/events');
+            src.addEventListener('new_activity', function (e) {
+                try {
+                    var data = JSON.parse(e.data);
+                    // Normalize to the SignalR-style payload the handler expects.
+                    if (window.FB.handleLiveActivity) {
+                        window.FB.handleLiveActivity({
+                            ActivityId: data.activityId,
+                            Type: data.type,
+                            ActorName: data.actorName,
+                            Content: data.content,
+                            Timestamp: data.timestamp
+                        });
+                    }
+                } catch (err) { console.warn('[SSE] bad event:', err); }
+            });
+            src.onerror = function () {
+                // EventSource auto-reconnects; if the stream is long-dead,
+                // let it keep retrying (built-in) rather than tearing down.
+                console.log('[SSE] connection error (auto-retrying)');
+            };
+        }
+
+        // Give SignalR a moment to establish before deciding to fall back.
+        setTimeout(function () {
+            // fbSignalR.ok is only true once .start() resolved. If SignalR is
+            // absent (module early-returned) ok stays undefined → fall back.
+            startSSE();
+        }, 1500);
     });
 
     // ---- Relative timestamps ----------------------------------------------
